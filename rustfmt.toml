@@ -1,0 +1,4 @@
+newline_style = "Windows"
+write_mode = "Replace"
+hard_tabs = true
+reorder_imports = true

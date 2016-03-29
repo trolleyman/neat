@@ -12,12 +12,12 @@ impl Entity {
 	pub fn new() {
 		Default::default()
 	}
-	
+
 	/// Apply a force in a direction
 	pub fn force<T: Into<Vec3>>(&mut self, f: T) {
 		self.vel += f.into() / self.weight;
 	}
-	
+
 	/// Process a tick for the entity.
 	/// Update position using velocity.
 	pub fn tick(&mut self, dt: f32) {
