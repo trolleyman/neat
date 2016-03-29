@@ -4,6 +4,7 @@ use util::clamp;
 
 use cgmath::{vec3, Vector3, Matrix4, SquareMatrix};
 
+#[derive(Copy, Clone)]
 pub struct Camera {
 	pos: Vector3<f32>,
 	yrot: f32,
@@ -22,9 +23,12 @@ impl Camera {
 		c
 	}
 	
+	pub fn pos(&self) -> Vector3<f32> {
+		self.pos
+	}
+	
 	fn calculate_view_matrix(&mut self) {
-		self.view_mat = Matrix4::identity();
-		
+		self.view_mat = Matrix4::from_translation(-self.pos);
 	}
 	
 	pub fn view_matrix(&self) -> Matrix4<f32> {
@@ -33,6 +37,7 @@ impl Camera {
 	
 	pub fn translate(&mut self, v: Vector3<f32>) {
 		self.pos = self.pos + v;
+		self.calculate_view_matrix();
 	}
 	
 	// Have a look around (radians)
@@ -46,5 +51,7 @@ impl Camera {
 		}
 		
 		self.yrot = clamp(self.yrot, f32::consts::PI / -2., f32::consts::PI / 2.);
+		
+		self.calculate_view_matrix();
 	}
 }

@@ -20,9 +20,9 @@ pub struct Render {
 	_context: Rc<Context>,
 	frame: Frame,
 	
-	projection: Matrix4<f32>,	
-	camera: Camera,
+	projection: Matrix4<f32>,
 	
+	camera: Camera,
 	sphere: Mesh,
 	
 	simple_shader: Program,
@@ -30,6 +30,10 @@ pub struct Render {
 impl Render {
 	pub fn new() -> Render {
 		Render::with_size(800, 600)
+	}
+	
+	fn clear_frame(frame: &mut Frame) {
+		frame.clear_color(0.0, 0.0, 0.0, 0.0);
 	}
 
 	pub fn with_size(w: u32, h: u32) -> Render {
@@ -43,9 +47,8 @@ impl Render {
 		};
 		
 		let mut frame = win.draw();
-		frame.clear_color(0.0, 0.0, 0.0, 0.0);
+		Render::clear_frame(&mut frame);
 		frame.finish().ok();
-		
 		let frame = win.draw();
 		
 		let simple_shader = match Render::load_shader(&win, "simple") {
@@ -71,6 +74,10 @@ impl Render {
 			
 			simple_shader: simple_shader,
 		}
+	}
+	
+	pub fn set_camera(&mut self, cam: Camera) {
+		self.camera = cam;
 	}
 	
 	/// Loads a shader named `name`.
@@ -122,6 +129,7 @@ impl Render {
 	pub fn swap(&mut self) {
 		self.frame.set_finish().ok();
 		self.frame = self.win.draw();
+		Render::clear_frame(&mut self.frame);
 	}
 	
 	pub fn draw_sphere(&mut self, pos: Vector3<f32>, size: f32, color: Color) {

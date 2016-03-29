@@ -28,7 +28,6 @@ impl Entity {
 	/// Processes a tick for the entity
 	pub fn tick(&mut self, dt: f32) {
 		self.pos = self.pos + self.vel * dt;
-		println!("pos: {:?}, vel: {:?}", self.pos, self.vel);
 	}
 	
 	/// Returns the position of the object in space

@@ -35,7 +35,7 @@ fn main() {
 		// Render to screen
 		// TODO: Render using seperate thread (mutexes?).
 		g.current_state().render(&mut r);
-
+		
 		let dt = last_render.elapsed();
 		println!("{}ms", dt.as_millis());
 		last_render = Instant::now();

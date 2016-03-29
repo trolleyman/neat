@@ -28,19 +28,68 @@ pub struct Mesh {
 }
 impl Mesh {
 	pub fn sphere<F: Facade>(facade: &F) -> Mesh {
-		const DETAIL: u32 = 0;
+		const DETAIL: u32 = 1;
 		
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
-		Mesh::gen_dodec(&mut vs, &mut is, DETAIL);
+		Mesh::gen_sphere(&mut vs, &mut is, DETAIL);
+		Mesh::from_vecs(facade, vs, is)
+	}
+	
+	pub fn cube<F: Facade>(facade: &F) -> Mesh {
+		let mut vs: Vec<SimpleVertex> = Vec::new();
+		let mut is: Vec<u32> = Vec::new();
 		
+		Mesh::gen_cube(&mut vs, &mut is);
+		Mesh::from_vecs(facade, vs, is)
+	}
+	
+	fn from_vecs<F: Facade>(facade: &F, vs: Vec<SimpleVertex>, is: Vec<u32>) -> Mesh {
 		let vs = VertexBuffer::immutable(facade, &vs).unwrap();
 		let is = IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, &is).unwrap();
 		
-		Mesh{
+		Mesh {
 			vertex_buffer: vs,
 			index_buffer : is,
+		}
+	}
+	
+	fn gen_cube(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>) {
+		fn push_quad(is: &mut Vec<u32>, i: u32, v0: u32, v1: u32, v2: u32, v3: u32) {
+			is.extend(&[i+v0, i+v2, i+v1]);
+			is.extend(&[i+v0, i+v3, i+v2]);
+		}
+		let i = vs.len() as u32;
+		
+		let cube_vs: &[SimpleVertex] = &[
+			vec3(-0.5,  0.5, -0.5).into(),
+			vec3( 0.5,  0.5, -0.5).into(),
+			vec3( 0.5, -0.5, -0.5).into(),
+			vec3(-0.5, -0.5, -0.5).into(),
+			vec3(-0.5,  0.5,  0.5).into(),
+			vec3( 0.5,  0.5,  0.5).into(),
+			vec3( 0.5, -0.5,  0.5).into(),
+			vec3(-0.5, -0.5,  0.5).into(),
+		];
+		
+		vs.extend(cube_vs);
+		push_quad(is, i, 0, 1, 2, 3); // F
+		push_quad(is, i, 5, 4, 7, 6); // B
+		push_quad(is, i, 0, 3, 7, 4); // L
+		push_quad(is, i, 1, 2, 6, 5); // R
+		push_quad(is, i, 0, 1, 5, 4); // U
+		push_quad(is, i, 2, 3, 7, 6); // D
+	}
+	
+	fn gen_sphere(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, detail: u32) {
+		// Generate dodecohedron
+		Mesh::gen_dodec(vs, is, detail);
+		
+		// Now scale vertices to proper locations.
+		// (by normalising them)
+		for v in vs.iter_mut() {
+			*v = SimpleVertex::from(Vector3::from(v.pos).normalize());
 		}
 	}
 	
@@ -55,11 +104,16 @@ impl Mesh {
 		let v4 = vec3(-0.5,  0.0,  0.0);
 		let v5 = vec3( 0.0, -0.5,  0.0);
 		
+		// Top half
 		Mesh::gen_dodec_face(vs, is, detail, v0, v1, v2);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v1, v2);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v1, v2);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v1, v2);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v1, v2);
+		Mesh::gen_dodec_face(vs, is, detail, v0, v2, v3);
+		Mesh::gen_dodec_face(vs, is, detail, v0, v3, v4);
+		Mesh::gen_dodec_face(vs, is, detail, v0, v4, v1);
+		// Bottom half
+		Mesh::gen_dodec_face(vs, is, detail, v5, v4, v3);
+		Mesh::gen_dodec_face(vs, is, detail, v5, v3, v2);
+		Mesh::gen_dodec_face(vs, is, detail, v5, v2, v1);
+		Mesh::gen_dodec_face(vs, is, detail, v5, v1, v4);
 	}
 	
 	fn gen_dodec_face(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {

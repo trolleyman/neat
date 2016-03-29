@@ -12,5 +12,5 @@ uniform vec3 in_color;
 
 void main() {
 	color = in_color;
-	gl_Position = vec4(pos, 1.0) * projection * view * model;
+	gl_Position = projection * view * model * vec4(pos, 1.0);
 }

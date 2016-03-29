@@ -1,20 +1,58 @@
-use game::Entity;
-use render::Render;
+use glutin::VirtualKeyCode as KeyCode;
 
-#[derive(Default, Clone)]
+use cgmath::Vector3;
+
+use game::{KeyboardState, Entity};
+use render::{Camera, Render};
+
+#[derive(Clone)]
 pub struct State {
 	entities: Vec<Entity>,
+	camera: Camera,
 }
 impl State {
 	pub fn new() -> State {
-		State { entities: Vec::new() }
+		State {
+			entities: Vec::new(),
+			camera: Camera::new(),
+		}
+	}
+	
+	pub fn camera(&self) -> &Camera {
+		&self.camera
 	}
 	
 	pub fn add_entity(&mut self, e: Entity) {
 		self.entities.push(e);
 	}
 	
-	pub fn tick(&mut self, dt: f32) {
+	pub fn tick(&mut self, dt: f32, keyboard: &KeyboardState) {
+		// m/s
+		let speed = 1.0 * dt;
+		
+		// Translate camera based on keyboard state
+		let mut trans = Vector3::new(0.0, 0.0, 0.0);
+		if keyboard.is_pressed(&KeyCode::W) { // Forward
+			trans = trans + Vector3::new(0.0, 0.0, -speed);
+		}
+		if keyboard.is_pressed(&KeyCode::S) { // Backward
+			trans = trans + Vector3::new(0.0, 0.0,  speed);
+		}
+		if keyboard.is_pressed(&KeyCode::A) { // Strafe left
+			trans = trans + Vector3::new(-speed, 0.0, 0.0);
+		}
+		if keyboard.is_pressed(&KeyCode::D) { // Strafe right
+			trans = trans + Vector3::new( speed, 0.0, 0.0);
+		}
+		if keyboard.is_pressed(&KeyCode::Q) { // Go up
+			trans = trans + Vector3::new(0.0,  speed, 0.0);
+		}
+		if keyboard.is_pressed(&KeyCode::E) { // Go down
+			trans = trans + Vector3::new(0.0, -speed, 0.0);
+		}
+		self.camera.translate(trans);
+		println!("cam_pos: {:?}", self.camera.pos());
+		
 		// Apply gravity to all entities.
 		/*
 		for i in 0..self.entities.len() {
@@ -46,6 +84,8 @@ impl State {
 	}
 
 	pub fn render(&self, r: &mut Render) {
+		r.set_camera(self.camera);
+		
 		self.entities.iter().map(|e| e.render(r)).count();
 		
 		r.swap();
