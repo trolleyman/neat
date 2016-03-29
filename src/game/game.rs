@@ -1,10 +1,13 @@
-use std::default::Default;
 use std::mem;
 use std::iter::Iterator;
 
 use glutin::Event;
 
-use super::GameState;
+use cgmath::vec3;
+
+use render::Color;
+use game::Entity;
+use game::GameState;
 
 pub struct Game {
 	current_state: GameState,
@@ -13,7 +16,9 @@ pub struct Game {
 }
 impl Game {
 	pub fn new() -> Game {
-		Game::with_state(Default::default())
+		let mut state = GameState::new();
+		state.add_entity(Entity::new(vec3(0.0, 0.0, -5.0), vec3(0.0, 0.0, 0.0), 1.0, Color::new(1.0, 0.0, 0.0)));
+		Game::with_state(state)
 	}
 
 	pub fn with_state(state: GameState) -> Game {
@@ -33,7 +38,7 @@ impl Game {
 	}
 
 	/// Ticks the game. `dt` is the number of seconds since last frame.
-	pub fn tick<I: Iterator<Item = Event>>(&mut self, dt: f64, events: I) {
+	pub fn tick<I: Iterator<Item = Event>>(&mut self, dt: f32, events: I) {
 		// Clone current state
 		self.next_state = self.current_state.clone();
 

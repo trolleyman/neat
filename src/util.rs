@@ -1,4 +1,5 @@
 use std::time::Duration;
+use std::cmp::PartialOrd;
 
 pub trait DurationExt {
 	fn as_millis(&self) -> u64;
@@ -14,5 +15,15 @@ impl DurationExt for Duration {
 
 	fn as_secs_partial(&self) -> f64 {
 		self.as_secs() as f64 + (self.subsec_nanos() as f64 / 1_000_000_000.0)
+	}
+}
+
+pub fn clamp<T: PartialOrd>(v: T, min: T, max: T) -> T {
+	if v < min {
+		min
+	} else if v > max {
+		max
+	} else {
+		v
 	}
 }

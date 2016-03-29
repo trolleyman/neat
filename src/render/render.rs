@@ -2,6 +2,7 @@ use std::rc::Rc;
 use std::io::{self, Read};
 use std::fs::File;
 use std::path::{Path, PathBuf};
+use std::mem;
 
 use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
@@ -9,14 +10,19 @@ use glium::*;
 
 use glutin::WindowBuilder;
 
+use cgmath::{self, vec3, Vector3, Matrix4, SquareMatrix};
+
 use render::Color;
-use math::Vec3;
+use render::Camera;
 
 /// Render handler.
 pub struct Render {
 	win: GlutinFacade,
 	_context: Rc<Context>,
 	frame: Frame,
+	
+	projection: Matrix4<f32>,	
+	camera: Camera,
 	
 	simple_shader: Program,
 }
@@ -54,6 +60,10 @@ impl Render {
 			_context: ctx,
 			frame: frame,
 			
+			projection: cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0),
+			
+			camera: Camera::new(),
+			
 			simple_shader: simple_shader,
 		}
 	}
@@ -71,25 +81,26 @@ impl Render {
 			Ok(src)
 		}
 		
+		let name = String::from(name);
+		
 		let shaders_dir = PathBuf::from("shaders");
 		if !shaders_dir.is_dir() {
 			return Err(format!("`shaders/` is not a directory."));
 		}
-		let shader_base = shaders_dir.join(name);
 		
-		let frag_path = shader_base.join(".frag");
-		let frag = match get_source(&*frag_path) {
-			Ok(s) => s,
-			Err(e) => return Err(format!("Could not read shader file at `{}`: {}", frag_path.display(), e)),
-		};
-		
-		let vert_path = shader_base.join(".vert");;
+		let vert_path = shaders_dir.join(name.clone() + ".vert");
 		let vert = match get_source(&*vert_path) {
 			Ok(s) => s,
 			Err(e) => return Err(format!("Could not read shader file at `{}`: {}", vert_path.display(), e)),
 		};
 		
-		match Program::from_source(facade, &frag, &vert, None) {
+		let frag_path = shaders_dir.join(name.clone() + ".frag");
+		let frag = match get_source(&*frag_path) {
+			Ok(s) => s,
+			Err(e) => return Err(format!("Could not read shader file at `{}`: {}", frag_path.display(), e)),
+		};
+		
+		match Program::from_source(facade, &vert, &frag, None) {
 			Ok(p) => Ok(p),
 			Err(e) => Err(format!("Could not compile shader `{}`: {}", name, e)),
 		}
@@ -108,8 +119,31 @@ impl Render {
 		self.frame = self.win.draw();
 	}
 	
-	pub fn draw_sphere(&mut self, pos: Vec3, size: f32, color: Color) {
+	pub fn draw_sphere(&mut self, pos: Vector3<f32>, size: f32, color: Color) {
+		// Scale * Rotation * Translation
+		let model = Matrix4::from_scale(size)
+			* Matrix4::identity()
+			* Matrix4::from_translation(pos);
 		
+		// Bottom left, Top, Bottom right
+		let verts: Vec<SimpleVertex> =
+			vec![vec3(-0.5, -0.5, -0.5).into(), vec3(0.0, 0.5, -0.5).into(), vec3(0.5, -0.5, -0.5).into()];
+		let vertex_buffer = VertexBuffer::new(&self.win, &verts).unwrap();
+		
+		unsafe {
+			self.frame.draw(
+				&vertex_buffer,
+				index::NoIndices(index::PrimitiveType::TrianglesList),
+				&self.simple_shader,
+				&uniform!{
+					projection: mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.projection),
+					view:       mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()),
+					model:      mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(model),
+					in_color:   mem::transmute::<Vector3<f32>, [f32; 3]>(color.into()),
+				},
+				&Default::default()
+			).unwrap();
+		}
 	}
 }
 
@@ -118,3 +152,17 @@ impl Drop for Render {
 		self.frame.set_finish().ok();
 	}
 }
+
+#[derive(Copy, Clone)]
+struct SimpleVertex {
+	pub pos: [f32; 3],
+}
+impl From<Vector3<f32>> for SimpleVertex {
+	fn from(v: Vector3<f32>) -> SimpleVertex {
+		SimpleVertex{
+			pos: unsafe { mem::transmute(v) },
+		}
+	}
+}
+
+implement_vertex!(SimpleVertex, pos);

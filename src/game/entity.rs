@@ -1,48 +1,48 @@
-use std::convert::Into;
-
 use render::Render;
 use render::Color;
-use math::Vec3;
+
+use cgmath::Vector3;
 
 #[derive(Clone)]
 pub struct Entity {
-	pos: Vec3,
-	vel: Vec3,
-	weight: f64,
+	pos: Vector3<f32>,
+	vel: Vector3<f32>,
+	weight: f32,
 	color: Color,
 }
 impl Entity {
-	pub fn new<V: Into<Vec3>, C: Into<Color>>(pos: V, vel: V, weight: f64, color: C) -> Entity {
+	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, color: Color) -> Entity {
 		Entity {
-			pos: pos.into(),
-			vel: vel.into(),
+			pos: pos,
+			vel: vel,
 			weight: weight,
-			color: color.into(),
+			color: color,
 		}
 	}
 
 	/// Applies a force in a direction
-	pub fn force<T: Into<Vec3>>(&mut self, f: T) {
-		self.vel += f.into() / self.weight;
+	pub fn force(&mut self, f: Vector3<f32>) {
+		self.vel = self.vel + (f / self.weight);
 	}
 
 	/// Processes a tick for the entity
-	pub fn tick(&mut self, dt: f64) {
-		self.pos = self.vel * dt;
+	pub fn tick(&mut self, dt: f32) {
+		self.pos = self.pos + self.vel * dt;
+		println!("pos: {:?}, vel: {:?}", self.pos, self.vel);
 	}
 	
 	/// Returns the position of the object in space
-	pub fn pos(&self) -> Vec3 {
+	pub fn pos(&self) -> Vector3<f32> {
 		self.pos
 	}
 	
 	/// Returns the velocity of the object
-	pub fn vel(&self) -> Vec3 {
+	pub fn vel(&self) -> Vector3<f32> {
 		self.vel
 	}
 	
 	/// Returns the weight of the object
-	pub fn weight(&self) -> f64 {
+	pub fn weight(&self) -> f32 {
 		self.weight
 	}
 	

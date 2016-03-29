@@ -1,8 +1,11 @@
 #![feature(box_syntax, question_mark)]
 extern crate rusttype;
+#[macro_use]
 extern crate glium;
+extern crate cgmath as cgmath;
 
-use std::time::Instant;
+use std::time::{Duration, Instant};
+use std::thread::sleep;
 use std::io::{self, Write};
 use std::fmt::Display;
 
@@ -10,7 +13,6 @@ pub use glium::glutin;
 
 pub mod render;
 pub mod game;
-pub mod math;
 pub mod util;
 
 use util::DurationExt;
@@ -39,7 +41,9 @@ fn main() {
 		last_render = Instant::now();
 
 		// Process events
-		g.tick(dt.as_secs_partial(), r.poll_events());
+		g.tick(dt.as_secs_partial() as f32, r.poll_events());
+		
+		sleep(Duration::from_millis(100));
 	}
 
 	println!("Program exited.");
