@@ -43,7 +43,7 @@ fn main() {
 		// Process events
 		g.tick(dt.as_secs_partial() as f32, r.poll_events());
 		
-		sleep(Duration::from_millis(100));
+		sleep(Duration::from_millis(10));
 	}
 
 	println!("Program exited.");

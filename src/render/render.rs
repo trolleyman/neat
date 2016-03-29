@@ -10,10 +10,9 @@ use glium::*;
 
 use glutin::WindowBuilder;
 
-use cgmath::{self, vec3, Vector3, Matrix4, SquareMatrix};
+use cgmath::{self, Vector3, Matrix4, SquareMatrix};
 
-use render::Color;
-use render::Camera;
+use render::{Camera, Color, Mesh};
 
 /// Render handler.
 pub struct Render {
@@ -23,6 +22,8 @@ pub struct Render {
 	
 	projection: Matrix4<f32>,	
 	camera: Camera,
+	
+	sphere: Mesh,
 	
 	simple_shader: Program,
 }
@@ -52,6 +53,8 @@ impl Render {
 			Err(e) => ::error(e),
 		};
 		
+		let sphere = Mesh::sphere(&win);
+		
 		win.get_window().unwrap().show();
 		
 		let ctx = win.get_context().clone();
@@ -63,6 +66,8 @@ impl Render {
 			projection: cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0),
 			
 			camera: Camera::new(),
+			
+			sphere: sphere,
 			
 			simple_shader: simple_shader,
 		}
@@ -124,16 +129,11 @@ impl Render {
 		let model = Matrix4::from_scale(size)
 			* Matrix4::identity()
 			* Matrix4::from_translation(pos);
-		
-		// Bottom left, Top, Bottom right
-		let verts: Vec<SimpleVertex> =
-			vec![vec3(-0.5, -0.5, -0.5).into(), vec3(0.0, 0.5, -0.5).into(), vec3(0.5, -0.5, -0.5).into()];
-		let vertex_buffer = VertexBuffer::new(&self.win, &verts).unwrap();
-		
+				
 		unsafe {
 			self.frame.draw(
-				&vertex_buffer,
-				index::NoIndices(index::PrimitiveType::TrianglesList),
+				self.sphere.vertices(),
+				self.sphere.indices(),
 				&self.simple_shader,
 				&uniform!{
 					projection: mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.projection),
@@ -152,17 +152,3 @@ impl Drop for Render {
 		self.frame.set_finish().ok();
 	}
 }
-
-#[derive(Copy, Clone)]
-struct SimpleVertex {
-	pub pos: [f32; 3],
-}
-impl From<Vector3<f32>> for SimpleVertex {
-	fn from(v: Vector3<f32>) -> SimpleVertex {
-		SimpleVertex{
-			pos: unsafe { mem::transmute(v) },
-		}
-	}
-}
-
-implement_vertex!(SimpleVertex, pos);
