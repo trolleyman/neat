@@ -1,65 +1,71 @@
-use std::mem;
-use std::iter::Iterator;
+use std::time::{Duration, Instant};
+use std::thread::sleep;
 
 use glutin::Event;
 
-use cgmath::vec3;
-
-use render::Color;
-use game::{GameState, KeyboardState, Entity};
+use game::{GameState, KeyboardState};
+use render::Render;
+use util::DurationExt;
 
 pub struct Game {
+	render: Render,
+	
 	current_state: GameState,
 	next_state: GameState,
 	running: bool,
 	keyboard_state: KeyboardState,
 }
 impl Game {
-	pub fn new() -> Game {
-		let mut state = GameState::new();
-		state.add_entity(Entity::new(vec3(5.0, 0.0,  0.0), vec3(0.0, 0.0, 0.0), 1.0, Color::new(1.0, 0.0, 0.0)));
-		state.add_entity(Entity::new(vec3(0.0, 0.0, -5.0), vec3(0.0, 0.0, 0.0), 1.0, Color::new(0.0, 1.0, 0.0)));
-		state.add_entity(Entity::new(vec3(0.0, 5.0,  0.0), vec3(0.0, 0.0, 0.0), 1.0, Color::new(0.0, 0.0, 1.0)));
-		Game::with_state(state)
+	pub fn new(render: Render) -> Game {
+		Game::with_state(render, GameState::new())
 	}
 
-	pub fn with_state(state: GameState) -> Game {
+	pub fn with_state(render: Render, state: GameState) -> Game {
 		Game {
-			current_state: state,
-			next_state: GameState::new(),
+			render: render,
+			
+			current_state: state.clone(),
+			next_state: state,
 			running: true,
 			keyboard_state: KeyboardState::new(),
 		}
 	}
-
-	pub fn running(&self) -> bool {
-		return self.running;
-	}
-
-	pub fn current_state(&self) -> &GameState {
-		&self.current_state
-	}
-
-	/// Ticks the game. `dt` is the number of seconds since last frame.
-	pub fn tick<I: Iterator<Item = Event>>(&mut self, dt: f32, events: I) {
-		// Clone current state
-		self.next_state = self.current_state.clone();
-
-		// Apply events
-		for e in events {
-			match e {
-				Event::Closed => {
-					self.running = false;
-					return; // Ignore all other events.
+	
+	pub fn main_loop(&mut self) {
+		let mut last_render = Instant::now();
+		while self.running {
+			// Render to screen
+			// TODO: Render using seperate thread (mutexes?).
+			self.current_state.render(&mut self.render);
+			
+			let dt = last_render.elapsed();
+			println!("{}ms", dt.as_millis());
+			last_render = Instant::now();
+			
+			// Process events
+			for e in self.render.poll_events() {
+				match e {
+					Event::Closed => {
+						self.running = false;
+						return; // Ignore all other events.
+					}
+					_ => self.keyboard_state.process_event(&e),
 				}
-				_ => self.keyboard_state.process_event(&e),
 			}
+			
+			// Tick game
+			self.tick(dt.as_secs_partial() as f32);
+			
+			sleep(Duration::from_millis(10));
 		}
-		
+	}
+	
+	/// Ticks the game. `dt` is the number of seconds since last frame.
+	pub fn tick(&mut self, dt: f32) {
 		// Tick next state
 		self.next_state.tick(dt, &self.keyboard_state);
 
 		// TODO: Wait for mutex on current state, as it might be being accessed by the renderer.
-		mem::swap(&mut self.next_state, &mut self.current_state);
+		self.current_state = self.next_state.clone();
 	}
 }

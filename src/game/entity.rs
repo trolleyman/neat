@@ -1,22 +1,25 @@
-use render::Render;
-use render::Color;
+use std::rc::Rc;
 
-use cgmath::Vector3;
+use render::{Render, Color, Mesh};
 
-#[derive(Clone)]
+use cgmath::{Vector3, Matrix4};
+
+#[derive(Clone, Debug)]
 pub struct Entity {
 	pos: Vector3<f32>,
 	vel: Vector3<f32>,
 	weight: f32,
 	color: Color,
+	mesh: Rc<Mesh>,
 }
 impl Entity {
-	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, color: Color) -> Entity {
+	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, color: Color, mesh: Rc<Mesh>) -> Entity {
 		Entity {
 			pos: pos,
 			vel: vel,
 			weight: weight,
 			color: color,
+			mesh: mesh,
 		}
 	}
 
@@ -46,6 +49,7 @@ impl Entity {
 	}
 	
 	pub fn render(&self, r: &mut Render) {
-		r.draw_sphere(self.pos, 0.5, self.color);
+		let model = Matrix4::from_translation(self.pos);
+		self.mesh.render(r, model, self.color);
 	}
 }

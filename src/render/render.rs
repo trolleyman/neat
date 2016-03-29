@@ -10,9 +10,9 @@ use glium::*;
 
 use glutin::WindowBuilder;
 
-use cgmath::{self, Vector3, Matrix4, SquareMatrix};
+use cgmath::{self, Matrix4};
 
-use render::{Camera, Color, Mesh};
+use render::{Camera, Color, SimpleVertex};
 
 /// Render handler.
 pub struct Render {
@@ -23,7 +23,6 @@ pub struct Render {
 	projection: Matrix4<f32>,
 	
 	camera: Camera,
-	sphere: Mesh,
 	
 	simple_shader: Program,
 }
@@ -56,8 +55,6 @@ impl Render {
 			Err(e) => ::error(e),
 		};
 		
-		let sphere = Mesh::sphere(&win);
-		
 		win.get_window().unwrap().show();
 		
 		let ctx = win.get_context().clone();
@@ -69,9 +66,7 @@ impl Render {
 			projection: cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0),
 			
 			camera: Camera::new(),
-			
-			sphere: sphere,
-			
+						
 			simple_shader: simple_shader,
 		}
 	}
@@ -121,6 +116,10 @@ impl Render {
 	pub fn poll_events<'a>(&'a self) -> PollEventsIter<'a> {
 		self.win.poll_events()
 	}
+	
+	pub fn facade(&self) -> &GlutinFacade {
+		&self.win
+	}
 
 	pub fn frame(&mut self) -> &mut Frame {
 		&mut self.frame
@@ -132,26 +131,19 @@ impl Render {
 		Render::clear_frame(&mut self.frame);
 	}
 	
-	pub fn draw_sphere(&mut self, pos: Vector3<f32>, size: f32, color: Color) {
-		// Scale * Rotation * Translation
-		let model = Matrix4::from_scale(size)
-			* Matrix4::identity()
-			* Matrix4::from_translation(pos);
-				
-		unsafe {
-			self.frame.draw(
-				self.sphere.vertices(),
-				self.sphere.indices(),
-				&self.simple_shader,
-				&uniform!{
-					projection: mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.projection),
-					view:       mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()),
-					model:      mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(model),
-					in_color:   mem::transmute::<Vector3<f32>, [f32; 3]>(color.into()),
-				},
-				&Default::default()
-			).unwrap();
-		}
+	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u32>, model: Matrix4<f32>, col: Color) {
+		self.frame.draw(
+			vs,
+			is,
+			&self.simple_shader,
+			&uniform! {
+				projection: unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.projection) },
+				view:       unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()) },
+				model:      unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(model) },
+				in_color:   unsafe { mem::transmute::<Color, [f32; 3]>(col) },
+			},
+			&Default::default()
+		).unwrap();
 	}
 }
 

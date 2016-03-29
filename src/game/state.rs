@@ -22,6 +22,10 @@ impl State {
 		&self.camera
 	}
 	
+	pub fn entities(&self) -> &[Entity] {
+		&self.entities
+	}
+	
 	pub fn add_entity(&mut self, e: Entity) {
 		self.entities.push(e);
 	}
@@ -51,7 +55,6 @@ impl State {
 			trans = trans + Vector3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
-		println!("cam_pos: {:?}", self.camera.pos());
 		
 		// Apply gravity to all entities.
 		/*
@@ -86,7 +89,9 @@ impl State {
 	pub fn render(&self, r: &mut Render) {
 		r.set_camera(self.camera);
 		
-		self.entities.iter().map(|e| e.render(r)).count();
+		for e in self.entities.iter() {
+			e.render(r);
+		}
 		
 		r.swap();
 	}

@@ -4,7 +4,9 @@ use glium::backend::Facade;
 use glium::{IndexBuffer, VertexBuffer};
 use glium::index;
 
-use cgmath::{vec3, EuclideanVector, Vector3};
+use cgmath::{vec3, EuclideanVector, Vector3, Matrix4};
+
+use render::{Render, Color};
 
 #[derive(Copy, Clone, Debug)]
 pub struct SimpleVertex {
@@ -22,18 +24,30 @@ implement_vertex!(SimpleVertex, pos);
 
 const LERP: f32 = 0.5;
 
+#[derive(Debug)]
 pub struct Mesh {
 	vertex_buffer: VertexBuffer<SimpleVertex>,
 	index_buffer: IndexBuffer<u32>,
 }
 impl Mesh {
-	pub fn sphere<F: Facade>(facade: &F) -> Mesh {
-		const DETAIL: u32 = 1;
-		
+	pub fn render(&self, r: &mut Render, model: Matrix4<f32>, color: Color) {
+		r.render_simple(&self.vertex_buffer, &self.index_buffer, model, color);
+	}
+}
+impl Mesh {
+	pub fn sphere<F: Facade>(facade: &F, detail: u32) -> Mesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
-		Mesh::gen_sphere(&mut vs, &mut is, DETAIL);
+		Mesh::gen_sphere(&mut vs, &mut is, detail);
+		Mesh::from_vecs(facade, vs, is)
+	}
+	
+	pub fn dodecahedron<F: Facade>(facade: &F) -> Mesh {
+		let mut vs: Vec<SimpleVertex> = Vec::new();
+		let mut is: Vec<u32> = Vec::new();
+		
+		Mesh::gen_dodec(&mut vs, &mut is, 0);
 		Mesh::from_vecs(facade, vs, is)
 	}
 	
