@@ -1,4 +1,3 @@
-
 use std::default::Default;
 use std::mem;
 use std::iter::Iterator;
@@ -34,7 +33,7 @@ impl Game {
 	}
 
 	/// Ticks the game. `dt` is the number of seconds since last frame.
-	pub fn tick<I: Iterator<Item = Event>>(&mut self, dt: f32, events: I) {
+	pub fn tick<I: Iterator<Item = Event>>(&mut self, dt: f64, events: I) {
 		// Clone current state
 		self.next_state = self.current_state.clone();
 

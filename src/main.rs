@@ -1,8 +1,10 @@
-#![feature(box_syntax)]
+#![feature(box_syntax, question_mark)]
 extern crate rusttype;
 extern crate glium;
 
 use std::time::Instant;
+use std::io::{self, Write};
+use std::fmt::Display;
 
 pub use glium::glutin;
 
@@ -15,6 +17,12 @@ use util::DurationExt;
 
 use render::Render;
 use game::Game;
+
+pub fn error<E: Display>(e: E) -> ! {
+	// TODO: MsgBox
+	writeln!(io::stderr(), "Error: {}", e).ok();
+	::std::process::exit(1);
+}
 
 fn main() {
 	let mut r = Render::new();
@@ -31,7 +39,7 @@ fn main() {
 		last_render = Instant::now();
 
 		// Process events
-		g.tick(dt.as_secs_partial() as f32, r.poll_events());
+		g.tick(dt.as_secs_partial(), r.poll_events());
 	}
 
 	println!("Program exited.");
