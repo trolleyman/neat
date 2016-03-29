@@ -47,5 +47,7 @@ impl State {
 
 	pub fn render(&self, r: &mut Render) {
 		self.entities.iter().map(|e| e.render(r)).count();
+		
+		r.swap();
 	}
 }
