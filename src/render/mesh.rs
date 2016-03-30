@@ -141,13 +141,13 @@ impl Mesh {
 		let rows = 2u32.pow(detail) + 1;
 		for row in 0..rows {
 			// Create row + 1 vertices.
-			let k_row = row as f32 / rows as f32;
+			let k_row = row as f32 / (rows - 1) as f32;
 			let start = v0.lerp(v1, k_row); // Pos of start of row
 			let end   = v0.lerp(v2, k_row); // Pos of end of row
 			
 			let cols = row + 1;
 			for col in 0..cols {
-				let k_col = col as f32 / cols as f32;
+				let k_col = if cols != 1 { col as f32 / (cols - 1) as f32 } else { 0.5 };
 				let v = start.lerp(end, k_col);
 				vs.push(v.into());
 			}
@@ -172,7 +172,7 @@ impl Mesh {
 				// Triangle pointing up
 				is.push(offset+i+prev_start+1);
 				is.push(offset+i+start+1);
-				is.push(offset+i+start+1);
+				is.push(offset+i+start+2);
 			}
 			prev_start = start;
 		}
