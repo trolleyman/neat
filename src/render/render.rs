@@ -33,6 +33,7 @@ impl Render {
 	
 	fn clear_frame(frame: &mut Frame) {
 		frame.clear_color(0.0, 0.0, 0.0, 0.0);
+		frame.clear_depth(1.0);
 	}
 
 	pub fn with_size(camera: Camera, w: u32, h: u32) -> Render {
@@ -161,7 +162,15 @@ impl Render {
 				model:      unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(model) },
 				in_color:   unsafe { mem::transmute::<Color, [f32; 3]>(col) },
 			},
-			&Default::default()
+			&DrawParameters {
+				depth: Depth {
+					test: DepthTest::IfLess,
+					write: true,
+					..Default::default()
+				},
+				//backface_culling: BackfaceCullingMode::CullClockwise,
+				..Default::default()
+			}
 		).unwrap();
 	}
 }
