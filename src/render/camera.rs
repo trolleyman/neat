@@ -2,7 +2,7 @@ use std::f32;
 
 use util::clamp;
 
-use cgmath::{Vector3, Matrix4, SquareMatrix};
+use cgmath::*;
 
 #[derive(Copy, Clone)]
 pub struct Camera {
@@ -28,7 +28,10 @@ impl Camera {
 	}
 	
 	fn calculate_view_matrix(&mut self) {
-		self.view_mat = Matrix4::from_translation(-self.pos);
+		let pos = Matrix4::from_translation(-self.pos);
+		let yrot: Matrix4<f32> = Quaternion::from_axis_angle(vec3(1.0, 0.0, 0.0), rad(-self.yrot)).into();
+		let xrot: Matrix4<f32> = Quaternion::from_axis_angle(vec3(0.0, 1.0, 0.0), rad(-self.xrot)).into();
+		self.view_mat = yrot * xrot * pos;
 	}
 	
 	pub fn view_matrix(&self) -> Matrix4<f32> {
@@ -38,6 +41,13 @@ impl Camera {
 	pub fn translate(&mut self, v: Vector3<f32>) {
 		self.pos = self.pos + v;
 		self.calculate_view_matrix();
+	}
+	
+	// The mouse moved
+	pub fn mouse_moved(&mut self, x: i32, y: i32) {
+		let x = x as f32 * -0.008;
+		let y = y as f32 * -0.008;
+		self.look(x, y);
 	}
 	
 	// Have a look around (radians)

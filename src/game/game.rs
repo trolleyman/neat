@@ -14,6 +14,8 @@ pub struct Game {
 	next_state: GameState,
 	running: bool,
 	keyboard_state: KeyboardState,
+	mouse_state: (i32, i32),
+	focused: bool,
 }
 impl Game {
 	pub fn new(render: Render) -> Game {
@@ -29,10 +31,14 @@ impl Game {
 			next_state: state,
 			running: true,
 			keyboard_state: KeyboardState::new(),
+			mouse_state: (0, 0),
+			focused: true,
 		}
 	}
 	
 	pub fn main_loop(&mut self) {
+		self.render.focus();
+		
 		let mut last_render = Instant::now();
 		while self.running {
 			// Render to screen
@@ -44,13 +50,24 @@ impl Game {
 			last_render = Instant::now();
 			
 			// Process events
+			let (mp_x, mp_y) = self.render.facade().get_window()
+				.and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
+			let (mp_x, mp_y) = (mp_x as i32 / 2, mp_y as i32 / 2);
+			if self.focused {
+				self.render.facade().get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
+			}
+			
 			let mut resized = false;
 			let mut focus = None;
+			let mut mouse_pos = (mp_x, mp_y);
 			for e in self.render.poll_events() {
 				match e {
 					Event::Closed => {
 						self.running = false;
 						return; // Ignore all other events.
+					},
+					Event::MouseMoved(pos) => {
+						mouse_pos = pos;
 					},
 					Event::MouseInput(_mouse_state, button) => {
 						if button == MouseButton::Left {
@@ -77,6 +94,7 @@ impl Game {
 			}
 			
 			if let Some(focus) = focus {
+				self.focused = focus;
 				if focus {
 					self.render.focus();
 				} else {
@@ -84,18 +102,28 @@ impl Game {
 				}
 			}
 			
+			if self.focused {
+				let xdiff = mouse_pos.0 - mp_x;
+				let ydiff = mouse_pos.1 - mp_y;
+				//println!("mouse_pos: {:?}, mp_x: {}, mp_y: {}, xdiff: {}, ydiff: {}", mouse_pos, mp_x, mp_y, xdiff, ydiff);
+				self.mouse_state = (xdiff, ydiff);
+			} else {
+				self.mouse_state = (0, 0);
+			}
+			
 			// Tick game
 			self.tick(dt.as_secs_partial() as f32);
 			
-			sleep(Duration::from_millis(10));
+			//sleep(Duration::from_millis(10));
 		}
 	}
 	
 	/// Ticks the game. `dt` is the number of seconds since last frame.
 	pub fn tick(&mut self, dt: f32) {
 		// Tick next state
-		self.next_state.tick(dt, &self.keyboard_state);
-
+		self.next_state.tick(dt, &self.keyboard_state, self.mouse_state);
+		self.mouse_state = (0, 0);
+		
 		// TODO: Wait for mutex on current state, as it might be being accessed by the renderer.
 		self.current_state = self.next_state.clone();
 	}

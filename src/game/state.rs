@@ -30,7 +30,7 @@ impl State {
 		self.entities.push(e);
 	}
 	
-	pub fn tick(&mut self, dt: f32, keyboard: &KeyboardState) {
+	pub fn tick(&mut self, dt: f32, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
 		// m/s
 		let speed = 2.0 * dt;
 		
@@ -55,6 +55,8 @@ impl State {
 			trans = trans + Vector3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
+		
+		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		
 		// Apply gravity to all entities.
 		for i in 0..self.entities.len() {

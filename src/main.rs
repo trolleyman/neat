@@ -37,7 +37,7 @@ fn main() {
 		//state.add_entity(Entity::new(vec3(0.0, 5.0,  0.0), vec3(0.0, 0.0, 1.0), 1.0, Color::BLUE , sphere.clone()));
 		
 		state.add_entity(Entity::new(vec3(0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.0), 100.0, Color::YELLOW, sphere.clone())); // Sun
-		state.add_entity(Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -5.0), 1.0, Color::GREEN, sphere.clone())); // Earth
+		state.add_entity(Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), 5.0, Color::GREEN, sphere.clone())); // Earth
 		state
 	};
 	let mut g = Game::with_state(r, state);

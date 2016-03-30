@@ -42,6 +42,7 @@ impl Render {
 			.with_title("NEAT".into())
 			.with_visibility(false)
 			.with_depth_buffer(24)
+			.with_vsync()
 			.build_glium() {
 			Ok(w)  => w,
 			Err(e) => ::error(format!("Could not initialize window: {}", e))
