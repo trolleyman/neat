@@ -39,7 +39,8 @@ impl Camera {
 	}
 	
 	pub fn translate(&mut self, v: Vector3<f32>) {
-		self.pos = self.pos + v;
+		let rot = Quaternion::from_axis_angle(vec3(0.0, 1.0, 0.0), rad(self.xrot));
+		self.pos = self.pos + rot * v;
 		self.calculate_view_matrix();
 	}
 	
