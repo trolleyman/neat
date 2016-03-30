@@ -27,15 +27,15 @@ pub struct Render {
 	simple_shader: Program,
 }
 impl Render {
-	pub fn new() -> Render {
-		Render::with_size(800, 600)
+	pub fn new(camera: Camera) -> Render {
+		Render::with_size(camera, 800, 600)
 	}
 	
 	fn clear_frame(frame: &mut Frame) {
 		frame.clear_color(0.0, 0.0, 0.0, 0.0);
 	}
 
-	pub fn with_size(w: u32, h: u32) -> Render {
+	pub fn with_size(camera: Camera, w: u32, h: u32) -> Render {
 		let win = match WindowBuilder::new()
 			.with_dimensions(w, h)
 			.with_title("NEAT".into())
@@ -63,13 +63,17 @@ impl Render {
 			
 			projection: Matrix4::identity(),
 			
-			camera: Camera::new(),
-						
+			camera: camera,
+			
 			simple_shader: simple_shader,
 		};
 		r.resize();
 		r.win.get_window().map(|w| w.show());
 		r
+	}
+	
+	pub fn camera(&self) -> &Camera {
+		&self.camera
 	}
 	
 	pub fn set_camera(&mut self, cam: Camera) {

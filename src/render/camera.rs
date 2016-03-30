@@ -2,7 +2,7 @@ use std::f32;
 
 use util::clamp;
 
-use cgmath::{vec3, Vector3, Matrix4, SquareMatrix};
+use cgmath::{Vector3, Matrix4, SquareMatrix};
 
 #[derive(Copy, Clone)]
 pub struct Camera {
@@ -12,9 +12,9 @@ pub struct Camera {
 	view_mat: Matrix4<f32>,
 }
 impl Camera {
-	pub fn new() -> Camera {
+	pub fn new(pos: Vector3<f32>) -> Camera {
 		let mut c = Camera {
-			pos: vec3(0.0, 0.0, 0.0),
+			pos: pos,
 			yrot: 0.0,
 			xrot: 0.0,
 			view_mat: Matrix4::identity(),

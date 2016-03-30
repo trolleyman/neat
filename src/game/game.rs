@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 use std::thread::sleep;
 
-use glutin::{VirtualKeyCode, Event};
+use glutin::{VirtualKeyCode, Event, MouseButton};
 
 use game::{GameState, KeyboardState};
 use render::Render;
@@ -17,7 +17,8 @@ pub struct Game {
 }
 impl Game {
 	pub fn new(render: Render) -> Game {
-		Game::with_state(render, GameState::new())
+		let cam = render.camera().clone();
+		Game::with_state(render, GameState::new(cam))
 	}
 
 	pub fn with_state(render: Render, state: GameState) -> Game {
@@ -50,6 +51,11 @@ impl Game {
 					Event::Closed => {
 						self.running = false;
 						return; // Ignore all other events.
+					},
+					Event::MouseInput(_mouse_state, button) => {
+						if button == MouseButton::Left {
+							focus = Some(true);
+						}
 					},
 					Event::Resized(_, _) => {
 						resized = true;

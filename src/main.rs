@@ -16,7 +16,7 @@ pub mod render;
 pub mod game;
 pub mod util;
 
-use render::{Mesh, Color, Render};
+use render::{Camera, Mesh, Color, Render};
 use game::{Entity, Game, GameState};
 
 pub fn error<E: Display>(e: E) -> ! {
@@ -26,11 +26,12 @@ pub fn error<E: Display>(e: E) -> ! {
 }
 
 fn main() {
-	let r = Render::new();
+	let cam = Camera::new(vec3(2.0, 2.0, 10.0));
+	let r = Render::new(cam);
 	
 	let state = {
 		let sphere = Rc::new(Mesh::sphere(r.facade(), 2));
-		let mut state = GameState::new();
+		let mut state = GameState::new(cam);
 		state.add_entity(Entity::new(vec3(5.0, 0.0,  0.0), vec3(0.0, 0.0, 0.0), 1.0, Color::RED  , sphere.clone()));
 		state.add_entity(Entity::new(vec3(0.0, 0.0, -5.0), vec3(0.0, 0.0, 0.0), 1.0, Color::GREEN, sphere.clone()));
 		state.add_entity(Entity::new(vec3(0.0, 5.0,  0.0), vec3(0.0, 0.0, 0.0), 1.0, Color::BLUE , sphere.clone()));

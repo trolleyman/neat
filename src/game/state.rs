@@ -1,6 +1,6 @@
 use glutin::VirtualKeyCode as KeyCode;
 
-use cgmath::Vector3;
+use cgmath::{EuclideanVector, Vector3};
 
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
@@ -11,10 +11,10 @@ pub struct State {
 	camera: Camera,
 }
 impl State {
-	pub fn new() -> State {
+	pub fn new(cam: Camera) -> State {
 		State {
 			entities: Vec::new(),
-			camera: Camera::new(),
+			camera: cam,
 		}
 	}
 	
@@ -32,7 +32,7 @@ impl State {
 	
 	pub fn tick(&mut self, dt: f32, keyboard: &KeyboardState) {
 		// m/s
-		let speed = 1.0 * dt;
+		let speed = 2.0 * dt;
 		
 		// Translate camera based on keyboard state
 		let mut trans = Vector3::new(0.0, 0.0, 0.0);
@@ -57,13 +57,12 @@ impl State {
 		self.camera.translate(trans);
 		
 		// Apply gravity to all entities.
-		/*
 		for i in 0..self.entities.len() {
 			let attractor = self.entities[i].clone();
 			
 			for j in i + 1..self.entities.len() {
 				//const G: f64 = 6.674e-11;
-				const G: f32 = 1.0;
+				const G: f32 = 0.000001;
 				
 				let mut o = &mut self.entities[j];
 				// Get unit vector from o to attractor
@@ -75,8 +74,8 @@ impl State {
 				let f = v * ((G * attractor.weight() * o.weight()) / len_sq);
 				o.force(f);
 			}
-		}*/
-
+		}
+		
 		// Collision check
 		// TODO
 
