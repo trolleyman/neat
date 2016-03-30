@@ -1,7 +1,7 @@
 use std::time::{Duration, Instant};
 use std::thread::sleep;
 
-use glutin::Event;
+use glutin::{VirtualKeyCode, Event};
 
 use game::{GameState, KeyboardState};
 use render::Render;
@@ -43,13 +43,38 @@ impl Game {
 			last_render = Instant::now();
 			
 			// Process events
+			let mut resized = false;
+			let mut focus = None;
 			for e in self.render.poll_events() {
 				match e {
 					Event::Closed => {
 						self.running = false;
 						return; // Ignore all other events.
-					}
-					_ => self.keyboard_state.process_event(&e),
+					},
+					Event::Resized(_, _) => {
+						resized = true;
+					},
+					Event::KeyboardInput(key_state, _, Some(code)) => {
+						self.keyboard_state.process_event(key_state, code);
+						if code == VirtualKeyCode::Escape {
+							focus = Some(false);
+						}
+					},
+					_ => {},
+				}
+			}
+			
+			if resized {
+				// Resize and rerender.
+				self.render.resize();
+				self.current_state.render(&mut self.render);
+			}
+			
+			if let Some(focus) = focus {
+				if focus {
+					self.render.focus();
+				} else {
+					self.render.unfocus();
 				}
 			}
 			

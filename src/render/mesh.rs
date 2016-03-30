@@ -22,8 +22,6 @@ impl From<Vector3<f32>> for SimpleVertex {
 
 implement_vertex!(SimpleVertex, pos);
 
-const LERP: f32 = 0.5;
-
 #[derive(Debug)]
 pub struct Mesh {
 	vertex_buffer: VertexBuffer<SimpleVertex>,
@@ -118,63 +116,66 @@ impl Mesh {
 		let v4 = vec3(-0.5,  0.0,  0.0);
 		let v5 = vec3( 0.0, -0.5,  0.0);
 		
+		let start_len = vs.len() as u32;
+		
 		// Top half
-		Mesh::gen_dodec_face(vs, is, detail, v0, v1, v2);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v2, v3);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v3, v4);
-		Mesh::gen_dodec_face(vs, is, detail, v0, v4, v1);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v1, v2);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v2, v3);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v3, v4);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v4, v1);
 		// Bottom half
-		Mesh::gen_dodec_face(vs, is, detail, v5, v4, v3);
-		Mesh::gen_dodec_face(vs, is, detail, v5, v3, v2);
-		Mesh::gen_dodec_face(vs, is, detail, v5, v2, v1);
-		Mesh::gen_dodec_face(vs, is, detail, v5, v1, v4);
-	}
-	
-	fn gen_dodec_face(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
-		// Generate base tri
-		let (v0, v1, v2) = Mesh::gen_tri(vs, is, v0, v1, v2);
-		if detail < 1 {
-			return;
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v4, v3);
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v3, v2);
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v2, v1);
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v1, v4);
+		
+		let tris_per_face = (vs.len() as u32 - start_len) / 8;
+		
+		for face in 0..8 { // Generate index buffer
+			let i = tris_per_face * face + start_len;
+			Mesh::gen_dodec_face_inds(is, detail, i);
 		}
-		
-		// Gen other tris
-		Mesh::gen_dodec_recursive(vs, is, v0, v1, v2, detail, 1);
 	}
 	
-	fn gen_dodec_recursive(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, v0: u32, v1: u32, v2: u32, detail: u32, level: u32) {
-		let v01 = Vector3::from(vs[v0 as usize].pos).lerp(Vector3::from(vs[v1 as usize].pos), LERP);
-		let v12 = Vector3::from(vs[v1 as usize].pos).lerp(Vector3::from(vs[v2 as usize].pos), LERP);
-		let v20 = Vector3::from(vs[v2 as usize].pos).lerp(Vector3::from(vs[v0 as usize].pos), LERP);
-		
-		// Gen centre tri
-		let (v01, v12, v20) = Mesh::gen_tri(vs, is, v01, v12, v20);
-		
-		if level >= detail {
-			is.extend(&[v0 , v01, v20]); // Top sub-tri
-			is.extend(&[v01, v1 , v12]); // Bottom left sub-tri
-			is.extend(&[v20, v12, v2 ]); // Bottom right sub-tri
-			return;
+	fn gen_dodec_face_tris(vs: &mut Vec<SimpleVertex>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
+		let rows = 2u32.pow(detail) + 1;
+		for row in 0..rows {
+			// Create row + 1 vertices.
+			let k_row = row as f32 / rows as f32;
+			let start = v0.lerp(v1, k_row); // Pos of start of row
+			let end   = v0.lerp(v2, k_row); // Pos of end of row
+			
+			let cols = row + 1;
+			for col in 0..cols {
+				let k_col = col as f32 / cols as f32;
+				let v = start.lerp(end, k_col);
+				vs.push(v.into());
+			}
 		}
-		
-		// Gen other sub-tris
-		Mesh::gen_dodec_recursive(vs, is, v0 , v01, v20, detail, level + 1); // Top sub-tri
-		Mesh::gen_dodec_recursive(vs, is, v01, v1 , v12, detail, level + 1); // Bottom left sub-tri
-		Mesh::gen_dodec_recursive(vs, is, v20, v12, v2 , detail, level + 1); // Bottom right sub-tri
 	}
 	
-	fn gen_tri(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) -> (u32, u32, u32) {
-		// Push triangle
-		let i = vs.len() as u32;
-		vs.push(v0.into());
-		vs.push(v1.into());
-		vs.push(v2.into());
-		let v0 = i;
-		let v1 = i + 1;
-		let v2 = i + 2;
-		is.push(v0);
-		is.push(v1);
-		is.push(v2);
-		(v0, v1, v2)
+	fn gen_dodec_face_inds(is: &mut Vec<u32>, detail: u32, offset: u32) {
+		let mut prev_start = 0;
+		let rows = 2u32.pow(detail) + 1;
+		for row in 1..rows {
+			let start = prev_start + row;
+			
+			is.push(offset+prev_start);
+			is.push(offset+start);
+			is.push(offset+start+1);
+			
+			for i in 0..row - 1 {
+				// Triangle pointing down
+				is.push(offset+i+prev_start+1);
+				is.push(offset+i+prev_start);
+				is.push(offset+i+start+1);
+				// Triangle pointing up
+				is.push(offset+i+prev_start+1);
+				is.push(offset+i+start+1);
+				is.push(offset+i+start+1);
+			}
+			prev_start = start;
+		}
 	}
 	
 	pub fn vertices(&self) -> &VertexBuffer<SimpleVertex> {

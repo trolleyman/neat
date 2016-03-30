@@ -8,9 +8,9 @@ use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
 use glium::*;
 
-use glutin::WindowBuilder;
+use glutin::{CursorState, WindowBuilder};
 
-use cgmath::{self, Matrix4};
+use cgmath::{self, Matrix4, SquareMatrix};
 
 use render::{Camera, Color, SimpleVertex};
 
@@ -55,20 +55,21 @@ impl Render {
 			Err(e) => ::error(e),
 		};
 		
-		win.get_window().unwrap().show();
-		
 		let ctx = win.get_context().clone();
-		Render {
+		let mut r = Render {
 			win: win,
 			_context: ctx,
 			frame: frame,
 			
-			projection: cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0),
+			projection: Matrix4::identity(),
 			
 			camera: Camera::new(),
 						
 			simple_shader: simple_shader,
-		}
+		};
+		r.resize();
+		r.win.get_window().map(|w| w.show());
+		r
 	}
 	
 	pub fn set_camera(&mut self, cam: Camera) {
@@ -79,7 +80,6 @@ impl Render {
 	/// Looks for fragment shaders in `"shaders/" + name + ".frag"`
 	/// Looks for vertex shaders in `"shaders/" + name + ".vert"`
 	/// TODO: Other shader types
-	/// TODO: Some sort of cache
 	fn load_shader<F: Facade>(facade: &F, name: &str) -> Result<Program, String> {
 		fn get_source(path: &Path) -> io::Result<String> {
 			let mut f = File::open(path)?;
@@ -112,9 +112,24 @@ impl Render {
 			Err(e) => Err(format!("Could not compile shader `{}`: {}", name, e)),
 		}
 	}
+	
+	/// Resizes the renderer
+	pub fn resize(&mut self) {
+		if let Some((w, h)) = self.win.get_window().and_then(|w| w.get_inner_size_pixels()) {
+			self.projection = cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0);
+		}
+	}
 
 	pub fn poll_events<'a>(&'a self) -> PollEventsIter<'a> {
 		self.win.poll_events()
+	}
+	
+	pub fn focus(&mut self) {
+		self.win.get_window().map(|w| w.set_cursor_state(CursorState::Grab));
+	}
+	
+	pub fn unfocus(&mut self) {
+		self.win.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
 	}
 	
 	pub fn facade(&self) -> &GlutinFacade {

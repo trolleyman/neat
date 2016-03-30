@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use glutin::{Event, VirtualKeyCode, ElementState};
+use glutin::{VirtualKeyCode, ElementState};
 
 pub struct KeyboardState {
 	state: HashMap<VirtualKeyCode, ElementState>,
@@ -19,12 +19,7 @@ impl KeyboardState {
 		!self.is_pressed(key)
 	}
 	
-	pub fn process_event(&mut self, e: &Event) {
-		match e {
-			&Event::KeyboardInput(ref key_state, _, Some(ref code)) => {
-				self.state.insert(*code, *key_state);
-			},
-			_ => {},
-		}
+	pub fn process_event(&mut self, key_state: ElementState, code: VirtualKeyCode) {
+		self.state.insert(code, key_state);
 	}
 }
