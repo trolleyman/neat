@@ -60,9 +60,12 @@ impl State {
 		for i in 0..self.entities.len() {
 			let attractor = self.entities[i].clone();
 			
-			for j in i + 1..self.entities.len() {
+			for j in 0..self.entities.len() {
+				if i == j {
+					continue;
+				}
 				//const G: f64 = 6.674e-11;
-				const G: f32 = 0.000001;
+				const G: f32 = 0.05;
 				
 				let mut o = &mut self.entities[j];
 				// Get unit vector from o to attractor
