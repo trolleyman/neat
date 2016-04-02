@@ -1,4 +1,4 @@
-use std::time::{Instant, Duration};
+use std::time::Duration;
 
 use glutin::VirtualKeyCode as KeyCode;
 
@@ -14,14 +14,12 @@ const FONT_SIZE: f32 = 24.0;
 pub struct State {
 	entities: Vec<Entity>,
 	camera: Camera,
-	pub last_render: Option<Duration>,
 }
 impl State {
 	pub fn new(cam: Camera) -> State {
 		State {
 			entities: Vec::new(),
 			camera: cam,
-			last_render: None,
 		}
 	}
 	
@@ -97,20 +95,15 @@ impl State {
 		}
 	}
 
-	pub fn render(&mut self, r: &mut Render) {
-		let t0 = Instant::now();
+	pub fn render(&mut self, r: &mut Render, dt: Duration) {
 		r.set_camera(self.camera);
 		
 		for e in self.entities.iter() {
 			e.render(r);
 		}
 		
-		if let Some(dur) = self.last_render {
-			r.draw_str(&format!("{}ms", dur.as_millis()), 10.0, 10.0 + FONT_SIZE, FONT_SIZE);
-		}
+		r.draw_str(&format!("{}ms", dt.as_millis()), 10.0, 10.0 + FONT_SIZE, FONT_SIZE);
 		
 		r.swap();
-		let dur = t0.elapsed();
-		self.last_render = Some(dur);
 	}
 }

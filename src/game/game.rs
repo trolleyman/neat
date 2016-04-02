@@ -38,14 +38,14 @@ impl Game {
 	pub fn main_loop(&mut self) {
 		self.render.focus();
 		
-		let mut last_render = Instant::now();
+		let mut last_time = Instant::now();
 		while self.running {
 			// Render to screen
 			// TODO: Render using seperate thread (mutexes?).
-			self.current_state.render(&mut self.render);
 			
-			let dt = last_render.elapsed();
-			last_render = Instant::now();
+			let dt = last_time.elapsed();
+			last_time = Instant::now();
+			self.current_state.render(&mut self.render, dt);
 			
 			// Process events
 			let (mp_x, mp_y) = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
@@ -87,7 +87,7 @@ impl Game {
 			if resized {
 				// Resize and rerender.
 				self.render.resize();
-				self.current_state.render(&mut self.render);
+				self.current_state.render(&mut self.render, dt);
 			}
 			
 			if let Some(focus) = focus {
@@ -122,7 +122,6 @@ impl Game {
 		self.mouse_state = (0, 0);
 		
 		// TODO: Wait for mutex on current state, as it might be being accessed by the renderer.
-		self.next_state.last_render = self.current_state.last_render;
 		self.current_state = self.next_state.clone();
 	}
 }
