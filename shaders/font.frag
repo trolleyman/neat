@@ -1,10 +1,13 @@
 #version 330
 
-in vec2 transfer_uv;
-in vec3 transfer_color;
+in vec2 t_uv;
+in vec3 t_color;
+
+out vec4 color;
 
 uniform sampler2D tex;
 
 void main() {
-	gl_FragColor = vec4(transfer_color, texture(tex, transfer_uv));
+	float v = texture(tex, t_uv).r;
+	color = vec4(vec3(v, v, v), 1.0);
 }
