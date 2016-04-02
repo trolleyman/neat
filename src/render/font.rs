@@ -199,14 +199,15 @@ fn get_glyph(font_tex: &mut Texture2d, cache: &mut Cache, glyph: &PositionedGlyp
 fn draw_glyph(font_tex: &mut Texture2d, cache: &mut Cache, glyph: &PositionedGlyph, size: (f32, f32), vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
 	if let Some((uv, pos)) = get_glyph(font_tex, cache, glyph) {
 		let (w, h) = size;
+		
 		let pos = Rect {
 			min: Point {
 				x: pos.min.x as f32 / w,
-				y: pos.min.y as f32 / h,
+				y: (-pos.min.y as f32) / h,
 			},
 			max: Point {
 				x: pos.max.x as f32 / w,
-				y: pos.max.y as f32 / h,
+				y: (-pos.max.y as f32) / h,
 			}
 		};
 		// 0--1
@@ -250,7 +251,7 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 			color: <Color as Into<[f32; 3]>>::into(color),
 		},
 		&DrawParameters {
-			backface_culling: BackfaceCullingMode::CullCounterClockwise,
+			backface_culling: BackfaceCullingMode::CullClockwise,
 			..Default::default()
 		}
 	).ok();
