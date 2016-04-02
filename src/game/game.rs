@@ -68,6 +68,8 @@ impl Game {
 					},
 					Event::MouseInput(_mouse_state, button) => {
 						if button == MouseButton::Left {
+							self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
+							mouse_pos = (mp_x, mp_y);
 							focus = Some(true);
 						}
 					},
