@@ -106,7 +106,7 @@ impl State {
 		}
 		
 		if let Some(dur) = self.last_render {
-			r.draw_str(&format!("{}ms", dur.as_millis()), 10.0, 10.0, FONT_SIZE);
+			r.draw_str(&format!("{}ms", dur.as_millis()), 10.0, 10.0 + FONT_SIZE, FONT_SIZE);
 		}
 		
 		r.swap();

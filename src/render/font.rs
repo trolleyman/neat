@@ -9,6 +9,7 @@ use glium::backend::{Context};
 use glium::texture::{RawImage2d, ClientFormat, UncompressedFloatFormat, MipmapsOption};
 use rusttype::*;
 use rusttype::gpu_cache::Cache;
+use cgmath::{SquareMatrix, Matrix4, vec3};
 
 use render::{load_shader, load_font, Color};
 
@@ -196,27 +197,15 @@ fn get_glyph(font_tex: &mut Texture2d, cache: &mut Cache, glyph: &PositionedGlyp
 	}
 }
 
-fn draw_glyph(font_tex: &mut Texture2d, cache: &mut Cache, glyph: &PositionedGlyph, size: (f32, f32), vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
+fn draw_glyph(font_tex: &mut Texture2d, cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
 	if let Some((uv, pos)) = get_glyph(font_tex, cache, glyph) {
-		let (w, h) = size;
-		
-		let pos = Rect {
-			min: Point {
-				x: pos.min.x as f32 / w,
-				y: (-pos.min.y as f32) / h,
-			},
-			max: Point {
-				x: pos.max.x as f32 / w,
-				y: (-pos.max.y as f32) / h,
-			}
-		};
 		// 0--1
 		// |  |
 		// 2--3
-		vs.push(FontVertex::new([pos.min.x, pos.min.y], [uv.min.x, uv.min.y]));
-		vs.push(FontVertex::new([pos.max.x, pos.min.y], [uv.max.x, uv.min.y]));
-		vs.push(FontVertex::new([pos.min.x, pos.max.y], [uv.min.x, uv.max.y]));
-		vs.push(FontVertex::new([pos.max.x, pos.max.y], [uv.max.x, uv.max.y]));
+		vs.push(FontVertex::new([pos.min.x as f32, pos.min.y as f32], [uv.min.x, uv.min.y]));
+		vs.push(FontVertex::new([pos.max.x as f32, pos.min.y as f32], [uv.max.x, uv.min.y]));
+		vs.push(FontVertex::new([pos.min.x as f32, pos.max.y as f32], [uv.min.x, uv.max.y]));
+		vs.push(FontVertex::new([pos.max.x as f32, pos.max.y as f32], [uv.max.x, uv.max.y]));
 		
 		let i = vs.len() as u32;
 		is.push(i);
@@ -235,8 +224,18 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 	
 	// Put glyphs into buffer
 	for glyph in glyphs.iter() {
-		draw_glyph(font_tex, cache, glyph, size, &mut vs, &mut is);
+		draw_glyph(font_tex, cache, glyph, &mut vs, &mut is);
 	}
+	
+	// Calculate matrix
+	let (w, h) = size;
+	let mut mat = Matrix4::<f32>::identity();
+	mat = mat * Matrix4::from_nonuniform_scale(1.0, -1.0, 1.0);
+	mat = mat * Matrix4::from_translation(vec3(-1.0, -1.0, 0.0));
+	
+	mat = mat * Matrix4::from_nonuniform_scale(2.0 / w, 2.0 / h, 1.0);
+	
+	
 	
 	// Upload buffer
 	let vs = VertexBuffer::immutable(ctx, &vs).unwrap();
@@ -249,6 +248,7 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 		&uniform!{
 			tex:   &*font_tex,
 			color: <Color as Into<[f32; 3]>>::into(color),
+			mat:   <Matrix4<f32> as Into<[[f32; 4]; 4]>>::into(mat),
 		},
 		&DrawParameters {
 			backface_culling: BackfaceCullingMode::CullClockwise,
