@@ -103,9 +103,10 @@ impl FontRender {
 			Err(e) => ::error(e),
 		};
 		
+		const FONT_PATH: &'static str = "fonts/courier-new.ttf";
 		const FONT_INDEX: usize = 0;
 		
-		let font_collection = match load_font("fonts/helvetica.ttf", FONT_INDEX) {
+		let font_collection = match load_font(FONT_PATH, FONT_INDEX) {
 			Ok(f) => f,
 			Err(e) => ::error(e),
 		};
