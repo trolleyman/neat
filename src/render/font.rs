@@ -2,7 +2,7 @@ use std::io::{self, Write};
 use std::rc::Rc;
 use std::borrow::Cow;
 
-use glium::{Texture2d, Program, Surface, VertexBuffer, IndexBuffer, DrawParameters, BackfaceCullingMode};
+use glium::{Blend, BlendingFunction, LinearBlendingFactor, Texture2d, Program, Surface, VertexBuffer, IndexBuffer, DrawParameters, BackfaceCullingMode};
 use glium::Rect as GlRect;
 use glium::index::PrimitiveType;
 use glium::backend::{Context};
@@ -188,7 +188,7 @@ fn get_glyph(font_tex: &mut Texture2d, cache: &mut Cache, glyph: &PositionedGlyp
 			return None;
 		},
 	}
-	
+	// FIXME: if the string is so long that the cache is filled up and overwrites the first character.
 	match cache.rect_for(0, glyph) {
 		Ok(ret) => ret,
 		Err(_) => {
@@ -233,10 +233,7 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 	let mut mat = Matrix4::<f32>::identity();
 	mat = mat * Matrix4::from_nonuniform_scale(1.0, -1.0, 1.0);
 	mat = mat * Matrix4::from_translation(vec3(-1.0, -1.0, 0.0));
-	
 	mat = mat * Matrix4::from_nonuniform_scale(2.0 / w, 2.0 / h, 1.0);
-	
-	
 	
 	// Upload buffer
 	let vs = VertexBuffer::immutable(ctx, &vs).unwrap();
@@ -252,6 +249,14 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 			mat:   <Matrix4<f32> as Into<[[f32; 4]; 4]>>::into(mat),
 		},
 		&DrawParameters {
+			blend: Blend {
+				color: BlendingFunction::Addition{
+					source:      LinearBlendingFactor::SourceAlpha,
+					destination: LinearBlendingFactor::OneMinusSourceAlpha,
+				},
+				alpha: BlendingFunction::Max,
+				..Default::default()
+			},
 			backface_culling: BackfaceCullingMode::CullClockwise,
 			..Default::default()
 		}

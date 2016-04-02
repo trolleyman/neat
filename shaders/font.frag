@@ -9,5 +9,5 @@ uniform sampler2D tex;
 
 void main() {
 	float v = texture(tex, t_uv).r;
-	color = vec4(vec3(v, v, v), 1.0);
+	color = vec4(t_color, v);
 }
