@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["trolleyman <cgtrolley@gmail.com>"]
 
 [dependencies]
+unicode-normalization = "*"
 rusttype = "*"
-glium = "=0.13.4"
-cgmath = "=0.7"
+glium = "*"
+cgmath = "*"

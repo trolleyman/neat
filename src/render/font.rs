@@ -10,6 +10,7 @@ use glium::texture::{RawImage2d, ClientFormat, UncompressedFloatFormat, MipmapsO
 use rusttype::*;
 use rusttype::gpu_cache::{Cache, CacheWriteErr};
 use cgmath::{SquareMatrix, Matrix4, vec3};
+use unicode_normalization::UnicodeNormalization;
 
 use render::{load_shader, load_font, Color};
 
@@ -144,7 +145,7 @@ impl FontRender {
 		let mut state = State::new(x, y, scale, &font);
 		
 		let mut cprev = None;
-		for c in s.chars() {
+		for c in s.chars().nfc() {
 			if let Some(glyph) = state.layout_char(&font, cprev, c) {
 				glyphs.push(glyph);
 			}

@@ -2,7 +2,8 @@
 extern crate rusttype;
 #[macro_use]
 extern crate glium;
-extern crate cgmath as cgmath;
+extern crate unicode_normalization;
+extern crate cgmath;
 
 use std::io::{self, Write};
 use std::fmt::Display;
