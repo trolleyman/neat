@@ -1,5 +1,4 @@
-use std::time::{Duration, Instant};
-use std::thread::sleep;
+use std::time::{Instant};
 
 use glutin::{VirtualKeyCode, Event, MouseButton};
 
@@ -46,15 +45,13 @@ impl Game {
 			self.current_state.render(&mut self.render);
 			
 			let dt = last_render.elapsed();
-			println!("{}ms", dt.as_millis());
 			last_render = Instant::now();
 			
 			// Process events
-			let (mp_x, mp_y) = self.render.facade().get_window()
-				.and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
+			let (mp_x, mp_y) = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
 			let (mp_x, mp_y) = (mp_x as i32 / 2, mp_y as i32 / 2);
 			if self.focused {
-				self.render.facade().get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
+				self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
 			}
 			
 			let mut resized = false;
@@ -125,6 +122,7 @@ impl Game {
 		self.mouse_state = (0, 0);
 		
 		// TODO: Wait for mutex on current state, as it might be being accessed by the renderer.
+		self.next_state.last_render = self.current_state.last_render;
 		self.current_state = self.next_state.clone();
 	}
 }

@@ -1,20 +1,27 @@
+use std::time::{Instant, Duration};
+
 use glutin::VirtualKeyCode as KeyCode;
 
 use cgmath::{EuclideanVector, Vector3};
 
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
+use util::DurationExt;
+
+const FONT_SIZE: f32 = 24.0;
 
 #[derive(Clone)]
 pub struct State {
 	entities: Vec<Entity>,
 	camera: Camera,
+	pub last_render: Option<Duration>,
 }
 impl State {
 	pub fn new(cam: Camera) -> State {
 		State {
 			entities: Vec::new(),
 			camera: cam,
+			last_render: None,
 		}
 	}
 	
@@ -90,13 +97,20 @@ impl State {
 		}
 	}
 
-	pub fn render(&self, r: &mut Render) {
+	pub fn render(&mut self, r: &mut Render) {
+		let t0 = Instant::now();
 		r.set_camera(self.camera);
 		
 		for e in self.entities.iter() {
 			e.render(r);
 		}
 		
+		if let Some(dur) = self.last_render {
+			r.draw_str(&format!("{}ms", dur.as_millis()), 10.0, 10.0, FONT_SIZE);
+		}
+		
 		r.swap();
+		let dur = t0.elapsed();
+		self.last_render = Some(dur);
 	}
 }

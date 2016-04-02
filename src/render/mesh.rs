@@ -1,6 +1,7 @@
 use std::mem;
+use std::rc::Rc;
 
-use glium::backend::Facade;
+use glium::backend::Context;
 use glium::{IndexBuffer, VertexBuffer};
 use glium::index;
 
@@ -33,33 +34,33 @@ impl Mesh {
 	}
 }
 impl Mesh {
-	pub fn sphere<F: Facade>(facade: &F, detail: u32) -> Mesh {
+	pub fn sphere(ctx: &Rc<Context>, detail: u32) -> Mesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
 		Mesh::gen_sphere(&mut vs, &mut is, detail);
-		Mesh::from_vecs(facade, vs, is)
+		Mesh::from_vecs(ctx, vs, is)
 	}
 	
-	pub fn dodecahedron<F: Facade>(facade: &F) -> Mesh {
+	pub fn dodecahedron(ctx: &Rc<Context>) -> Mesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
 		Mesh::gen_dodec(&mut vs, &mut is, 0);
-		Mesh::from_vecs(facade, vs, is)
+		Mesh::from_vecs(ctx, vs, is)
 	}
 	
-	pub fn cube<F: Facade>(facade: &F) -> Mesh {
+	pub fn cube(ctx: &Rc<Context>) -> Mesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
 		Mesh::gen_cube(&mut vs, &mut is);
-		Mesh::from_vecs(facade, vs, is)
+		Mesh::from_vecs(ctx, vs, is)
 	}
 	
-	fn from_vecs<F: Facade>(facade: &F, vs: Vec<SimpleVertex>, is: Vec<u32>) -> Mesh {
-		let vs = VertexBuffer::immutable(facade, &vs).unwrap();
-		let is = IndexBuffer::immutable(facade, index::PrimitiveType::TrianglesList, &is).unwrap();
+	fn from_vecs(ctx: &Rc<Context>, vs: Vec<SimpleVertex>, is: Vec<u32>) -> Mesh {
+		let vs = VertexBuffer::immutable(ctx, &vs).unwrap();
+		let is = IndexBuffer::immutable(ctx, index::PrimitiveType::TrianglesList, &is).unwrap();
 		
 		Mesh {
 			vertex_buffer: vs,

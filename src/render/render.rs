@@ -1,30 +1,26 @@
 use std::rc::Rc;
-use std::io::{self, Read};
-use std::fs::File;
-use std::path::{Path, PathBuf};
 use std::mem;
 
 use glium::backend::{Context, Facade};
-use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter};
+use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
 use glium::*;
-
 use glutin::{CursorState, WindowBuilder};
-
 use cgmath::{self, Matrix4, SquareMatrix};
 
-use render::{Camera, Color, SimpleVertex};
+use render::load_shader;
+use render::{FontRender, Camera, Color, SimpleVertex};
 
 /// Render handler.
 pub struct Render {
 	win: GlutinFacade,
-	_context: Rc<Context>,
+	ctx: Rc<Context>,
 	frame: Frame,
 	
 	projection: Matrix4<f32>,
-	
 	camera: Camera,
 	
 	simple_shader: Program,
+	font_render: FontRender,
 }
 impl Render {
 	pub fn new(camera: Camera) -> Render {
@@ -53,26 +49,37 @@ impl Render {
 		frame.finish().ok();
 		let frame = win.draw();
 		
-		let simple_shader = match Render::load_shader(&win, "simple") {
+		let simple_shader = match load_shader(&win, "simple") {
 			Ok(i)  => i,
 			Err(e) => ::error(e),
 		};
 		
 		let ctx = win.get_context().clone();
+		
+		let font_render = FontRender::new(ctx.clone());
+		
 		let mut r = Render {
 			win: win,
-			_context: ctx,
+			ctx: ctx,
 			frame: frame,
 			
 			projection: Matrix4::identity(),
-			
 			camera: camera,
 			
 			simple_shader: simple_shader,
+			font_render: font_render,
 		};
 		r.resize();
 		r.win.get_window().map(|w| w.show());
 		r
+	}
+	
+	pub fn draw_str(&mut self, s: &str, x: f32, y: f32, scale: f32) {
+		self.draw_str_color(s, x, y, scale, Color::WHITE);
+	}
+	pub fn draw_str_color(&mut self, s: &str, x: f32, y: f32, scale: f32, color: Color) {
+		let (screen_w, screen_h) = self.frame.get_dimensions();
+		self.font_render.draw_str(&mut self.frame, s, x, y, screen_w as f32, screen_h as f32, scale, color);
 	}
 	
 	pub fn camera(&self) -> &Camera {
@@ -83,50 +90,16 @@ impl Render {
 		self.camera = cam;
 	}
 	
-	/// Loads a shader named `name`.
-	/// Looks for fragment shaders in `"shaders/" + name + ".frag"`
-	/// Looks for vertex shaders in `"shaders/" + name + ".vert"`
-	/// TODO: Other shader types
-	fn load_shader<F: Facade>(facade: &F, name: &str) -> Result<Program, String> {
-		fn get_source(path: &Path) -> io::Result<String> {
-			let mut f = File::open(path)?;
-			let mut src = String::with_capacity(f.metadata()?.len() as usize);
-			f.read_to_string(&mut src)?;
-			Ok(src)
-		}
-		
-		let name = String::from(name);
-		
-		let shaders_dir = PathBuf::from("shaders");
-		if !shaders_dir.is_dir() {
-			return Err(format!("`shaders/` is not a directory."));
-		}
-		
-		let vert_path = shaders_dir.join(name.clone() + ".vert");
-		let vert = match get_source(&*vert_path) {
-			Ok(s) => s,
-			Err(e) => return Err(format!("Could not read shader file at `{}`: {}", vert_path.display(), e)),
-		};
-		
-		let frag_path = shaders_dir.join(name.clone() + ".frag");
-		let frag = match get_source(&*frag_path) {
-			Ok(s) => s,
-			Err(e) => return Err(format!("Could not read shader file at `{}`: {}", frag_path.display(), e)),
-		};
-		
-		match Program::from_source(facade, &vert, &frag, None) {
-			Ok(p) => Ok(p),
-			Err(e) => Err(format!("Could not compile shader `{}`: {}", name, e)),
-		}
-	}
-	
 	/// Resizes the renderer
 	pub fn resize(&mut self) {
-		if let Some((w, h)) = self.win.get_window().and_then(|w| w.get_inner_size_pixels()) {
-			self.projection = cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0);
-		}
+		let (w, h) = self.frame.get_dimensions();
+		self.projection = cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0);
 	}
-
+	
+	pub fn get_window(&self) -> Option<WinRef> {
+		self.win.get_window()
+	}
+	
 	pub fn poll_events<'a>(&'a self) -> PollEventsIter<'a> {
 		self.win.poll_events()
 	}
@@ -139,10 +112,10 @@ impl Render {
 		self.win.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
 	}
 	
-	pub fn facade(&self) -> &GlutinFacade {
-		&self.win
+	pub fn context(&mut self) -> &Rc<Context> {
+		&self.ctx
 	}
-
+	
 	pub fn frame(&mut self) -> &mut Frame {
 		&mut self.frame
 	}
@@ -162,7 +135,7 @@ impl Render {
 				projection: unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.projection) },
 				view:       unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()) },
 				model:      unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(model) },
-				in_color:   unsafe { mem::transmute::<Color, [f32; 3]>(col) },
+				color:      unsafe { mem::transmute::<Color, [f32; 3]>(col) },
 			},
 			&DrawParameters {
 				depth: Depth {

@@ -5,5 +5,5 @@ authors = ["trolleyman <cgtrolley@gmail.com>"]
 
 [dependencies]
 rusttype = "*"
-glium = "*"
-cgmath = "0.7"
+glium = "=0.13.4"
+cgmath = "=0.7"
