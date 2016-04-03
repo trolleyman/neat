@@ -66,6 +66,30 @@ impl State {
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		
 		// Apply gravity to all non-static entities.
+		for i in 0..self.entities.len() {
+			let attractor = self.entities[i].clone();
+			if let Some(a_weight) = attractor.weight() {
+				for j in 0..self.entities.len() {
+					if i == j {
+						continue;
+					}
+					//const G: f64 = 6.674e-11;
+					const G: f32 = 0.05;
+					
+					let mut o = &mut self.entities[j];
+					if let Some(o_weight) = o.weight() {
+						// Get unit vector from o to attractor
+						let mut v = attractor.pos() - o.pos();
+						let len_sq = v.length2();
+						v = v / len_sq.sqrt();
+						
+						// Apply a force towards the attractor.
+						let f = v * ((G * a_weight * o_weight) / len_sq);
+						o.force(f);
+					}
+				}
+			}
+		}
 		/*const G: Vector3<f32> = Vector3{ x: 0.0, y: -9.81, z: 0.0};
 		for e in &mut self.entities {
 			if let Some(w) = e.weight() {
