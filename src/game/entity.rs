@@ -17,6 +17,7 @@ pub struct Entity {
 	mesh: Rc<RenderableMesh>,
 	/// Collider
 	collider: Collider,
+	pub scale: f32,
 }
 impl Entity {
 	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: Option<f32>, mesh: Rc<RenderableMesh>, collider: Collider) -> Entity {
@@ -26,6 +27,7 @@ impl Entity {
 			weight: weight,
 			mesh: mesh,
 			collider: collider,
+			scale: 1.0,
 		}
 	}
 	
@@ -63,7 +65,7 @@ impl Entity {
 	
 	/// Renders the entity
 	pub fn render(&self, r: &mut Render) {
-		let model = Matrix4::from_translation(self.pos);
+		let model = Matrix4::from_translation(self.pos) * Matrix4::from_scale(self.scale);
 		self.mesh.render(r, model);
 	}
 }

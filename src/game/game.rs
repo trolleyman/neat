@@ -35,8 +35,11 @@ impl Game {
 			
 			let collider = Collider::sphere(Vector3::zero(), 1.0);
 			
-			state.add_entity(Entity::new(vec3( 0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.2), Some(100.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), collider));
-			state.add_entity(Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), Some(  5.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN )), collider));
+			let sun = Entity::new(vec3( 0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.2), Some(100.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), collider);
+			state.add_entity(sun);
+			let mut earth = Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), Some(  5.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), collider);
+			earth.scale = 0.1;
+			state.add_entity(earth);
 			state
 		};
 		info!("Initialized game state");

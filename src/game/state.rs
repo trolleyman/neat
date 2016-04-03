@@ -66,12 +66,12 @@ impl State {
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		
 		// Apply gravity to all non-static entities.
-		const G: Vector3<f32> = Vector3{ x: 0.0, y: -9.81, z: 0.0};
+		/*const G: Vector3<f32> = Vector3{ x: 0.0, y: -9.81, z: 0.0};
 		for e in &mut self.entities {
 			if let Some(w) = e.weight() {
 				e.force(G * w);
 			}
-		}
+		}*/
 		
 		// Collision check
 		for i in 0..self.entities.len() {
