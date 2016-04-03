@@ -27,3 +27,19 @@ pub fn clamp<T: PartialOrd>(v: T, min: T, max: T) -> T {
 		v
 	}
 }
+
+pub fn min<T: PartialOrd>(v1: T, v2: T) -> T {
+	if v1 < v2 {
+		v1
+	} else {
+		v2
+	}
+}
+
+pub fn max<T: PartialOrd>(v1: T, v2: T) -> T {
+	if v1 > v2 {
+		v1
+	} else {
+		v2
+	}
+}

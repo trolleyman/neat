@@ -2,7 +2,6 @@
 #[macro_use]
 extern crate glium;
 extern crate cgmath;
-extern crate collision;
 extern crate rusttype;
 
 #[macro_use]
@@ -19,12 +18,12 @@ use std::io::{self, Write};
 use std::rc::Rc;
 
 pub use glium::glutin;
-
 use cgmath::vec3;
 
 pub mod render;
 pub mod game;
 pub mod util;
+pub mod collision;
 
 use render::{Camera, Mesh, Color, Render};
 use game::{Entity, Game, GameState};

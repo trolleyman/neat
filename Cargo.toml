@@ -6,7 +6,6 @@ authors = ["trolleyman <cgtrolley@gmail.com>"]
 [dependencies]
 glium = "*"
 cgmath = "*"
-collision = "*"
 rusttype = "*"
 unicode-normalization = "*"
 log = "*"
