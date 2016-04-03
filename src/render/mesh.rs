@@ -1,5 +1,6 @@
 use std::mem;
 use std::rc::Rc;
+use std::process::exit;
 
 use glium::backend::Context;
 use glium::{IndexBuffer, VertexBuffer};
@@ -59,8 +60,20 @@ impl Mesh {
 	}
 	
 	fn from_vecs(ctx: &Rc<Context>, vs: Vec<SimpleVertex>, is: Vec<u32>) -> Mesh {
-		let vs = VertexBuffer::immutable(ctx, &vs).unwrap();
-		let is = IndexBuffer::immutable(ctx, index::PrimitiveType::TrianglesList, &is).unwrap();
+		let vs = match VertexBuffer::immutable(ctx, &vs) {
+			Ok(vs) => vs,
+			Err(e) => {
+				error!("Could not create vertex buffer: {:?}", e);
+				exit(1);
+			},
+		};
+		let is = match IndexBuffer ::immutable(ctx, index::PrimitiveType::TrianglesList, &is) {
+			Ok(is) => is,
+			Err(e) => {
+				error!("Could not create index buffer: {:?}", e);
+				exit(1);
+			},
+		};
 		
 		Mesh {
 			vertex_buffer: vs,

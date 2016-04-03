@@ -236,8 +236,20 @@ fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Prog
 			}
 			
 			// Upload buffer
-			let vs = VertexBuffer::immutable(ctx, &vs).unwrap();
-			let is = IndexBuffer ::immutable(ctx, PrimitiveType::TrianglesList, &is).unwrap();
+			let vs = match VertexBuffer::immutable(ctx, &vs) {
+				Ok(vs) => vs,
+				Err(e) => {
+					error!("Could not create vertex buffer: {:?}", e);
+					return;
+				},
+			};
+			let is = match IndexBuffer ::immutable(ctx, PrimitiveType::TrianglesList, &is) {
+				Ok(is) => is,
+				Err(e) => {
+					error!("Could not create index buffer: {:?}", e);
+					return;
+				},
+			};
 			// Draw buffer
 			surface.draw(
 				&vs,

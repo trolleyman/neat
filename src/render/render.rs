@@ -185,7 +185,7 @@ impl Render {
 				backface_culling: BackfaceCullingMode::CullClockwise,
 				..Default::default()
 			}
-		).unwrap();
+		).map_err(|e| error!("Draw failed: {:?}", e)).ok();
 	}
 }
 
