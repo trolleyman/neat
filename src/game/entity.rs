@@ -11,7 +11,6 @@ pub struct Entity {
 	weight: f32,
 	color: Color,
 	mesh: Rc<Mesh>,
-	collision_mesh: CollisionMesh,
 }
 impl Entity {
 	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, color: Color, mesh: Rc<Mesh>) -> Entity {
