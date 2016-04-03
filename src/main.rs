@@ -33,7 +33,7 @@ use settings::Settings;
 
 fn main() {
 	let settings = Settings::from_args();
-	let log_level = if settings.verbose { LogLevelFilter::Trace } else { LogLevelFilter::Info };
+	let log_level = if settings.verbose { LogLevelFilter::Debug } else { LogLevelFilter::Info };
 	TermLogger::init(log_level)
 		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
 	info!("Initialized logger");

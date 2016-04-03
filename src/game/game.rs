@@ -62,7 +62,7 @@ impl Game {
 			let mut focus = None;
 			let mut mouse_pos = (mp_x, mp_y);
 			for e in self.render.poll_events() {
-				debug!("Event recieved: {:?}", e);
+				trace!("Event recieved: {:?}", e);
 				match e {
 					Event::Closed => {
 						self.running = false;
