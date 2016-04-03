@@ -4,13 +4,14 @@ version = "0.1.0"
 authors = ["trolleyman <cgtrolley@gmail.com>"]
 
 [dependencies]
-unicode-normalization = "*"
-rusttype = "*"
 glium = "*"
 cgmath = "*"
-cfg-if = "*"
+collision = "*"
+rusttype = "*"
+unicode-normalization = "*"
 log = "*"
 simplelog = "*"
+cfg-if = "*"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 user32-sys = "*"

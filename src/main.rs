@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate glium;
 extern crate cgmath;
+extern crate collision;
 extern crate rusttype;
 
 #[macro_use]
