@@ -1,0 +1,16 @@
+set -v
+
+dir=`mktemp -d -p neat`
+cargo doc
+mv target/doc $dir/doc
+git checkout gh-pages
+mv index.html $dir/
+rm -rf ./*
+mv $dir/doc/* ./
+mv $dir/index.html ./
+rm -rf $dir
+git add -A
+git commit -m "Updated docs"
+git push
+git checkout master
+
