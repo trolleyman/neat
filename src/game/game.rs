@@ -1,7 +1,7 @@
 use std::time::{Instant};
 use std::rc::Rc;
 
-use glutin::{VirtualKeyCode, Event, MouseButton};
+use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
 use cgmath::{Vector, Vector3, vec3};
 
 use collision::Collider;
@@ -37,9 +37,13 @@ impl Game {
 			
 			let sun = Entity::new(vec3( 0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.2), Some(100.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), collider);
 			state.add_entity(sun);
-			let mut earth = Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), Some(  5.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), collider);
-			earth.scale = 0.1;
+			
+			let mut earth = Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), Some(5.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), collider);
+			earth.scale(0.3684);
 			state.add_entity(earth);
+			
+			let mut mercury = Entity::new(vec3(1.5, 0.0, 0.0), vec3(0.0, 0.0, -10.0), Some(0.05), Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), collider);
+			mercury.scale(0.07937);
 			state
 		};
 		info!("Initialized game state");
@@ -95,6 +99,7 @@ impl Game {
 					},
 					Event::MouseInput(_mouse_state, button) => {
 						if button == MouseButton::Left {
+							// FIXME: Breaks when user clicks on title bar
 							self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
 							mouse_pos = (mp_x, mp_y);
 							focus = Some(true);
@@ -107,6 +112,14 @@ impl Game {
 						self.keyboard_state.process_event(key_state, code);
 						if code == VirtualKeyCode::Escape {
 							focus = Some(false);
+						}
+						if key_state == ElementState::Pressed && Some(code) == self.settings.pause_key {
+							self.settings.paused = !self.settings.paused;
+							if self.settings.paused {
+								info!("Game paused");
+							} else {
+								info!("Game resumed");
+							}
 						}
 					},
 					_ => {},

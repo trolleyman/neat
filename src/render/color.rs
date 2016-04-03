@@ -24,6 +24,9 @@ impl Color {
 			b: b,
 		}
 	}
+	pub fn uniform(v: f32) -> Color {
+		Color::new(v, v, v)
+	}
 }
 
 impl From<[f32; 3]> for Color {

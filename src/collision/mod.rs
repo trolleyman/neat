@@ -53,6 +53,14 @@ pub struct Sphere {
 	pub centre: Vector3<f32>,
 	pub radius: f32,
 }
+impl Sphere {
+	pub fn transformed(self, trans: Decomposed<Vector3<f32>, Quaternion<f32>>) -> Sphere {
+		Sphere {
+			centre: trans.transform_vector(self.centre),
+			radius: trans.scale * self.radius,
+		}
+	}
+}
 pub struct InfinitePlane {
 	pub point: Vector3<f32>,
 	pub normal: Vector3<f32>,
@@ -66,6 +74,14 @@ pub enum Collider {
 }
 
 impl Collider {
+	pub fn transformed(self, trans: Decomposed<Vector3<f32>, Quaternion<f32>>) -> Collider {
+		use self::Collider::*;
+		
+		match self {
+			Sphere(s) => Sphere(s.transformed(trans)),
+		}
+	}
+	
 	pub fn sphere(centre: Vector3<f32>, radius: f32) -> Collider {
 		Collider::Sphere(Sphere{
 			centre: centre,

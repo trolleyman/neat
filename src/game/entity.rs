@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use cgmath::{Vector3, Matrix4};
+use cgmath::*;
 
 use render::{Render, RenderableMesh};
 use collision::{Collision, Collider};
@@ -17,7 +17,8 @@ pub struct Entity {
 	mesh: Rc<RenderableMesh>,
 	/// Collider
 	collider: Collider,
-	pub scale: f32,
+	/// Transform
+	trans: Decomposed<Vector3<f32>, Quaternion<f32>>,
 }
 impl Entity {
 	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: Option<f32>, mesh: Rc<RenderableMesh>, collider: Collider) -> Entity {
@@ -27,8 +28,18 @@ impl Entity {
 			weight: weight,
 			mesh: mesh,
 			collider: collider,
-			scale: 1.0,
+			trans: Decomposed{scale:1.0, rot:Quaternion::one(), disp:pos},
 		}
+	}
+	
+	/// Rotate the entity by a specified amount
+	pub fn rotate(&mut self, rot: &Quaternion<f32>) {
+		self.trans.rot.concat_self(rot);
+	}
+	
+	/// Scale the entity by a specified amount
+	pub fn scale(&mut self, scale: f32) {
+		self.trans.scale *= scale;
 	}
 	
 	/// Applies a force in a direction
@@ -41,6 +52,7 @@ impl Entity {
 	/// Processes a tick for the entity
 	pub fn tick(&mut self, dt: f32) {
 		self.pos = self.pos + self.vel * dt;
+		self.trans.disp = self.pos;
 	}
 	
 	/// Returns the position of the object in space
@@ -60,12 +72,15 @@ impl Entity {
 	
 	/// Calculates if the entity has collided with `other`, and returns the collision data if it has.
 	pub fn collision(&self, other: &Entity) -> Option<Collision> {
-		self.collider.collision(&other.collider)
+		self.collider.transformed(self.trans).collision(&other.collider.transformed(other.trans))
 	}
 	
 	/// Renders the entity
 	pub fn render(&self, r: &mut Render) {
-		let model = Matrix4::from_translation(self.pos) * Matrix4::from_scale(self.scale);
+		let model = 
+			  Matrix4::from_translation(self.trans.disp)
+			* Matrix4::from_scale(self.trans.scale)
+			* Matrix4::from(*Basis3::from(self.trans.rot).as_ref());
 		self.mesh.render(r, model);
 	}
 }
