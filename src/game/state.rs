@@ -1,7 +1,5 @@
 use std::time::Duration;
 
-use glutin::VirtualKeyCode as KeyCode;
-
 use cgmath::{EuclideanVector, vec3};
 
 use game::{KeyboardState, Entity};
@@ -42,22 +40,22 @@ impl State {
 		
 		// Translate camera based on keyboard state
 		let mut trans = vec3(0.0, 0.0, 0.0);
-		if keyboard.is_pressed(&KeyCode::W) { // Forward
+		if keyboard.is_pressed(&settings.forward) {
 			trans = trans + vec3(0.0, 0.0, -speed);
 		}
-		if keyboard.is_pressed(&KeyCode::S) { // Backward
+		if keyboard.is_pressed(&settings.backward) {
 			trans = trans + vec3(0.0, 0.0,  speed);
 		}
-		if keyboard.is_pressed(&KeyCode::A) { // Strafe left
+		if keyboard.is_pressed(&settings.left) {
 			trans = trans + vec3(-speed, 0.0, 0.0);
 		}
-		if keyboard.is_pressed(&KeyCode::D) { // Strafe right
+		if keyboard.is_pressed(&settings.right) {
 			trans = trans + vec3( speed, 0.0, 0.0);
 		}
-		if keyboard.is_pressed(&KeyCode::Q) { // Go up
+		if keyboard.is_pressed(&settings.up) {
 			trans = trans + vec3(0.0,  speed, 0.0);
 		}
-		if keyboard.is_pressed(&KeyCode::E) { // Go down
+		if keyboard.is_pressed(&settings.down) {
 			trans = trans + vec3(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
