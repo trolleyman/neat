@@ -42,8 +42,9 @@ impl Game {
 			earth.scale(0.3684);
 			state.add_entity(earth);
 			
-			let mut mercury = Entity::new(vec3(1.5, 0.0, 0.0), vec3(0.0, 0.0, -10.0), Some(0.05), Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), collider);
+			let mut mercury = Entity::new(vec3(2.5, 0.0, 0.0), vec3(0.0, 0.0, -10.0), Some(0.05), Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), collider);
 			mercury.scale(0.07937);
+			state.add_entity(mercury);
 			state
 		};
 		info!("Initialized game state");
