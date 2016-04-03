@@ -58,6 +58,7 @@ impl Game {
 			let mut focus = None;
 			let mut mouse_pos = (mp_x, mp_y);
 			for e in self.render.poll_events() {
+				debug!("Event recieved: {:?}", e);
 				match e {
 					Event::Closed => {
 						self.running = false;
@@ -87,6 +88,7 @@ impl Game {
 			}
 			
 			if resized {
+				info!("Resizing renderer");
 				// Resize and rerender.
 				self.render.resize();
 				self.current_state.render(&mut self.render, dt);
@@ -119,6 +121,7 @@ impl Game {
 	
 	/// Ticks the game. `dt` is the number of seconds since last frame.
 	pub fn tick(&mut self, dt: f32) {
+		debug!("Game tick: {}s", dt);
 		// Tick next state
 		self.next_state.tick(dt, &self.keyboard_state, self.mouse_state);
 		self.mouse_state = (0, 0);

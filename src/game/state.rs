@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use glutin::VirtualKeyCode as KeyCode;
 
-use cgmath::{EuclideanVector, Vector3};
+use cgmath::{EuclideanVector, vec3};
 
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
@@ -40,26 +40,29 @@ impl State {
 		let speed = 2.0 * dt;
 		
 		// Translate camera based on keyboard state
-		let mut trans = Vector3::new(0.0, 0.0, 0.0);
+		let mut trans = vec3(0.0, 0.0, 0.0);
 		if keyboard.is_pressed(&KeyCode::W) { // Forward
-			trans = trans + Vector3::new(0.0, 0.0, -speed);
+			trans = trans + vec3(0.0, 0.0, -speed);
 		}
 		if keyboard.is_pressed(&KeyCode::S) { // Backward
-			trans = trans + Vector3::new(0.0, 0.0,  speed);
+			trans = trans + vec3(0.0, 0.0,  speed);
 		}
 		if keyboard.is_pressed(&KeyCode::A) { // Strafe left
-			trans = trans + Vector3::new(-speed, 0.0, 0.0);
+			trans = trans + vec3(-speed, 0.0, 0.0);
 		}
 		if keyboard.is_pressed(&KeyCode::D) { // Strafe right
-			trans = trans + Vector3::new( speed, 0.0, 0.0);
+			trans = trans + vec3( speed, 0.0, 0.0);
 		}
 		if keyboard.is_pressed(&KeyCode::Q) { // Go up
-			trans = trans + Vector3::new(0.0,  speed, 0.0);
+			trans = trans + vec3(0.0,  speed, 0.0);
 		}
 		if keyboard.is_pressed(&KeyCode::E) { // Go down
-			trans = trans + Vector3::new(0.0, -speed, 0.0);
+			trans = trans + vec3(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
+		if trans != vec3(0.0, 0.0, 0.0) {
+			debug!("Camera moved: {:?}", trans);
+		}
 		
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		

@@ -131,6 +131,7 @@ impl FontRender {
 	
 	/// Draw a string at x, y on the screen scaled by scale.
 	pub fn draw_str<S: Surface>(&mut self, surface: &mut S, s: &str, x: f32, y: f32, screen_w: f32, screen_h: f32, scale: f32, color: Color) {
+		trace!("Drawing string: {}", s);
 		let font = match self.font_collection.font_at(self.font_index) {
 			Some(f) => f,
 			None => {
@@ -147,7 +148,7 @@ impl FontRender {
 		let mut cprev = None;
 		for c in s.chars().nfc() {
 			if let Some(glyph) = state.layout_char(&font, cprev, c) {
-				glyphs.push(glyph);
+				glyphs.push((c, glyph));
 			}
 			cprev = Some(c);
 		}
@@ -197,7 +198,7 @@ fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVerte
 	}
 }
 
-fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[PositionedGlyph], color: Color) {
+fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[(char, PositionedGlyph)], color: Color) {
 	// Calculate matrix
 	let (w, h) = size;
 	let mut mat = Matrix4::<f32>::identity();
@@ -207,18 +208,17 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 	draw_glyphs_mat(ctx, surface, shader, font_tex, cache, mat, glyphs, color)
 }
 
-fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Matrix4<f32>, glyphs: &[PositionedGlyph], color: Color) {
+fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Matrix4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
 	cache.clear_queue();
-	for glyph in glyphs.iter() {
+	for &(_, ref glyph) in glyphs.iter() {
 		cache.queue_glyph(0, glyph.clone());
 	}
 	match cache_queued(font_tex, cache) {
 		Ok(()) => {
-			//println!("Rendering glyphs: {:?}", glyphs.iter().map(|g| g.id()).collect::<Vec<_>>());
 			let mut vs = Vec::new();
 			let mut is = Vec::new();
 			
-			for glyph in glyphs {
+			for &(_, ref glyph) in glyphs {
 				draw_glyph(cache, glyph, &mut vs, &mut is);
 			}
 			
@@ -250,10 +250,15 @@ fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Prog
 			).ok();
 		},
 		Err(e) => {
-			if glyphs.len() <= 1 {
-				// Error: cannot put glyph in cache. // TODO: Clean up error message // TODO: Maybe render default glyph?
-				writeln!(io::stderr(), "Error: Cannot render glyph: {:?}", e).ok();
+			if glyphs.len() == 0 {
+				// Do nothing, it's fine to not render any glyphs.
+				error!("Error: This should never happen, but it's fine if it does.");
+			} else if glyphs.len() == 1 {
+				// TODO: Maybe render default glyph?
+				let c = glyphs[0].0;
+				error!("Error: Cannot render character '{}' ({:#04X}): {:?}", c, c as u32, e);
 			} else {
+				error!("Error: Cannot render all glyphs in array (len {}): {:?}, splitting at {}", glyphs.len(), e, glyphs.len() / 2);
 				// Split glyphs up into two halves, and draw them seperately.
 				let (a, b) = glyphs.split_at(glyphs.len() / 2);
 				draw_glyphs_mat(ctx, surface, shader, font_tex, cache, mat, a, color);

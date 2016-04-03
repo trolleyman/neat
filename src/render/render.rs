@@ -131,6 +131,7 @@ impl Render {
 	}
 	
 	pub fn focus(&mut self) {
+		info!("Window focused");
 		if let Some(win) = self.win.get_window() {
 			win.set_cursor_state(CursorState::Grab).ok();
 			focus_window(&win);
@@ -138,6 +139,7 @@ impl Render {
 	}
 	
 	pub fn unfocus(&mut self) {
+		info!("Window unfocused");
 		self.win.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
 	}
 	
@@ -150,6 +152,7 @@ impl Render {
 	}
 
 	pub fn swap(&mut self) {
+		trace!("Swapping buffers...");
 		self.frame.set_finish().ok();
 		self.frame = self.win.draw();
 		Render::clear_frame(&mut self.frame);
