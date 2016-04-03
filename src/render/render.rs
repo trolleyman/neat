@@ -4,11 +4,37 @@ use std::mem;
 use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
 use glium::*;
-use glutin::{CursorState, WindowBuilder};
+use glutin::{CursorState, WindowBuilder, Window};
 use cgmath::{self, Matrix4, SquareMatrix};
 
 use render::load_shader;
 use render::{FontRender, Camera, Color, SimpleVertex};
+
+cfg_if! {
+	if #[cfg(target_os = "windows")] {
+		fn focus_window(win: &Window) {
+			use glutin::os::windows::WindowExt;
+			use user32;
+			unsafe {
+				let hwnd = win.get_hwnd() as *mut _;
+				user32::SetActiveWindow(hwnd);
+				user32::SetForegroundWindow(hwnd);
+			};
+		}
+	} else if #[cfg(target_os = "macos")] {
+		fn focus_window(win: &Window) {
+			
+		}
+	} else if #[cfg(target_os = "linux")] {
+		fn focus_window(win: &Window) {
+			
+		}
+	} else {
+		fn focus_window(win: &Window) {
+			// Don't do anything
+		}
+	}
+}
 
 /// Render handler.
 pub struct Render {
@@ -105,7 +131,10 @@ impl Render {
 	}
 	
 	pub fn focus(&mut self) {
-		self.win.get_window().map(|w| w.set_cursor_state(CursorState::Grab));
+		if let Some(win) = self.win.get_window() {
+			win.set_cursor_state(CursorState::Grab).ok();
+			focus_window(&win);
+		}
 	}
 	
 	pub fn unfocus(&mut self) {

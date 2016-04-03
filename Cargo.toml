@@ -8,3 +8,12 @@ unicode-normalization = "*"
 rusttype = "*"
 glium = "*"
 cgmath = "*"
+cfg-if = "*"
+
+[target.'cfg(target_os = "windows")'.dependencies]
+user32-sys = "*"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+
+
+[target.'cfg(target_os = "linux")'.dependencies]

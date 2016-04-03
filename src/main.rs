@@ -1,9 +1,15 @@
 #![feature(box_syntax, question_mark, associated_consts)]
-extern crate rusttype;
 #[macro_use]
 extern crate glium;
-extern crate unicode_normalization;
 extern crate cgmath;
+extern crate rusttype;
+
+extern crate unicode_normalization;
+#[macro_use]
+extern crate cfg_if;
+
+#[cfg(windows)]
+extern crate user32;
 
 use std::io::{self, Write};
 use std::fmt::Display;
