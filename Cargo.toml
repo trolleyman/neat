@@ -9,6 +9,8 @@ rusttype = "*"
 glium = "*"
 cgmath = "*"
 cfg-if = "*"
+log = "*"
+simplelog = "*"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 user32-sys = "*"

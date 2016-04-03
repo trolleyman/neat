@@ -172,7 +172,7 @@ impl Render {
 					write: true,
 					..Default::default()
 				},
-				//backface_culling: BackfaceCullingMode::CullClockwise,
+				backface_culling: BackfaceCullingMode::CullClockwise,
 				..Default::default()
 			}
 		).unwrap();

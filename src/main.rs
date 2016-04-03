@@ -4,6 +4,9 @@ extern crate glium;
 extern crate cgmath;
 extern crate rusttype;
 
+#[macro_use]
+extern crate log;
+extern crate simplelog;
 extern crate unicode_normalization;
 #[macro_use]
 extern crate cfg_if;
@@ -33,6 +36,9 @@ pub fn error<E: Display>(e: E) -> ! {
 }
 
 fn main() {
+	simplelog::TermLogger::init(simplelog::LogLevelFilter::Info)
+		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
+	
 	let cam = Camera::new(vec3(2.0, 2.0, 10.0));
 	let mut r = Render::new(cam);
 	
@@ -51,5 +57,5 @@ fn main() {
 	
 	g.main_loop();
 
-	println!("Program exited.");
+	info!("Program exited.");
 }
