@@ -1,9 +1,12 @@
 use std::time::{Instant};
+use std::rc::Rc;
 
 use glutin::{VirtualKeyCode, Event, MouseButton};
+use cgmath::{Vector, Vector3, vec3};
 
-use game::{GameState, KeyboardState};
-use render::Render;
+use collision::Collider;
+use game::{GameState, KeyboardState, Entity};
+use render::{Color, Render, SimpleMesh, ColoredMesh, Camera};
 use settings::Settings;
 use util::DurationExt;
 
@@ -19,9 +22,25 @@ pub struct Game {
 	focused: bool,
 }
 impl Game {
-	pub fn new(settings: Settings, render: Render) -> Game {
-		let cam = render.camera().clone();
-		Game::with_state(settings, render, GameState::new(cam))
+	pub fn new(settings: Settings, cam: Camera) -> Game {
+		let mut render = Render::new(cam);
+		info!("Initialized renderer");
+		
+		let state = {
+			let sphere = Rc::new(SimpleMesh::sphere(render.context(), 4));
+			let mut state = GameState::new(cam);
+			//state.add_entity(Entity::new(vec3(5.0, 0.0,  0.0), vec3(0.0, 1.0, 0.0), 1.0, Color::RED  , sphere.clone()));
+			//state.add_entity(Entity::new(vec3(0.0, 0.0, -5.0), vec3(1.0, 0.0, 0.0), 1.0, Color::GREEN, sphere.clone()));
+			//state.add_entity(Entity::new(vec3(0.0, 5.0,  0.0), vec3(0.0, 0.0, 1.0), 1.0, Color::BLUE , sphere.clone()));
+			
+			let collider = Collider::sphere(Vector3::zero(), 1.0);
+			
+			state.add_entity(Entity::new(vec3( 0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.2), Some(100.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), collider));
+			state.add_entity(Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), Some(  5.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN )), collider));
+			state
+		};
+		info!("Initialized game state");
+		Game::with_state(settings, render, state)
 	}
 
 	pub fn with_state(settings: Settings, render: Render, state: GameState) -> Game {

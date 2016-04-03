@@ -13,7 +13,8 @@ use rusttype::gpu_cache::{Cache, CacheWriteErr};
 use cgmath::{SquareMatrix, Matrix4, vec3};
 use unicode_normalization::UnicodeNormalization;
 
-use render::{load_shader, load_font, Color};
+use render::Color;
+use vfs::{load_shader, load_font};
 
 struct State {
 	init_x: f32,

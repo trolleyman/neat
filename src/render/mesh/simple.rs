@@ -11,32 +11,32 @@ use cgmath::{vec3, EuclideanVector, Vector3, Matrix4};
 use render::{Render, Color};
 
 #[derive(Copy, Clone, Debug)]
-pub struct SimpleVertex {
+pub struct Vertex {
 	pub pos: [f32; 3],
 }
-impl From<Vector3<f32>> for SimpleVertex {
-	fn from(v: Vector3<f32>) -> SimpleVertex {
-		SimpleVertex{
+impl From<Vector3<f32>> for Vertex {
+	fn from(v: Vector3<f32>) -> Vertex {
+		Vertex{
 			pos: unsafe { mem::transmute(v) },
 		}
 	}
 }
 
-implement_vertex!(SimpleVertex, pos);
+implement_vertex!(Vertex, pos);
 
+/// A simple mesh is basically just a list of triangles
 #[derive(Debug)]
 pub struct Mesh {
-	vertex_buffer: VertexBuffer<SimpleVertex>,
+	vertex_buffer: VertexBuffer<Vertex>,
 	index_buffer: IndexBuffer<u32>,
 }
 impl Mesh {
 	pub fn render(&self, r: &mut Render, model: Matrix4<f32>, color: Color) {
 		r.render_simple(&self.vertex_buffer, &self.index_buffer, model, color);
 	}
-}
-impl Mesh {
+	
 	pub fn sphere(ctx: &Rc<Context>, detail: u32) -> Mesh {
-		let mut vs: Vec<SimpleVertex> = Vec::new();
+		let mut vs: Vec<Vertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
 		Mesh::gen_sphere(&mut vs, &mut is, detail);
@@ -44,7 +44,7 @@ impl Mesh {
 	}
 	
 	pub fn dodecahedron(ctx: &Rc<Context>) -> Mesh {
-		let mut vs: Vec<SimpleVertex> = Vec::new();
+		let mut vs: Vec<Vertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
 		Mesh::gen_dodec(&mut vs, &mut is, 0);
@@ -52,14 +52,14 @@ impl Mesh {
 	}
 	
 	pub fn cube(ctx: &Rc<Context>) -> Mesh {
-		let mut vs: Vec<SimpleVertex> = Vec::new();
+		let mut vs: Vec<Vertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
 		
 		Mesh::gen_cube(&mut vs, &mut is);
 		Mesh::from_vecs(ctx, vs, is)
 	}
 	
-	fn from_vecs(ctx: &Rc<Context>, vs: Vec<SimpleVertex>, is: Vec<u32>) -> Mesh {
+	fn from_vecs(ctx: &Rc<Context>, vs: Vec<Vertex>, is: Vec<u32>) -> Mesh {
 		let vs = match VertexBuffer::immutable(ctx, &vs) {
 			Ok(vs) => vs,
 			Err(e) => {
@@ -81,14 +81,14 @@ impl Mesh {
 		}
 	}
 	
-	fn gen_cube(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>) {
+	fn gen_cube(vs: &mut Vec<Vertex>, is: &mut Vec<u32>) {
 		fn push_quad(is: &mut Vec<u32>, i: u32, v0: u32, v1: u32, v2: u32, v3: u32) {
 			is.extend(&[i+v0, i+v2, i+v1]);
 			is.extend(&[i+v0, i+v3, i+v2]);
 		}
 		let i = vs.len() as u32;
 		
-		let cube_vs: &[SimpleVertex] = &[
+		let cube_vs: &[Vertex] = &[
 			vec3(-0.5,  0.5, -0.5).into(),
 			vec3( 0.5,  0.5, -0.5).into(),
 			vec3( 0.5, -0.5, -0.5).into(),
@@ -108,18 +108,18 @@ impl Mesh {
 		push_quad(is, i, 2, 3, 7, 6); // D
 	}
 	
-	fn gen_sphere(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, detail: u32) {
+	fn gen_sphere(vs: &mut Vec<Vertex>, is: &mut Vec<u32>, detail: u32) {
 		// Generate dodecohedron
 		Mesh::gen_dodec(vs, is, detail);
 		
 		// Now scale vertices to proper locations.
 		// (by normalising them)
 		for v in vs.iter_mut() {
-			*v = SimpleVertex::from(Vector3::from(v.pos).normalize());
+			*v = Vertex::from(Vector3::from(v.pos).normalize());
 		}
 	}
 	
-	fn gen_dodec(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u32>, detail: u32) {
+	fn gen_dodec(vs: &mut Vec<Vertex>, is: &mut Vec<u32>, detail: u32) {
 		// v0 is top
 		// v1 through v4 are vertices going anti-clockwise (looking down) around the dodecahedron
 		// v5 is bottom
@@ -151,7 +151,7 @@ impl Mesh {
 		}
 	}
 	
-	fn gen_dodec_face_tris(vs: &mut Vec<SimpleVertex>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
+	fn gen_dodec_face_tris(vs: &mut Vec<Vertex>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
 		let rows = 2u32.pow(detail) + 1;
 		for row in 0..rows {
 			// Create row + 1 vertices.
@@ -192,7 +192,7 @@ impl Mesh {
 		}
 	}
 	
-	pub fn vertices(&self) -> &VertexBuffer<SimpleVertex> {
+	pub fn vertices(&self) -> &VertexBuffer<Vertex> {
 		&self.vertex_buffer
 	}
 	

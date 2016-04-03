@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use cgmath::{EuclideanVector, vec3};
+use cgmath::*;
 
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
@@ -65,31 +65,24 @@ impl State {
 		
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		
-		// Apply gravity to all entities.
-		for i in 0..self.entities.len() {
-			let attractor = self.entities[i].clone();
-			
-			for j in 0..self.entities.len() {
-				if i == j {
-					continue;
-				}
-				//const G: f64 = 6.674e-11;
-				const G: f32 = 0.05;
-				
-				let mut o = &mut self.entities[j];
-				// Get unit vector from o to attractor
-				let mut v = attractor.pos() - o.pos();
-				let len_sq = v.length2();
-				v = v / len_sq.sqrt();
-				
-				// Apply a force towards the attractor.
-				let f = v * ((G * attractor.weight() * o.weight()) / len_sq);
-				o.force(f);
+		// Apply gravity to all non-static entities.
+		const G: Vector3<f32> = Vector3{ x: 0.0, y: -9.81, z: 0.0};
+		for e in &mut self.entities {
+			if let Some(w) = e.weight() {
+				e.force(G * w);
 			}
 		}
 		
 		// Collision check
-		// TODO
+		for i in 0..self.entities.len() {
+			for j in i+1..self.entities.len() {
+				if let Some(col) = self.entities[i].collision(&self.entities[j]) {
+					let a = self.entities[i].pos();
+					let b = self.entities[j].pos();
+					info!("Collision: Entity at [{},{},{}] with entity at [{},{},{}]", a.x, a.y, a.z, b.x, b.y, b.z);
+				}
+			}
+		}
 
 		// Tick entities
 		for e in &mut self.entities {

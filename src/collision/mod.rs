@@ -1,18 +1,28 @@
 use cgmath::*;
 
 /// Holds data on the collision between two objects.
+#[derive(Copy, Clone)]
 pub struct Collision {
-	// The point of the collision
+	/// The point of the collision
 	pub point : Vector3<f32>,
-	// The normal of the plane of collision, pointing towards the first object.
+	/// The normal of the plane of collision, pointing towards the first object.
 	pub normal: Vector3<f32>,
+	/// The force to apply to both objects to resolve the collision.
+	pub impulse: Vector3<f32>,
 }
 impl Collision {
-	pub fn new(point: Vector3<f32>, normal: Vector3<f32>) -> Collision {
+	pub fn new(point: Vector3<f32>, normal: Vector3<f32>, impulse: Vector3<f32>) -> Collision {
 		Collision {
-			point: point,
-			normal: normal,
+			point  : point,
+			normal : normal,
+			impulse: impulse,
 		}
+	}
+	
+	/// Invert the normal and impulse of the collision
+	pub fn invert(&mut self) {
+		self.normal  = self.normal  * -1.0;
+		self.impulse = self.impulse * -1.0;
 	}
 	
 	pub fn sphere_sphere(s1: &Sphere, s2: &Sphere) -> Option<Collision> {
@@ -25,16 +35,20 @@ impl Collision {
 			return None;
 		}
 		if dist < max(s1.radius, s2.radius) - min(s1.radius, s2.radius) {
-			return None; // Sphere is inside other sphere.
+			// Sphere is inside other sphere.
+			// TODO: Fix
+			return None;
 		}
 		
 		let normal = diff.normalize();
 		let point = diff * (s2.radius / (s1.radius + s2.radius));
+		let impulse = Vector3::zero();
 		
-		Some(Collision::new(point, normal))
+		Some(Collision::new(point, normal, impulse))
 	}
 }
 
+#[derive(Copy, Clone)]
 pub struct Sphere {
 	pub centre: Vector3<f32>,
 	pub radius: f32,
@@ -45,13 +59,21 @@ pub struct InfinitePlane {
 }
 
 /// A 'collision mesh', or, how the object looks to the collision detection system.
+#[derive(Copy, Clone)]
 pub enum Collider {
 	Sphere(Sphere),
 	//InfinitePlane(InfinitePlane),
 }
 
 impl Collider {
-	pub fn intersection(&self, other: &Collider) -> Option<Collision> {
+	pub fn sphere(centre: Vector3<f32>, radius: f32) -> Collider {
+		Collider::Sphere(Sphere{
+			centre: centre,
+			radius: radius,
+		})
+	}
+	
+	pub fn collision(&self, other: &Collider) -> Option<Collision> {
 		use self::Collider::*;
 		
 		match (self, other) {
@@ -69,6 +91,6 @@ mod test {
 		
 		assert!(Collision::sphere_sphere(&Sphere{centre:vec3(0.0, 0.0, 0.0), radius:10.0}, &Sphere{centre:vec3(0.0, 13.0, 0.0), radius:2.0}).is_none()); // Outside
 		assert!(Collision::sphere_sphere(&Sphere{centre:vec3(0.0, 0.0, 0.0), radius:10.0}, &Sphere{centre:vec3(0.0, 10.0, 0.0), radius:2.0}).is_some()); // Intersection
-		assert!(Collision::sphere_sphere(&Sphere{centre:vec3(0.0, 0.0, 0.0), radius:10.0}, &Sphere{centre:vec3(0.0, 5.0, 0.0), radius:2.0}).is_none()); // Inside
+		assert!(Collision::sphere_sphere(&Sphere{centre:vec3(0.0, 0.0, 0.0), radius:10.0}, &Sphere{centre:vec3(0.0, 5.0, 0.0), radius:2.0}).is_some()); // Inside
 	}
 }

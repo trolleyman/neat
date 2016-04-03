@@ -1,33 +1,41 @@
 use std::rc::Rc;
 
-use render::{Render, Color, Mesh};
-
 use cgmath::{Vector3, Matrix4};
 
-#[derive(Clone, Debug)]
+use render::{Render, RenderableMesh};
+use collision::{Collision, Collider};
+
+#[derive(Clone)]
 pub struct Entity {
+	/// Position
 	pos: Vector3<f32>,
+	/// Velocity
 	vel: Vector3<f32>,
-	weight: f32,
-	color: Color,
-	mesh: Rc<Mesh>,
+	/// Weight of the entity. If None, the entity is static.
+	weight: Option<f32>,
+	/// Visible mesh
+	mesh: Rc<RenderableMesh>,
+	/// Collider
+	collider: Collider,
 }
 impl Entity {
-	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, color: Color, mesh: Rc<Mesh>) -> Entity {
+	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: Option<f32>, mesh: Rc<RenderableMesh>, collider: Collider) -> Entity {
 		Entity {
 			pos: pos,
 			vel: vel,
 			weight: weight,
-			color: color,
 			mesh: mesh,
+			collider: collider,
 		}
 	}
-
+	
 	/// Applies a force in a direction
 	pub fn force(&mut self, f: Vector3<f32>) {
-		self.vel = self.vel + (f / self.weight);
+		if let Some(w) = self.weight {
+			self.vel = self.vel + (f / w);
+		}
 	}
-
+	
 	/// Processes a tick for the entity
 	pub fn tick(&mut self, dt: f32) {
 		self.pos = self.pos + self.vel * dt;
@@ -44,12 +52,18 @@ impl Entity {
 	}
 	
 	/// Returns the weight of the object
-	pub fn weight(&self) -> f32 {
+	pub fn weight(&self) -> Option<f32> {
 		self.weight
 	}
 	
+	/// Calculates if the entity has collided with `other`, and returns the collision data if it has.
+	pub fn collision(&self, other: &Entity) -> Option<Collision> {
+		self.collider.collision(&other.collider)
+	}
+	
+	/// Renders the entity
 	pub fn render(&self, r: &mut Render) {
 		let model = Matrix4::from_translation(self.pos);
-		self.mesh.render(r, model, self.color);
+		self.mesh.render(r, model);
 	}
 }

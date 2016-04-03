@@ -8,7 +8,7 @@ use glium::*;
 use glutin::{CursorState, WindowBuilder, Window};
 use cgmath::{self, Matrix4, SquareMatrix};
 
-use render::load_shader;
+use vfs::load_shader;
 use render::{FontRender, Camera, Color, SimpleVertex};
 
 cfg_if! {
