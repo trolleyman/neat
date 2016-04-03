@@ -19,17 +19,22 @@ use std::rc::Rc;
 
 pub use glium::glutin;
 use cgmath::vec3;
+use simplelog::{TermLogger, LogLevelFilter};
 
 pub mod render;
 pub mod game;
 pub mod util;
 pub mod collision;
+pub mod settings;
 
 use render::{Camera, Mesh, Color, Render};
 use game::{Entity, Game, GameState};
+use settings::Settings;
 
 fn main() {
-	simplelog::TermLogger::init(simplelog::LogLevelFilter::Info)
+	let settings = Settings::from_args();
+	let log_level = if settings.verbose { LogLevelFilter::Trace } else { LogLevelFilter::Info };
+	TermLogger::init(log_level)
 		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
 	info!("Initialized logger");
 	
@@ -49,7 +54,7 @@ fn main() {
 		state
 	};
 	info!("Initialized game state");
-	let mut g = Game::with_state(r, state);
+	let mut g = Game::with_state(settings, r, state);
 	info!("Initialized game");
 	
 	g.main_loop();

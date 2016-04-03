@@ -6,6 +6,7 @@ use cgmath::{EuclideanVector, vec3};
 
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
+use settings::Settings;
 use util::DurationExt;
 
 const FONT_SIZE: f32 = 24.0;
@@ -35,7 +36,7 @@ impl State {
 		self.entities.push(e);
 	}
 	
-	pub fn tick(&mut self, dt: f32, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
+	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
 		// m/s
 		let speed = 2.0 * dt;
 		

@@ -4,10 +4,12 @@ use glutin::{VirtualKeyCode, Event, MouseButton};
 
 use game::{GameState, KeyboardState};
 use render::Render;
+use settings::Settings;
 use util::DurationExt;
 
 pub struct Game {
 	render: Render,
+	settings: Settings,
 	
 	current_state: GameState,
 	next_state: GameState,
@@ -17,14 +19,15 @@ pub struct Game {
 	focused: bool,
 }
 impl Game {
-	pub fn new(render: Render) -> Game {
+	pub fn new(settings: Settings, render: Render) -> Game {
 		let cam = render.camera().clone();
-		Game::with_state(render, GameState::new(cam))
+		Game::with_state(settings, render, GameState::new(cam))
 	}
 
-	pub fn with_state(render: Render, state: GameState) -> Game {
+	pub fn with_state(settings: Settings, render: Render, state: GameState) -> Game {
 		Game {
 			render: render,
+			settings: settings,
 			
 			current_state: state.clone(),
 			next_state: state,
@@ -124,7 +127,7 @@ impl Game {
 	pub fn tick(&mut self, dt: f32) {
 		debug!("Game tick: {}s", dt);
 		// Tick next state
-		self.next_state.tick(dt, &self.keyboard_state, self.mouse_state);
+		self.next_state.tick(dt, &self.settings, &self.keyboard_state, self.mouse_state);
 		self.mouse_state = (0, 0);
 		
 		// TODO: Wait for mutex on current state, as it might be being accessed by the renderer.
