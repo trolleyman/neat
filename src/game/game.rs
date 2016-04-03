@@ -36,6 +36,7 @@ impl Game {
 	}
 	
 	pub fn main_loop(&mut self) {
+		info!("Starting game main loop");
 		self.render.focus();
 		
 		let mut last_time = Instant::now();

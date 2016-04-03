@@ -15,7 +15,6 @@ extern crate cfg_if;
 extern crate user32;
 
 use std::io::{self, Write};
-use std::fmt::Display;
 use std::rc::Rc;
 
 pub use glium::glutin;
@@ -29,18 +28,14 @@ pub mod util;
 use render::{Camera, Mesh, Color, Render};
 use game::{Entity, Game, GameState};
 
-pub fn error<E: Display>(e: E) -> ! {
-	// TODO: MsgBox
-	writeln!(io::stderr(), "Error: {}", e).ok();
-	::std::process::exit(1);
-}
-
 fn main() {
 	simplelog::TermLogger::init(simplelog::LogLevelFilter::Info)
 		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
+	info!("Initialized logger");
 	
 	let cam = Camera::new(vec3(2.0, 2.0, 10.0));
 	let mut r = Render::new(cam);
+	info!("Initialized renderer");
 	
 	let state = {
 		let sphere = Rc::new(Mesh::sphere(r.context(), 4));
@@ -53,7 +48,9 @@ fn main() {
 		state.add_entity(Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), 5.0, Color::GREEN, sphere.clone())); // Earth
 		state
 	};
+	info!("Initialized game state");
 	let mut g = Game::with_state(r, state);
+	info!("Initialized game");
 	
 	g.main_loop();
 

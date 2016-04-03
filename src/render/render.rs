@@ -1,5 +1,6 @@
 use std::rc::Rc;
 use std::mem;
+use std::process::exit;
 
 use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
@@ -66,8 +67,11 @@ impl Render {
 			.with_depth_buffer(24)
 			.with_vsync()
 			.build_glium() {
-			Ok(w)  => w,
-			Err(e) => ::error(format!("Could not initialize window: {}", e))
+				Ok(w)  => w,
+				Err(e) => {
+					error!("Could not initialize window: {}", e);
+					exit(1);
+				}
 		};
 		
 		let mut frame = win.draw();
@@ -77,7 +81,10 @@ impl Render {
 		
 		let simple_shader = match load_shader(&win, "simple") {
 			Ok(i)  => i,
-			Err(e) => ::error(e),
+			Err(e) => {
+				error!("{}", e);
+				exit(1);
+			},
 		};
 		
 		let ctx = win.get_context().clone();
