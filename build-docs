@@ -1,6 +1,7 @@
 set -v
 
-dir=`mktemp -d -p neat`
+dir=../.docs/
+mkdir $dir
 cargo doc
 mv target/doc $dir/doc
 git checkout gh-pages
