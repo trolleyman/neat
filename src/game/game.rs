@@ -2,9 +2,9 @@ use std::time::{Instant};
 use std::rc::Rc;
 
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
-use cgmath::{Vector, Vector3, vec3};
+use cgmath::vec3;
 
-use collision::Collider;
+use collision::Aabb;
 use game::{GameState, KeyboardState, Entity};
 use render::{Color, Render, SimpleMesh, ColoredMesh, Camera};
 use settings::Settings;
@@ -33,16 +33,16 @@ impl Game {
 			//state.add_entity(Entity::new(vec3(0.0, 0.0, -5.0), vec3(1.0, 0.0, 0.0), 1.0, Color::GREEN, sphere.clone()));
 			//state.add_entity(Entity::new(vec3(0.0, 5.0,  0.0), vec3(0.0, 0.0, 1.0), 1.0, Color::BLUE , sphere.clone()));
 			
-			let collider = Collider::sphere(Vector3::zero(), 1.0);
+			let bb = Aabb::new(vec3(-0.5, -0.5, -0.5), vec3(0.5, 0.5, 0.5));
 			
-			let sun = Entity::new(vec3( 0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.2), Some(100.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), collider);
+			let sun = Entity::new(vec3( 0.0, 0.0, 0.0), vec3(0.0, 0.0,  0.2), 100.0, Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), bb, false);
 			state.add_entity(sun);
 			
-			let mut earth = Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), Some(5.0), Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), collider);
+			let mut earth = Entity::new(vec3(10.0, 0.0, 0.0), vec3(0.0, 0.0, -4.0), 5.0, Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), bb, false);
 			earth.scale(0.3684);
 			state.add_entity(earth);
 			
-			let mut mercury = Entity::new(vec3(2.5, 0.0, 0.0), vec3(0.0, 0.0, -10.0), Some(0.05), Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), collider);
+			let mut mercury = Entity::new(vec3(2.5, 0.0, 0.0), vec3(0.0, 0.0, -10.0), 0.05, Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), bb, false);
 			mercury.scale(0.07937);
 			state.add_entity(mercury);
 			state

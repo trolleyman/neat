@@ -3,33 +3,41 @@ use std::rc::Rc;
 use cgmath::*;
 
 use render::{Render, RenderableMesh};
-use collision::{Collision, Collider};
+use collision::Aabb;
 
 #[derive(Clone)]
 pub struct Entity {
+	/// If the entity can move. (static)
+	stat: bool,
 	/// Position
 	pos: Vector3<f32>,
 	/// Velocity
 	vel: Vector3<f32>,
-	/// Weight of the entity. If None, the entity is static.
-	weight: Option<f32>,
+	/// Weight of the entity
+	weight: f32,
 	/// Visible mesh
 	mesh: Rc<RenderableMesh>,
-	/// Collider
-	collider: Collider,
+	/// Bounding Box when the entity is at 0,0 with scale 1.0 and no rotation.
+	bb: Aabb,
 	/// Transform
 	trans: Decomposed<Vector3<f32>, Quaternion<f32>>,
 }
 impl Entity {
-	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: Option<f32>, mesh: Rc<RenderableMesh>, collider: Collider) -> Entity {
+	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, mesh: Rc<RenderableMesh>, bb: Aabb, stat: bool) -> Entity {
 		Entity {
+			stat: stat,
 			pos: pos,
 			vel: vel,
 			weight: weight,
 			mesh: mesh,
-			collider: collider,
+			bb: bb,
 			trans: Decomposed{scale:1.0, rot:Quaternion::one(), disp:pos},
 		}
+	}
+	
+	/// Returns the bounding box the entity has in it's current position and at it's current scale.
+	pub fn bounding_box(&self) -> Aabb {
+		self.bb.scale(self.trans.scale).translate(self.trans.disp)
 	}
 	
 	/// Rotate the entity by a specified amount
@@ -44,8 +52,8 @@ impl Entity {
 	
 	/// Applies a force in a direction
 	pub fn force(&mut self, f: Vector3<f32>) {
-		if let Some(w) = self.weight {
-			self.vel = self.vel + (f / w);
+		if !self.stat {
+			self.vel = self.vel + (f / self.weight);
 		}
 	}
 	
@@ -66,13 +74,8 @@ impl Entity {
 	}
 	
 	/// Returns the weight of the object
-	pub fn weight(&self) -> Option<f32> {
+	pub fn weight(&self) -> f32 {
 		self.weight
-	}
-	
-	/// Calculates if the entity has collided with `other`, and returns the collision data if it has.
-	pub fn collision(&self, other: &Entity) -> Option<Collision> {
-		self.collider.transformed(self.trans).collision(&other.collider.transformed(other.trans))
 	}
 	
 	/// Renders the entity

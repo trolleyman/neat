@@ -1,7 +1,9 @@
 use std::time::Duration;
+use std::mem;
 
 use cgmath::*;
 
+use collision;
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
 use settings::Settings;
@@ -69,26 +71,22 @@ impl State {
 			// Apply gravity to all non-static entities.
 			for i in 0..self.entities.len() {
 				let attractor = self.entities[i].clone();
-				if let Some(a_weight) = attractor.weight() {
-					for j in 0..self.entities.len() {
-						if i == j {
-							continue;
-						}
-						//const G: f64 = 6.674e-11;
-						const G: f32 = 0.05;
-						
-						let mut o = &mut self.entities[j];
-						if let Some(o_weight) = o.weight() {
-							// Get unit vector from o to attractor
-							let mut v = attractor.pos() - o.pos();
-							let len_sq = v.length2();
-							v = v / len_sq.sqrt();
-							
-							// Apply a force towards the attractor.
-							let f = v * ((G * a_weight * o_weight) / len_sq);
-							o.force(f);
-						}
+				for j in 0..self.entities.len() {
+					if i == j {
+						continue;
 					}
+					//const G: f64 = 6.674e-11;
+					const G: f32 = 0.05;
+					
+					let mut o = &mut self.entities[j];
+					// Get unit vector from o to attractor
+					let mut v = attractor.pos() - o.pos();
+					let len_sq = v.length2();
+					v = v / len_sq.sqrt();
+					
+					// Apply a force towards the attractor.
+					let f = v * ((G * attractor.weight() * o.weight()) / len_sq);
+					o.force(f);
 				}
 			}
 			/*const G: Vector3<f32> = Vector3{ x: 0.0, y: -9.81, z: 0.0};
@@ -101,11 +99,11 @@ impl State {
 			// Collision check
 			for i in 0..self.entities.len() {
 				for j in i+1..self.entities.len() {
-					if let Some(col) = self.entities[i].collision(&self.entities[j]) {
-						let a = self.entities[i].pos();
-						let b = self.entities[j].pos();
-						info!("Collision: Entity at [{},{},{}] with entity at [{},{},{}]", a.x, a.y, a.z, b.x, b.y, b.z);
-					}
+					// I know this is safe as i and j are disjoint.
+					debug_assert!(i != j);
+					let i: &mut Entity = unsafe { mem::transmute::<*mut _, &mut _>(&mut self.entities[i] as *mut _) };
+					let j: &mut Entity = unsafe { mem::transmute::<*mut _, &mut _>(&mut self.entities[j] as *mut _) };
+					collision::calc_collision(i, j);
 				}
 			}
 
