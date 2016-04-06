@@ -58,7 +58,7 @@ impl Game {
 			running: true,
 			keyboard_state: KeyboardState::new(),
 			mouse_state: (0, 0),
-			focused: true,
+			focused: false,
 		}
 	}
 	
@@ -158,7 +158,7 @@ impl Game {
 	
 	/// Ticks the game. `dt` is the number of seconds since last frame.
 	pub fn tick(&mut self, dt: f32) {
-		debug!("Game tick: {}s", dt);
+		trace!("Game tick: {}s", dt);
 		// Tick next state
 		self.next_state.tick(dt, &self.settings, &self.keyboard_state, self.mouse_state);
 		self.mouse_state = (0, 0);

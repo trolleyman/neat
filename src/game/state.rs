@@ -59,10 +59,6 @@ impl State {
 			trans = trans + Vec3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
-		if trans != Vec3::new(0.0, 0.0, 0.0) {
-			debug!("Camera moved: {:?}", trans);
-		}
-		
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		
 		if !settings.paused {

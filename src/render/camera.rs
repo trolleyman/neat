@@ -45,9 +45,12 @@ impl Camera {
 	}
 	
 	// The mouse moved
-	pub fn mouse_moved(&mut self, x: i32, y: i32) {
-		let x = x as f32 * -0.008;
-		let y = y as f32 * -0.008;
+	pub fn mouse_moved(&mut self, screen_x: i32, screen_y: i32) {
+		let x = screen_x as f32 * -0.008;
+		let y = screen_y as f32 * -0.008;
+		if screen_x != 0 && screen_y != 0 {
+			debug!("mouse moved: {:3},{:3} look change: {},{}", x, y, -screen_x, -screen_y);
+		}
 		self.look(x, y);
 	}
 	

@@ -51,7 +51,7 @@ impl Entity {
 	/// Processes a tick for the entity
 	pub fn tick(&mut self, dt: f32) {
 		self.pos = self.pos + self.vel * dt;
-		self.trans.isometry.set_translation(self.pos);
+		self.trans.isometry.set_translation(-self.pos);
 	}
 	
 	/// Returns the position of the object in space
