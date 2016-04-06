@@ -1,6 +1,6 @@
 use std::convert::{Into, From};
 
-use cgmath::{vec3, Vector3};
+use na::Vec3;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Color {
@@ -39,8 +39,8 @@ impl From<(f32, f32, f32)> for Color {
 		Color::new(c.0, c.1, c.2)
 	}
 }
-impl From<Vector3<f32>> for Color {
-	fn from(c: Vector3<f32>) -> Color {
+impl From<Vec3<f32>> for Color {
+	fn from(c: Vec3<f32>) -> Color {
 		Color::new(c.x, c.y, c.z)
 	}
 }
@@ -55,8 +55,8 @@ impl Into<[f32; 3]> for Color {
 		[self.r, self.g, self.b]
 	}
 }
-impl Into<Vector3<f32>> for Color {
-	fn into(self) -> Vector3<f32> {
-		vec3(self.r, self.g, self.b)
+impl Into<Vec3<f32>> for Color {
+	fn into(self) -> Vec3<f32> {
+		Vec3::new(self.r, self.g, self.b)
 	}
 }

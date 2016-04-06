@@ -1,21 +1,22 @@
 use std::mem;
 use std::rc::Rc;
 use std::process::exit;
+use std::convert::From;
 
 use glium::backend::Context;
 use glium::{IndexBuffer, VertexBuffer};
 use glium::index;
-
-use cgmath::{vec3, EuclideanVector, Vector3, Matrix4};
+use na::{Vec3, Mat4, Norm};
 
 use render::{Render, Color};
+use util;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
 	pub pos: [f32; 3],
 }
-impl From<Vector3<f32>> for Vertex {
-	fn from(v: Vector3<f32>) -> Vertex {
+impl From<Vec3<f32>> for Vertex {
+	fn from(v: Vec3<f32>) -> Vertex {
 		Vertex{
 			pos: unsafe { mem::transmute(v) },
 		}
@@ -31,7 +32,7 @@ pub struct Mesh {
 	index_buffer: IndexBuffer<u32>,
 }
 impl Mesh {
-	pub fn render(&self, r: &mut Render, model: Matrix4<f32>, color: Color) {
+	pub fn render(&self, r: &mut Render, model: Mat4<f32>, color: Color) {
 		r.render_simple(&self.vertex_buffer, &self.index_buffer, model, color);
 	}
 	
@@ -89,14 +90,14 @@ impl Mesh {
 		let i = vs.len() as u32;
 		
 		let cube_vs: &[Vertex] = &[
-			vec3(-0.5,  0.5, -0.5).into(),
-			vec3( 0.5,  0.5, -0.5).into(),
-			vec3( 0.5, -0.5, -0.5).into(),
-			vec3(-0.5, -0.5, -0.5).into(),
-			vec3(-0.5,  0.5,  0.5).into(),
-			vec3( 0.5,  0.5,  0.5).into(),
-			vec3( 0.5, -0.5,  0.5).into(),
-			vec3(-0.5, -0.5,  0.5).into(),
+			Vec3::new(-0.5,  0.5, -0.5).into(),
+			Vec3::new( 0.5,  0.5, -0.5).into(),
+			Vec3::new( 0.5, -0.5, -0.5).into(),
+			Vec3::new(-0.5, -0.5, -0.5).into(),
+			Vec3::new(-0.5,  0.5,  0.5).into(),
+			Vec3::new( 0.5,  0.5,  0.5).into(),
+			Vec3::new( 0.5, -0.5,  0.5).into(),
+			Vec3::new(-0.5, -0.5,  0.5).into(),
 		];
 		
 		vs.extend(cube_vs);
@@ -115,7 +116,12 @@ impl Mesh {
 		// Now scale vertices to proper locations.
 		// (by normalising them)
 		for v in vs.iter_mut() {
-			*v = Vertex::from(Vector3::from(v.pos).normalize());
+			let pos: Vec3<f32> = {
+				let add: &[f32;3] = &v.pos;
+				let into: &Vec3<f32> = add.into();
+				*into
+			};
+			*v = Vertex::from(pos.normalize());
 		}
 	}
 	
@@ -123,12 +129,12 @@ impl Mesh {
 		// v0 is top
 		// v1 through v4 are vertices going anti-clockwise (looking down) around the dodecahedron
 		// v5 is bottom
-		let v0 = vec3( 0.0,  0.5,  0.0);
-		let v1 = vec3( 0.0,  0.0,  0.5);
-		let v2 = vec3( 0.5,  0.0,  0.0);
-		let v3 = vec3( 0.0,  0.0, -0.5);
-		let v4 = vec3(-0.5,  0.0,  0.0);
-		let v5 = vec3( 0.0, -0.5,  0.0);
+		let v0 = Vec3::new( 0.0,  0.5,  0.0);
+		let v1 = Vec3::new( 0.0,  0.0,  0.5);
+		let v2 = Vec3::new( 0.5,  0.0,  0.0);
+		let v3 = Vec3::new( 0.0,  0.0, -0.5);
+		let v4 = Vec3::new(-0.5,  0.0,  0.0);
+		let v5 = Vec3::new( 0.0, -0.5,  0.0);
 		
 		let start_len = vs.len() as u32;
 		
@@ -151,18 +157,18 @@ impl Mesh {
 		}
 	}
 	
-	fn gen_dodec_face_tris(vs: &mut Vec<Vertex>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
+	fn gen_dodec_face_tris(vs: &mut Vec<Vertex>, detail: u32, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>) {
 		let rows = 2u32.pow(detail) + 1;
 		for row in 0..rows {
 			// Create row + 1 vertices.
 			let k_row = row as f32 / (rows - 1) as f32;
-			let start = v0.lerp(v1, k_row); // Pos of start of row
-			let end   = v0.lerp(v2, k_row); // Pos of end of row
+			let start = util::lerp(v0, v1, k_row); // Pos of start of row
+			let end   = util::lerp(v0, v2, k_row); // Pos of end of row
 			
 			let cols = row + 1;
 			for col in 0..cols {
 				let k_col = if cols != 1 { col as f32 / (cols - 1) as f32 } else { 0.5 };
-				let v = start.lerp(end, k_col);
+				let v = util::lerp(start, end, k_col);
 				vs.push(v.into());
 			}
 		}

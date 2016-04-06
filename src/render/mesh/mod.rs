@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use cgmath::Matrix4;
+use na::Mat4;
 
 use super::{Color, Render};
 
@@ -10,7 +10,7 @@ pub use self::simple::Vertex as SimpleVertex;
 mod simple;
 
 pub trait RenderableMesh {
-	fn render(&self, r: &mut Render, model: Matrix4<f32>);
+	fn render(&self, r: &mut Render, model: Mat4<f32>);
 }
 
 pub struct ColoredMesh {
@@ -26,7 +26,7 @@ impl ColoredMesh {
 	}
 }
 impl RenderableMesh for ColoredMesh {
-	fn render(&self, r: &mut Render, model: Matrix4<f32>) {
+	fn render(&self, r: &mut Render, model: Mat4<f32>) {
 		self.mesh.render(r, model, self.color);
 	}
 }

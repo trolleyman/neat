@@ -1,57 +1,48 @@
 use std::rc::Rc;
 
-use cgmath::*;
+use na::{Vec3, Sim3, Eye, Rot3, Rotation, Translation, ToHomogeneous};
 
 use render::{Render, RenderableMesh};
-use collision::Aabb;
 
 #[derive(Clone)]
 pub struct Entity {
 	/// If the entity can move. (static)
 	stat: bool,
 	/// Position
-	pos: Vector3<f32>,
+	pos: Vec3<f32>,
 	/// Velocity
-	vel: Vector3<f32>,
+	vel: Vec3<f32>,
 	/// Weight of the entity
 	weight: f32,
 	/// Visible mesh
 	mesh: Rc<RenderableMesh>,
-	/// Bounding Box when the entity is at 0,0 with scale 1.0 and no rotation.
-	bb: Aabb,
 	/// Transform
-	trans: Decomposed<Vector3<f32>, Quaternion<f32>>,
+	trans: Sim3<f32>,
 }
 impl Entity {
-	pub fn new(pos: Vector3<f32>, vel: Vector3<f32>, weight: f32, mesh: Rc<RenderableMesh>, bb: Aabb, stat: bool) -> Entity {
+	pub fn new(pos: Vec3<f32>, vel: Vec3<f32>, weight: f32, mesh: Rc<RenderableMesh>, stat: bool) -> Entity {
 		Entity {
 			stat: stat,
 			pos: pos,
 			vel: vel,
 			weight: weight,
 			mesh: mesh,
-			bb: bb,
-			trans: Decomposed{scale:1.0, rot:Quaternion::one(), disp:pos},
+			trans: Sim3::new_with_rotmat(pos, Rot3::new_identity(3), 1.0),
 		}
 	}
 	
-	/// Returns the bounding box the entity has in it's current position and at it's current scale.
-	pub fn bounding_box(&self) -> Aabb {
-		self.bb.scale(self.trans.scale).translate(self.trans.disp)
-	}
-	
-	/// Rotate the entity by a specified amount
-	pub fn rotate(&mut self, rot: &Quaternion<f32>) {
-		self.trans.rot.concat_self(rot);
+	/// Rotate the entity by a specified amount (axis-angle format)
+	pub fn rotate(&mut self, rot: Vec3<f32>) {
+		self.trans.isometry.append_rotation_mut(&rot);
 	}
 	
 	/// Scale the entity by a specified amount
 	pub fn scale(&mut self, scale: f32) {
-		self.trans.scale *= scale;
+		self.trans.append_scale_mut(&scale);
 	}
 	
 	/// Applies a force in a direction
-	pub fn force(&mut self, f: Vector3<f32>) {
+	pub fn force(&mut self, f: Vec3<f32>) {
 		if !self.stat {
 			self.vel = self.vel + (f / self.weight);
 		}
@@ -60,16 +51,16 @@ impl Entity {
 	/// Processes a tick for the entity
 	pub fn tick(&mut self, dt: f32) {
 		self.pos = self.pos + self.vel * dt;
-		self.trans.disp = self.pos;
+		self.trans.isometry.set_translation(self.pos);
 	}
 	
 	/// Returns the position of the object in space
-	pub fn pos(&self) -> Vector3<f32> {
+	pub fn pos(&self) -> Vec3<f32> {
 		self.pos
 	}
 	
 	/// Returns the velocity of the object
-	pub fn vel(&self) -> Vector3<f32> {
+	pub fn vel(&self) -> Vec3<f32> {
 		self.vel
 	}
 	
@@ -80,10 +71,6 @@ impl Entity {
 	
 	/// Renders the entity
 	pub fn render(&self, r: &mut Render) {
-		let model = 
-			  Matrix4::from_translation(self.trans.disp)
-			* Matrix4::from_scale(self.trans.scale)
-			* Matrix4::from(*Basis3::from(self.trans.rot).as_ref());
-		self.mesh.render(r, model);
+		self.mesh.render(r, self.trans.to_homogeneous());
 	}
 }

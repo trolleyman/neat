@@ -1,9 +1,7 @@
 use std::time::Duration;
-use std::mem;
 
-use cgmath::*;
+use na::{Norm, Vec3};
 
-use collision;
 use game::{KeyboardState, Entity};
 use render::{Camera, Render};
 use settings::Settings;
@@ -41,27 +39,27 @@ impl State {
 		let speed = 2.0 * dt;
 		
 		// Translate camera based on keyboard state
-		let mut trans = vec3(0.0, 0.0, 0.0);
+		let mut trans = Vec3::new(0.0, 0.0, 0.0);
 		if keyboard.is_pressed(&settings.forward) {
-			trans = trans + vec3(0.0, 0.0, -speed);
+			trans = trans + Vec3::new(0.0, 0.0, -speed);
 		}
 		if keyboard.is_pressed(&settings.backward) {
-			trans = trans + vec3(0.0, 0.0,  speed);
+			trans = trans + Vec3::new(0.0, 0.0,  speed);
 		}
 		if keyboard.is_pressed(&settings.left) {
-			trans = trans + vec3(-speed, 0.0, 0.0);
+			trans = trans + Vec3::new(-speed, 0.0, 0.0);
 		}
 		if keyboard.is_pressed(&settings.right) {
-			trans = trans + vec3( speed, 0.0, 0.0);
+			trans = trans + Vec3::new( speed, 0.0, 0.0);
 		}
 		if keyboard.is_pressed(&settings.up) {
-			trans = trans + vec3(0.0,  speed, 0.0);
+			trans = trans + Vec3::new(0.0,  speed, 0.0);
 		}
 		if keyboard.is_pressed(&settings.down) {
-			trans = trans + vec3(0.0, -speed, 0.0);
+			trans = trans + Vec3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
-		if trans != vec3(0.0, 0.0, 0.0) {
+		if trans != Vec3::new(0.0, 0.0, 0.0) {
 			debug!("Camera moved: {:?}", trans);
 		}
 		
@@ -81,7 +79,7 @@ impl State {
 					let mut o = &mut self.entities[j];
 					// Get unit vector from o to attractor
 					let mut v = attractor.pos() - o.pos();
-					let len_sq = v.length2();
+					let len_sq = v.norm();
 					v = v / len_sq.sqrt();
 					
 					// Apply a force towards the attractor.
@@ -97,15 +95,7 @@ impl State {
 			}*/
 			
 			// Collision check
-			for i in 0..self.entities.len() {
-				for j in i+1..self.entities.len() {
-					// I know this is safe as i and j are disjoint.
-					debug_assert!(i != j);
-					let i: &mut Entity = unsafe { mem::transmute::<*mut _, &mut _>(&mut self.entities[i] as *mut _) };
-					let j: &mut Entity = unsafe { mem::transmute::<*mut _, &mut _>(&mut self.entities[j] as *mut _) };
-					collision::calc_collision(i, j);
-				}
-			}
+			// TODO
 
 			// Tick entities
 			for e in &mut self.entities {

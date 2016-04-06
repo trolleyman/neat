@@ -10,10 +10,11 @@ use glium::backend::Context;
 use glium::texture::{RawImage2d, ClientFormat, UncompressedFloatFormat, MipmapsOption};
 use rusttype::*;
 use rusttype::gpu_cache::{Cache, CacheWriteErr};
-use cgmath::{SquareMatrix, Matrix4, vec3};
+use na::{Vec3, Mat4, Eye};
 use unicode_normalization::UnicodeNormalization;
 
 use render::Color;
+use util;
 use vfs::{load_shader, load_font};
 
 struct State {
@@ -215,14 +216,14 @@ fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVerte
 fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[(char, PositionedGlyph)], color: Color) {
 	// Calculate matrix
 	let (w, h) = size;
-	let mut mat = Matrix4::<f32>::identity();
-	mat = mat * Matrix4::from_nonuniform_scale(1.0, -1.0, 1.0);
-	mat = mat * Matrix4::from_translation(vec3(-1.0, -1.0, 0.0));
-	mat = mat * Matrix4::from_nonuniform_scale(2.0 / w, 2.0 / h, 1.0);
+	let mut mat = Mat4::new_identity(4);
+	mat = mat * util::mat4_scale(Vec3::new(1.0, -1.0, 1.0));
+	mat = mat * util::mat4_translation(Vec3::new(-1.0, -1.0, 0.0));
+	mat = mat * util::mat4_scale(Vec3::new(2.0 / w, 2.0 / h, 1.0));
 	draw_glyphs_mat(ctx, surface, shader, font_tex, cache, mat, glyphs, color)
 }
 
-fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Matrix4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
+fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Mat4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
 	cache.clear_queue();
 	for &(_, ref glyph) in glyphs.iter() {
 		cache.queue_glyph(0, glyph.clone());
@@ -259,7 +260,7 @@ fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Prog
 				&uniform!{
 					tex:   &*font_tex,
 					color: <Color as Into<[f32; 3]>>::into(color),
-					mat:   <Matrix4<f32> as Into<[[f32; 4]; 4]>>::into(mat),
+					mat:   *mat.as_ref(),
 				},
 				&DrawParameters {
 					blend: Blend {

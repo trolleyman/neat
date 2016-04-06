@@ -6,8 +6,9 @@ use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
 use glium::*;
 use glutin::{CursorState, WindowBuilder, Window};
-use cgmath::{self, Matrix4, SquareMatrix};
+use na::{Mat4, Persp3, Eye};
 
+use util;
 use vfs::load_shader;
 use render::{FontRender, Camera, Color, SimpleVertex};
 
@@ -43,7 +44,7 @@ pub struct Render {
 	ctx: Rc<Context>,
 	frame: Frame,
 	
-	projection: Matrix4<f32>,
+	projection: Mat4<f32>,
 	camera: Camera,
 	
 	simple_shader: Program,
@@ -96,7 +97,7 @@ impl Render {
 			ctx: ctx,
 			frame: frame,
 			
-			projection: Matrix4::identity(),
+			projection: Mat4::new_identity(4),
 			camera: camera,
 			
 			simple_shader: simple_shader,
@@ -126,7 +127,7 @@ impl Render {
 	/// Resizes the renderer
 	pub fn resize(&mut self) {
 		let (w, h) = self.frame.get_dimensions();
-		self.projection = cgmath::perspective(cgmath::deg(90.0), w as f32 / h as f32, 0.001, 1000.0);
+		self.projection = Persp3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_mat();
 	}
 	
 	pub fn get_window(&self) -> Option<WinRef> {
@@ -165,15 +166,15 @@ impl Render {
 		Render::clear_frame(&mut self.frame);
 	}
 	
-	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u32>, model: Matrix4<f32>, col: Color) {
+	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u32>, model: Mat4<f32>, col: Color) {
 		self.frame.draw(
 			vs,
 			is,
 			&self.simple_shader,
 			&uniform! {
-				projection: unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.projection) },
-				view:       unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()) },
-				model:      unsafe { mem::transmute::<Matrix4<f32>, [[f32; 4]; 4]>(model) },
+				projection: unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(self.projection) },
+				view:       unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()) },
+				model:      unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(model) },
 				color:      unsafe { mem::transmute::<Color, [f32; 3]>(col) },
 			},
 			&DrawParameters {
