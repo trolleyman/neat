@@ -1,7 +1,9 @@
 use std::rc::Rc;
 use std::mem;
 use std::process::exit;
+use std::ptr::null_mut;
 
+use winapi::winuser;
 use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
 use glium::*;
@@ -19,17 +21,18 @@ cfg_if! {
 			use user32;
 			unsafe {
 				let hwnd = win.get_hwnd() as *mut _;
-				user32::SetActiveWindow(hwnd);
+				user32::SetWindowPos(hwnd, null_mut(), 0, 0, 0, 0, winuser::SWP_SHOWWINDOW | winuser::SWP_NOMOVE | winuser::SWP_NOSIZE);
 				user32::SetForegroundWindow(hwnd);
+				user32::SetActiveWindow(hwnd);
 			};
 		}
 	} else if #[cfg(target_os = "macos")] {
 		fn focus_window(win: &Window) {
-			
+			// TODO
 		}
 	} else if #[cfg(target_os = "linux")] {
 		fn focus_window(win: &Window) {
-			
+			// TODO
 		}
 	} else {
 		fn focus_window(win: &Window) {

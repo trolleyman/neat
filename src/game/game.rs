@@ -59,7 +59,7 @@ impl Game {
 			running: true,
 			keyboard_state: KeyboardState::new(),
 			mouse_state: (0, 0),
-			focused: false,
+			focused: true,
 			step: false,
 		}
 	}
