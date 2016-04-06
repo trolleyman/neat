@@ -35,6 +35,11 @@ impl State {
 	}
 	
 	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
+		if !settings.paused {
+			for (i, e) in self.entities.iter().enumerate() {
+				info!("{:4}: pos: {:.4},{:.4},{:.4} vel: {:.4},{:.4},{:.4}", i, e.pos().x, e.pos().y, e.vel().x, e.pos().z, e.vel().y, e.vel().z);
+			}
+		}
 		// m/s
 		let speed = 2.0 * dt;
 		

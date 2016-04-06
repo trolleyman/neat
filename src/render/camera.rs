@@ -4,7 +4,7 @@ use na::{Vec3, Mat4, UnitQuat, Eye, ToHomogeneous, Rot3};
 
 use util::{self, clamp};
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct Camera {
 	pos: Vec3<f32>,
 	yrot: f32,

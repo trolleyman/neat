@@ -27,13 +27,18 @@ impl Entity {
 			vel: vel,
 			weight: weight,
 			mesh: mesh,
-			trans: Sim3::new_with_rotmat(pos, Rot3::new_identity(3), 1.0),
+			trans: Sim3::new_with_rotmat(-pos, Rot3::new_identity(3), 1.0),
 		}
 	}
 	
 	/// Rotate the entity by a specified amount (axis-angle format)
 	pub fn rotate(&mut self, rot: Vec3<f32>) {
-		self.trans.isometry.append_rotation_mut(&rot);
+		self.trans.isometry.append_rotation_mut(&rot); // FIXME: rotation
+	}
+	
+	/// Set the entity's scale to a specified amount
+	pub fn set_scale(&mut self, scale: f32) {
+		self.trans.set_scale(scale);
 	}
 	
 	/// Scale the entity by a specified amount

@@ -19,6 +19,7 @@ pub struct Game {
 	keyboard_state: KeyboardState,
 	mouse_state: (i32, i32),
 	focused: bool,
+	step: bool,
 }
 impl Game {
 	pub fn new(settings: Settings, cam: Camera) -> Game {
@@ -36,11 +37,11 @@ impl Game {
 			state.add_entity(sun);
 			
 			let mut earth = Entity::new(Vec3::new(10.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -4.0), 5.0, Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), false);
-			earth.scale(0.3684);
+			earth.set_scale(0.3684);
 			state.add_entity(earth);
 			
 			let mut mercury = Entity::new(Vec3::new(2.5, 0.0, 0.0), Vec3::new(0.0, 0.0, -10.0), 0.05, Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), false);
-			mercury.scale(0.07937);
+			mercury.set_scale(0.07937);
 			state.add_entity(mercury);
 			state
 		};
@@ -59,6 +60,7 @@ impl Game {
 			keyboard_state: KeyboardState::new(),
 			mouse_state: (0, 0),
 			focused: false,
+			step: false,
 		}
 	}
 	
@@ -80,6 +82,11 @@ impl Game {
 			let (mp_x, mp_y) = (mp_x as i32 / 2, mp_y as i32 / 2);
 			if self.focused {
 				self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
+			}
+			
+			if self.step {
+				self.step = false;
+				self.settings.paused = true;
 			}
 			
 			let mut resized = false;
@@ -111,12 +118,19 @@ impl Game {
 						if code == VirtualKeyCode::Escape {
 							focus = Some(false);
 						}
-						if key_state == ElementState::Pressed && Some(code) == self.settings.pause_key {
+						if key_state == ElementState::Pressed && Some(code) == self.settings.physics_pause {
 							self.settings.paused = !self.settings.paused;
 							if self.settings.paused {
 								info!("Game paused");
 							} else {
 								info!("Game resumed");
+							}
+						}
+						if key_state == ElementState::Pressed && Some(code) == self.settings.physics_step {
+							if self.settings.paused {
+								self.settings.paused = false;
+								self.step = true;
+								info!("Game stepped");
 							}
 						}
 					},
