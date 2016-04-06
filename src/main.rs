@@ -13,8 +13,6 @@ extern crate unicode_normalization;
 extern crate cfg_if;
 
 #[cfg(windows)]
-extern crate winapi;
-#[cfg(windows)]
 extern crate user32;
 
 use std::io::{self, Write};

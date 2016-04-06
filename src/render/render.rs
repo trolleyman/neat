@@ -1,9 +1,7 @@
 use std::rc::Rc;
 use std::mem;
 use std::process::exit;
-use std::ptr::null_mut;
 
-use winapi::winuser;
 use glium::backend::{Context, Facade};
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
 use glium::*;
@@ -16,27 +14,35 @@ use render::{FontRender, Camera, Color, SimpleVertex};
 
 cfg_if! {
 	if #[cfg(target_os = "windows")] {
-		fn focus_window(win: &Window) {
+		fn focus_window(win: &Window) -> Result<(), ()> {
 			use glutin::os::windows::WindowExt;
 			use user32;
 			unsafe {
 				let hwnd = win.get_hwnd() as *mut _;
-				user32::SetWindowPos(hwnd, null_mut(), 0, 0, 0, 0, winuser::SWP_SHOWWINDOW | winuser::SWP_NOMOVE | winuser::SWP_NOSIZE);
-				user32::SetForegroundWindow(hwnd);
-				user32::SetActiveWindow(hwnd);
-			};
+				// FIXME: God damn focus keeps on failing. It grabs input, but doesn't get to the top of the z-order.
+				let fail = user32::SetForegroundWindow(hwnd) == 0;
+				if fail {
+					warn!("Focus failed");
+					Err(())
+				} else {
+					Ok(())
+				}
+			}
 		}
 	} else if #[cfg(target_os = "macos")] {
-		fn focus_window(win: &Window) {
+		fn focus_window(win: &Window) -> Result<(), ()> {
 			// TODO
+			false
 		}
 	} else if #[cfg(target_os = "linux")] {
-		fn focus_window(win: &Window) {
+		fn focus_window(win: &Window) -> Result<(), ()> {
 			// TODO
+			false
 		}
 	} else {
-		fn focus_window(win: &Window) {
+		fn focus_window(win: &Window) -> Result<(), ()> {
 			// Don't do anything
+			false
 		}
 	}
 }
@@ -141,11 +147,17 @@ impl Render {
 		self.win.poll_events()
 	}
 	
-	pub fn focus(&mut self) {
-		info!("Window focused");
+	pub fn focus(&mut self) -> Result<(), ()> {
 		if let Some(win) = self.win.get_window() {
-			win.set_cursor_state(CursorState::Grab).ok();
-			focus_window(&win);
+			if focus_window(&win).is_ok() {
+				win.set_cursor_state(CursorState::Grab).ok();
+				Ok(())
+			} else {
+				win.set_cursor_state(CursorState::Normal).ok();
+				Err(())
+			}
+		} else {
+			Err(())
 		}
 	}
 	

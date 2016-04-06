@@ -65,8 +65,9 @@ impl Game {
 	}
 	
 	pub fn main_loop(&mut self) {
+		// FIXME: When starting the game the camera is skewed off to the side if the window starts focused.
 		info!("Starting game main loop");
-		self.render.focus();
+		self.focused = self.render.focus().is_ok();
 		
 		let mut last_time = Instant::now();
 		while self.running {
@@ -146,10 +147,10 @@ impl Game {
 			}
 			
 			if let Some(focus) = focus {
-				self.focused = focus;
 				if focus {
-					self.render.focus();
+					self.focused = self.render.focus().is_ok() && focus;
 				} else {
+					self.focused = focus;
 					self.render.unfocus();
 				}
 			}
