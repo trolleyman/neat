@@ -75,7 +75,7 @@ impl Render {
 			.with_title("NEAT".into())
 			.with_visibility(false)
 			.with_depth_buffer(24)
-			//.with_vsync()
+			.with_vsync()
 			.build_glium() {
 				Ok(w)  => w,
 				Err(e) => {
