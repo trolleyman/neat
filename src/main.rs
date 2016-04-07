@@ -31,7 +31,7 @@ use render::Camera;
 use game::Game;
 use settings::Settings;
 
-fn main() {
+pub fn main() {
 	let settings = Settings::from_args();
 	let log_level = if settings.verbose { LogLevelFilter::Debug } else { LogLevelFilter::Info };
 	TermLogger::init(log_level)
