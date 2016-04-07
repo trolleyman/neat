@@ -124,7 +124,7 @@ impl Game {
 					if self.ignore_next_mouse_movement {
 						self.ignore_next_mouse_movement = false;
 					} else {
-						mouse_pos = pos;	
+						mouse_pos = pos;
 					}
 				},
 				Event::Focused(b) => {

@@ -114,7 +114,7 @@ impl FontRender {
 			}
 		};
 		
-		const FONT_PATH: &'static str = "fonts/courier-new.ttf";
+		const FONT_PATH: &'static str = "fonts/consolas.ttf";
 		const FONT_INDEX: usize = 0;
 		
 		let font_collection = match load_font(FONT_PATH, FONT_INDEX) {
