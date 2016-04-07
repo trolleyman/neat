@@ -1,4 +1,3 @@
-use std::time::Duration;
 use std::rc::Rc;
 
 use glium::backend::Context;
@@ -7,7 +6,6 @@ use na::{Norm, Vec3};
 use game::{KeyboardState, Entity, GameState};
 use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
 use settings::Settings;
-use util::DurationExt;
 
 const FONT_SIZE: f32 = 24.0;
 
@@ -149,14 +147,14 @@ impl State {
 		}
 	}
 
-	pub fn render(&mut self, r: &mut Render, dt: Duration) {
+	pub fn render(&mut self, r: &mut Render, fps: u32) {
 		r.set_camera(self.camera);
 		
 		for e in self.entities.iter() {
 			e.render(r);
 		}
 		
-		r.draw_str(&format!("{}ms", dt.as_millis()), 10.0, 10.0 + FONT_SIZE, FONT_SIZE);
+		r.draw_str(&format!("{} FPS", fps), 10.0, 10.0, FONT_SIZE);
 		
 		r.swap();
 	}

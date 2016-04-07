@@ -18,6 +18,7 @@ pub struct Game {
 	mouse_state: (i32, i32),
 	focused: bool,
 	step: bool,
+	ignore_next_mouse_movement: bool,
 }
 impl Game {
 	pub fn new(settings: Settings, cam: Camera) -> Game {
@@ -41,6 +42,7 @@ impl Game {
 			mouse_state: (0, 0),
 			focused: true,
 			step: false,
+			ignore_next_mouse_movement: false,
 		}
 	}
 	
@@ -49,20 +51,30 @@ impl Game {
 		self.focused = self.render.try_focus().is_ok();
 		
 		// How long each physics timestep should be.
-		let physics_dt = Duration::from_millis(1000) / 120;
-		
-		// Ignore mouse movement this frame
-		let mut ignore_movement_frame = true;
+		let sec = Duration::new(1, 0);
+		let physics_dt = sec / 120;
 		
 		let mut lag = Duration::from_millis(0);
 		let mut previous = Instant::now();
 		
+		let mut previous_fps_count = Instant::now();
+		let mut frames = 0;
+		let mut fps = 0;
+		
 		info!("Starting game main loop");
 		while self.running {
+			// Process timing stuff
 			let current = Instant::now();
 			let elapsed = current - previous;
 			previous = current;
 			lag += elapsed;
+			
+			// Calculate fps
+			if current - previous_fps_count >= sec {
+				previous_fps_count = Instant::now();
+				fps = frames;
+				frames = 0;
+			}
 			
 			// Process events
 			self.process_events();
@@ -77,8 +89,8 @@ impl Game {
 			
 			// Render to screen
 			// TODO: Render using seperate thread (mutexes?).
-			self.current_state.render(&mut self.render, elapsed);
-			//ignore_movement_frame = false;
+			self.current_state.render(&mut self.render, fps);
+			frames += 1;
 		}
 	}
 	
@@ -104,7 +116,11 @@ impl Game {
 					return; // Ignore all other events.
 				},
 				Event::MouseMoved(pos) => {
-					mouse_pos = pos;
+					if self.ignore_next_mouse_movement {
+						self.ignore_next_mouse_movement = false;
+					} else {
+						mouse_pos = pos;	
+					}
 				},
 				Event::Focused(b) => {
 					self.focused = b;
@@ -120,7 +136,7 @@ impl Game {
 						if !self.focused {
 							self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
 							mouse_pos = (mp_x, mp_y);
-							//self.ignore_movement_frame = true;
+							self.ignore_next_mouse_movement = true;
 							self.focused = true;
 						}
 					}
