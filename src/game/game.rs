@@ -65,9 +65,10 @@ impl Game {
 	}
 	
 	pub fn main_loop(&mut self) {
-		// FIXME: When starting the game the camera is skewed off to the side if the window starts focused.
 		info!("Starting game main loop");
 		self.focused = self.render.focus().is_ok();
+		// Ignore mouse movement this frame
+		let mut ignore_movement_frame = true;
 		
 		let mut last_time = Instant::now();
 		while self.running {
@@ -105,7 +106,6 @@ impl Game {
 					},
 					Event::MouseInput(_mouse_state, button) => {
 						if button == MouseButton::Left {
-							// FIXME: Breaks when user clicks on title bar
 							self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
 							mouse_pos = (mp_x, mp_y);
 							focus = Some(true);
@@ -155,7 +155,7 @@ impl Game {
 				}
 			}
 			
-			if self.focused {
+			if self.focused && !ignore_movement_frame {
 				let xdiff = mouse_pos.0 - mp_x;
 				let ydiff = mouse_pos.1 - mp_y;
 				//println!("mouse_pos: {:?}, mp_x: {}, mp_y: {}, xdiff: {}, ydiff: {}", mouse_pos, mp_x, mp_y, xdiff, ydiff);
@@ -168,6 +168,7 @@ impl Game {
 			self.tick(dt.as_secs_partial() as f32);
 			
 			//sleep(Duration::from_millis(10));
+			ignore_movement_frame = false;
 		}
 	}
 	
