@@ -34,6 +34,7 @@ impl State {
 	pub fn new(x: f32, y: f32, scale: f32, font: &Font) -> State {
 		let scale = Scale::uniform(scale);
 		let v_metrics = font.v_metrics(scale);
+		let y = y + v_metrics.ascent;
 		State{
 			init_x: x,
 			_init_y: y,
