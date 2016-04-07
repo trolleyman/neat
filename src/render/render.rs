@@ -32,17 +32,17 @@ cfg_if! {
 	} else if #[cfg(target_os = "macos")] {
 		fn focus_window(win: &Window) -> Result<(), ()> {
 			// TODO
-			false
+			Err(())
 		}
 	} else if #[cfg(target_os = "linux")] {
 		fn focus_window(win: &Window) -> Result<(), ()> {
 			// TODO
-			false
+			Err(())
 		}
 	} else {
 		fn focus_window(win: &Window) -> Result<(), ()> {
 			// Don't do anything
-			false
+			Err(())
 		}
 	}
 }
@@ -147,7 +147,7 @@ impl Render {
 		self.win.poll_events()
 	}
 	
-	pub fn focus(&mut self) -> Result<(), ()> {
+	pub fn try_focus(&mut self) -> Result<(), ()> {
 		if let Some(win) = self.win.get_window() {
 			if focus_window(&win).is_ok() {
 				win.set_cursor_state(CursorState::Grab).ok();
@@ -161,9 +161,12 @@ impl Render {
 		}
 	}
 	
-	pub fn unfocus(&mut self) {
-		info!("Window unfocused");
-		self.win.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
+	pub fn input_grab(&self) {
+		self.get_window().map(|w| w.set_cursor_state(CursorState::Grab));
+	}
+	
+	pub fn input_normal(&self) {
+		self.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
 	}
 	
 	pub fn context(&mut self) -> &Rc<Context> {

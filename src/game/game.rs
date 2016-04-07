@@ -46,7 +46,7 @@ impl Game {
 	
 	pub fn main_loop(&mut self) {
 		info!("Starting game main loop");
-		self.focused = self.render.focus().is_ok();
+		self.focused = self.render.try_focus().is_ok();
 		// Ignore mouse movement this frame
 		let mut ignore_movement_frame = true;
 		
@@ -72,7 +72,6 @@ impl Game {
 			}
 			
 			let mut resized = false;
-			let mut focus = None;
 			let mut mouse_pos = (mp_x, mp_y);
 			for e in self.render.poll_events() {
 				trace!("Event recieved: {:?}", e);
@@ -84,11 +83,23 @@ impl Game {
 					Event::MouseMoved(pos) => {
 						mouse_pos = pos;
 					},
-					Event::MouseInput(_mouse_state, button) => {
-						if button == MouseButton::Left {
-							self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
-							mouse_pos = (mp_x, mp_y);
-							focus = Some(true);
+					Event::Focused(b) => {
+						self.focused = b;
+						if b {
+							info!("Window focused");
+						} else {
+							info!("Window unfocused");
+							self.focused = false;
+						}
+					},
+					Event::MouseInput(mouse_state, button) => {
+						if mouse_state == ElementState::Pressed && button == MouseButton::Left {
+							if !self.focused {
+								self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
+								mouse_pos = (mp_x, mp_y);
+								ignore_movement_frame = true;
+								self.focused = true;
+							}
 						}
 					},
 					Event::Resized(_, _) => {
@@ -97,7 +108,7 @@ impl Game {
 					Event::KeyboardInput(key_state, _, Some(code)) => {
 						self.keyboard_state.process_event(key_state, code);
 						if code == VirtualKeyCode::Escape {
-							focus = Some(false);
+							self.focused = false;
 						}
 						if key_state == ElementState::Pressed && Some(code) == self.settings.physics_pause {
 							self.settings.paused = !self.settings.paused;
@@ -126,13 +137,10 @@ impl Game {
 				self.current_state.render(&mut self.render, dt);
 			}
 			
-			if let Some(focus) = focus {
-				if focus {
-					self.focused = self.render.focus().is_ok() && focus;
-				} else {
-					self.focused = focus;
-					self.render.unfocus();
-				}
+			if self.focused {
+				self.render.input_grab();
+			} else {
+				self.render.input_normal();
 			}
 			
 			if self.focused && !ignore_movement_frame {

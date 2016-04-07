@@ -85,7 +85,7 @@ impl State {
 	
 	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
 		// m/s
-		let speed = 2.0 * dt;
+		let speed = 4.0 * dt;
 		
 		// Translate camera based on keyboard state
 		let mut trans = Vec3::new(0.0, 0.0, 0.0);
