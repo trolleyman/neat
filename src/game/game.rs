@@ -109,7 +109,12 @@ impl Game {
 		let mut resized = false;
 		let mut mouse_pos = (mp_x, mp_y);
 		for e in self.render.poll_events() {
-			debug!("Event recieved: {:?}", e);
+			if let &Event::MouseMoved(_) = &e {
+				trace!("Event recieved: {:?}", e);
+			} else {
+				debug!("Event recieved: {:?}", e);
+			}
+			
 			match e {
 				Event::Closed => {
 					self.running = false;
@@ -169,7 +174,7 @@ impl Game {
 		}
 		
 		if resized {
-			info!("Resizing renderer");
+			debug!("Resizing renderer");
 			// Resize
 			self.render.resize();
 		}
