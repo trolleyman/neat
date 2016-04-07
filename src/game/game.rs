@@ -109,7 +109,7 @@ impl Game {
 		let mut resized = false;
 		let mut mouse_pos = (mp_x, mp_y);
 		for e in self.render.poll_events() {
-			trace!("Event recieved: {:?}", e);
+			debug!("Event recieved: {:?}", e);
 			match e {
 				Event::Closed => {
 					self.running = false;
@@ -123,7 +123,6 @@ impl Game {
 					}
 				},
 				Event::Focused(b) => {
-					self.focused = b;
 					if b {
 						info!("Window focused");
 					} else {

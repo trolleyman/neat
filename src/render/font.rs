@@ -154,7 +154,6 @@ impl FontRender {
 	
 	/// Draw a string at x, y on the screen scaled by scale.
 	pub fn draw_str<S: Surface>(&mut self, surface: &mut S, s: &str, x: f32, y: f32, screen_w: f32, screen_h: f32, scale: f32, color: Color) {
-		trace!("Drawing string: {}", s);
 		let font = match self.font_collection.font_at(self.font_index) {
 			Some(f) => f,
 			None => {
