@@ -19,12 +19,12 @@ cfg_if! {
 			use user32;
 			unsafe {
 				let hwnd = win.get_hwnd() as *mut _;
-				// FIXME: God damn focus keeps on failing. It grabs input, but doesn't get to the top of the z-order.
 				let fail = user32::SetForegroundWindow(hwnd) == 0;
 				if fail {
 					warn!("Focus failed");
 					Err(())
 				} else {
+					user32::SetActiveWindow(hwnd);
 					Ok(())
 				}
 			}

@@ -182,7 +182,7 @@ impl Game {
 		if n == 0 {
 			return;
 		}
-		info!("Game tick: {}s ({} iterations)", dt, n);
+		trace!("Game tick: {}s ({} iterations)", dt, n);
 		// Tick next state
 		for _ in 0..n {
 			self.next_state.tick(dt, &self.settings, &self.keyboard_state, self.mouse_state);
