@@ -20,12 +20,14 @@ impl DurationExt for Duration {
 }
 
 pub fn clamp<T: PartialOrd>(v: T, min: T, max: T) -> T {
-	if v < min {
-		min
-	} else if v > max {
-		max
+	if v > min {
+		if v < max {
+			v
+		} else {
+			max
+		}
 	} else {
-		v
+		min
 	}
 }
 

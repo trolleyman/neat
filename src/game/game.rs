@@ -1,11 +1,9 @@
-use std::time::{Instant};
-use std::rc::Rc;
+use std::time::Instant;
 
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
-use na::Vec3;
 
-use game::{GameState, KeyboardState, Entity};
-use render::{Color, Render, SimpleMesh, ColoredMesh, Camera};
+use game::{GameState, KeyboardState};
+use render::{Render, Camera};
 use settings::Settings;
 use util::DurationExt;
 
@@ -26,25 +24,7 @@ impl Game {
 		let mut render = Render::new(cam);
 		info!("Initialized renderer");
 		
-		let state = {
-			let sphere = Rc::new(SimpleMesh::sphere(render.context(), 4));
-			let mut state = GameState::new(cam);
-			//state.add_entity(Entity::new(Vec3::new(5.0, 0.0,  0.0), Vec3::new(0.0, 1.0, 0.0), 1.0, Color::RED  , sphere.clone()));
-			//state.add_entity(Entity::new(Vec3::new(0.0, 0.0, -5.0), Vec3::new(1.0, 0.0, 0.0), 1.0, Color::GREEN, sphere.clone()));
-			//state.add_entity(Entity::new(Vec3::new(0.0, 5.0,  0.0), Vec3::new(0.0, 0.0, 1.0), 1.0, Color::BLUE , sphere.clone()));
-						
-			let sun = Entity::new(Vec3::new( 0.0, 0.0, 0.0), Vec3::new(0.0, 0.0,  0.2), 100.0, Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW)), false);
-			state.add_entity(sun);
-			
-			let mut earth = Entity::new(Vec3::new(10.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -4.0), 5.0, Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN)), false);
-			earth.set_scale(0.3684);
-			state.add_entity(earth);
-			
-			let mut mercury = Entity::new(Vec3::new(2.5, 0.0, 0.0), Vec3::new(0.0, 0.0, -10.0), 0.05, Rc::new(ColoredMesh::new(sphere.clone(), Color::RED)), false);
-			mercury.set_scale(0.07937);
-			state.add_entity(mercury);
-			state
-		};
+		let state = GameState::gen_balls(render.context(), cam);
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)
 	}

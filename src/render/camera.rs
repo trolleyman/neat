@@ -2,7 +2,7 @@ use std::f32;
 
 use na::{Vec3, Mat4, UnitQuat, Eye, ToHomogeneous, Rot3};
 
-use util::{self, clamp};
+use util;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Camera {
@@ -64,7 +64,7 @@ impl Camera {
 			self.xrot += f32::consts::PI * 2.;
 		}
 		
-		self.yrot = clamp(self.yrot, f32::consts::PI / -2., f32::consts::PI / 2.);
+		self.yrot = util::clamp(self.yrot, f32::consts::PI / -2., f32::consts::PI / 2.);
 		
 		self.calculate_view_matrix();
 	}

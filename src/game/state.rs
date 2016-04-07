@@ -1,25 +1,74 @@
 use std::time::Duration;
+use std::rc::Rc;
 
+use glium::backend::Context;
 use na::{Norm, Vec3};
 
-use game::{KeyboardState, Entity};
-use render::{Camera, Render};
+use game::{KeyboardState, Entity, GameState};
+use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
 use settings::Settings;
 use util::DurationExt;
 
 const FONT_SIZE: f32 = 24.0;
 
+/// Gravity type of the simulation
+#[derive(Copy, Clone)]
+pub enum Gravity {
+	/// Each object attracts each other object
+	Relative,
+	/// Each object is attracted in a constant direction
+	Constant(Vec3<f32>),
+}
+
 #[derive(Clone)]
 pub struct State {
 	entities: Vec<Entity>,
 	camera: Camera,
+	gravity: Gravity,
 }
 impl State {
-	pub fn new(cam: Camera) -> State {
+	pub fn new(cam: Camera, g: Gravity) -> State {
 		State {
 			entities: Vec::new(),
 			camera: cam,
+			gravity: g,
 		}
+	}
+	
+	pub fn gen_balls(ctx: &Rc<Context>, cam: Camera) -> State {
+		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
+		
+		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
+		let green = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
+		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
+		
+		let mut state = GameState::new(cam, Gravity::Relative);
+		state.add_entity(Entity::dynamic(Vec3::new(5.0, 0.0,  0.0), Vec3::new(0.0, 1.0, -1.0), 1.0, red));
+		state.add_entity(Entity::dynamic(Vec3::new(0.0, 0.0, -5.0), Vec3::new(1.0, -1.0, 0.0), 1.0, green));
+		state.add_entity(Entity::dynamic(Vec3::new(0.0, 5.0,  0.0), Vec3::new(-1.0, 0.0, 1.0), 1.0, blue));
+		state
+	}
+	
+	pub fn gen_solar(ctx: &Rc<Context>, cam: Camera) -> State {
+		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
+		
+		let yellow = Rc::new(ColoredMesh::new(sphere.clone(), Color::YELLOW));
+		let green  = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
+		let red    = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
+		
+		let mut state = GameState::new(cam, Gravity::Relative);
+		let sun = Entity::dynamic(Vec3::new( 0.0, 0.0, 0.0), Vec3::new(0.0, 0.0, 1.7505), 100.0, yellow);
+		state.add_entity(sun);
+		
+		let mut earth = Entity::dynamic(Vec3::new(10.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -35.0), 5.0, green);
+		earth.set_scale(0.3684);
+		state.add_entity(earth);
+		
+		let mut mercury = Entity::dynamic(Vec3::new(4.0, 0.0, 0.0), Vec3::new(0.0, 0.0, -15.0), 0.05, red);
+		mercury.set_scale(0.07937);
+		state.add_entity(mercury);
+		
+		state
 	}
 	
 	pub fn camera(&self) -> &Camera {
@@ -35,11 +84,6 @@ impl State {
 	}
 	
 	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
-		if !settings.paused {
-			for (i, e) in self.entities.iter().enumerate() {
-				info!("{:4}: pos: {:.4},{:.4},{:.4} vel: {:.4},{:.4},{:.4}", i, e.pos().x, e.pos().y, e.vel().x, e.pos().z, e.vel().y, e.vel().z);
-			}
-		}
 		// m/s
 		let speed = 2.0 * dt;
 		

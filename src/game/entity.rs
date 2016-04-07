@@ -27,8 +27,16 @@ impl Entity {
 			vel: vel,
 			weight: weight,
 			mesh: mesh,
-			trans: Sim3::new_with_rotmat(-pos, Rot3::new_identity(3), 1.0),
+			trans: Sim3::new_with_rotmat(pos, Rot3::new_identity(3), 1.0),
 		}
+	}
+	
+	pub fn dynamic(pos: Vec3<f32>, vel: Vec3<f32>, weight: f32, mesh: Rc<RenderableMesh>) -> Entity {
+		Entity::new(pos, vel, weight, mesh, false)
+	}
+	/// Creates a static entity
+	pub fn stat(pos: Vec3<f32>, vel: Vec3<f32>, weight: f32, mesh: Rc<RenderableMesh>) -> Entity {
+		Entity::new(pos, vel, weight, mesh, true)
 	}
 	
 	/// Rotate the entity by a specified amount (axis-angle format)
@@ -56,7 +64,7 @@ impl Entity {
 	/// Processes a tick for the entity
 	pub fn tick(&mut self, dt: f32) {
 		self.pos = self.pos + self.vel * dt;
-		self.trans.isometry.set_translation(-self.pos);
+		self.trans.isometry.set_translation(self.pos);
 	}
 	
 	/// Returns the position of the object in space
