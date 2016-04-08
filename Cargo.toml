@@ -6,7 +6,8 @@ authors = ["trolleyman <cgtrolley@gmail.com>"]
 [dependencies]
 glium = "0.13.5"
 nalgebra = "0.6.0"
-nphysics3d = "0.2.0"
+ncollide = "0.7.0"
+nphysics3d = "0.2.2"
 rusttype = "0.2.0"
 unicode-normalization = "0.1.2"
 log = "0.3.6"

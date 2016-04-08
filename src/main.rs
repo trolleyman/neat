@@ -2,6 +2,7 @@
 #[macro_use]
 extern crate glium;
 extern crate nalgebra as na;
+extern crate ncollide as nc;
 extern crate nphysics3d as np;
 extern crate rusttype;
 

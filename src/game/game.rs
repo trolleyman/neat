@@ -12,7 +12,6 @@ pub struct Game {
 	settings: Settings,
 	
 	current_state: GameState,
-	next_state: GameState,
 	running: bool,
 	keyboard_state: KeyboardState,
 	mouse_state: (i32, i32),
@@ -35,8 +34,7 @@ impl Game {
 			render: render,
 			settings: settings,
 			
-			current_state: state.clone(),
-			next_state: state,
+			current_state: state,
 			running: true,
 			keyboard_state: KeyboardState::new(),
 			mouse_state: (0, 0),
@@ -205,11 +203,8 @@ impl Game {
 		trace!("Game tick: {}s ({} iterations)", dt, n);
 		// Tick next state
 		for _ in 0..n {
-			self.next_state.tick(dt, &self.settings, &self.keyboard_state, self.mouse_state);
+			self.current_state.tick(dt, &self.settings, &self.keyboard_state, self.mouse_state);
 			self.mouse_state = (0, 0);
 		}
-		
-		// TODO: Wait for mutex on current state, as it might be being accessed by the renderer.
-		self.current_state = self.next_state.clone();
 	}
 }
