@@ -87,8 +87,8 @@ impl State {
 		const MERCURY_MASS: f32 = SUN_MASS * MERCURY_SCALE;
 		let MERCURY_RADIUS: f32 = ((3.0 * MERCURY_SCALE) / (4.0 * PI)).cbrt();
 		
-		// Equalize forces (momentum = mass * velocity)
-		const SUN_VEL: f32 = (EARTH_MASS * EARTH_VEL + MERCURY_MASS * MERCURY_VEL) / SUN_MASS;
+		// Equalize forces
+		const SUN_VEL: f32 = 0.45;
 		
 		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", SUN_VEL, 1.0, SUN_MASS, SUN_RADIUS);
 		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", EARTH_VEL, EARTH_SCALE, EARTH_MASS, EARTH_RADIUS);
@@ -126,6 +126,7 @@ impl State {
 	/// Adds an entity to the world
 	pub fn add_entity(&mut self, mut body: RigidBody<f32>, e: Box<Entity>) -> u64 {
 		let id = self.next_free_id;
+		body.set_deactivation_threshold(None);
 		*body.user_data_mut() = Some(e);
 		let h = self.world.add_body(body);
 		self.bodies.insert(id, h);
