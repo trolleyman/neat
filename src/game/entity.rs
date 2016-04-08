@@ -10,6 +10,10 @@ use np::world::World;
 use game::GameState;
 use render::{Render, RenderableMesh};
 
+/// ID of the root component in an entity.
+pub type ComponentId = u32;
+pub const ROOT_ID: ComponentId = 0;
+
 pub struct Component {
 	body: RigidBody<f32>,
 	mesh: Rc<RenderableMesh>,
@@ -64,11 +68,6 @@ impl BallInSocketIds {
 	}
 }
 
-/// ID of the root component in an entity.
-#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Debug)]
-struct ComponentId(usize);
-pub const ROOT_ID: ComponentId = ComponentId(0);
-
 pub struct EntityBuilder {
 	components: Vec<Component>,
 	fixed_joints: Vec<FixedIds>,
@@ -98,11 +97,12 @@ impl EntityBuilder {
 	/// # Panics
 	/// If the ID is not valid.
 	pub fn add_fixed(&mut self, a_id: ComponentId, a_pos: Iso3<f32>, b: Component, b_pos: Iso3<f32>) -> ComponentId {
-		if a_id >= ComponentId(self.components.len()) {
+		let len = self.components.len() as ComponentId;
+		if a_id >= len {
 			panic!("a_id {:?} is not valid.", a_id);
 		}
 		
-		let b_id = ComponentId(self.components.len());
+		let b_id = len;
 		self.fixed_joints.push(FixedIds::new(a_id, a_pos, b_id, b_pos));
 		b_id
 	}
@@ -121,11 +121,12 @@ impl EntityBuilder {
 	/// # Panics
 	/// If the ID is not valid.
 	pub fn add_ball_in_socket(&mut self, a_id: ComponentId, a_pos: Iso3<f32>, b: Component, b_pos: Iso3<f32>) -> ComponentId {
-		if a_id >= ComponentId(self.components.len()) {
+		let len = self.components.len() as ComponentId;
+		if a_id >= len {
 			panic!("a_id {:?} is not valid.", a_id);
 		}
 		
-		let b_id = ComponentId(self.components.len());
+		let b_id = len;
 		self.fixed_joints.push(FixedIds::new(a_id, a_pos, b_id, b_pos));
 		b_id
 	}
@@ -161,15 +162,15 @@ impl Entity {
 		}).collect();
 		
 		let fixed_joints = fixed_joints.drain(..).map(|j| {
-			let a = components[j.a.0].body;
-			let b = components[j.b.0].body;
-			Fixed::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos))
+			let a = components[j.a as usize].body;
+			let b = components[j.b as usize].body;
+			world.add_fixed(Fixed::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos)))
 		}).collect();
 		
 		let ball_joints = ball_joints.drain(..).map(|j| {
-			let a = components[j.a.0].body;
-			let b = components[j.b.0].body;
-			BallInSocket::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos))
+			let a = components[j.a as usize].body;
+			let b = components[j.b as usize].body;
+			world.add_ball_in_socket(BallInSocket::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos)))
 		}).collect();
 		
 		let mass = components.iter().filter_map(|ch| ch.body.borrow().mass()).sum();

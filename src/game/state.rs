@@ -15,7 +15,7 @@ use settings::Settings;
 
 const FONT_SIZE: f32 = 24.0;
 
-type EntityId = u32;
+pub type EntityId = u32;
 
 /// Gravity type of the simulation
 #[derive(Copy, Clone)]
