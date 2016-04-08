@@ -108,29 +108,17 @@ impl State {
 		id
 	}
 	
+	/// Gets the rigid body with the specified id
 	pub fn get_body<'a>(&'a self, id: &u64) -> Option<&'a RigidBodyHandle<f32>> {
-		if self.get_entity(id).is_some() { // Ignore items that don't have entities attached to them.
-			self.bodies.get(&id)
-		} else {
-			None
-		}
+		self.get_item(id).map(|p| p.0)
 	}
 	
+	/// Gets the entity with the specified id
 	pub fn get_entity<'a>(&'a self, id: &u64) -> Option<&'a Entity> {
-		unsafe {
-			match self.bodies.get(id) {
-				Some(ref b) => {
-					let b = b.as_unsafe_cell().get();
-					match (*b).user_data() {
-						&Some(ref any) => any.downcast_ref::<Entity>(),
-						&None => None,
-					}
-				},
-				None => None,
-			}
-		}
+		self.get_item(id).map(|p| p.1)
 	}
 	
+	/// Gets the pair (RigidBody, Entity) with the specified id
 	pub fn get_item<'a>(&'a self, id: &u64) -> Option<(&'a RigidBodyHandle<f32>, &'a Entity)> {
 		unsafe {
 			match self.bodies.get(id) {
