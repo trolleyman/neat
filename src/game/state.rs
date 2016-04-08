@@ -18,8 +18,8 @@ const FONT_SIZE: f32 = 24.0;
 /// Gravity type of the simulation
 #[derive(Copy, Clone)]
 pub enum Gravity {
-	/// Each object attracts each other object
-	Relative,
+	/// Each object attracts each other object, scaled by a specified amount.
+	Relative(f32),
 	/// Each object is attracted in a constant direction
 	Constant(Vec3<f32>),
 }
@@ -50,7 +50,7 @@ impl State {
 		let green = box ColoredMesh::new(sphere.clone(), Color::GREEN);
 		let blue  = box ColoredMesh::new(sphere.clone(), Color::BLUE);
 		
-		let mut state = GameState::new(cam, Gravity::Relative);
+		let mut state = GameState::new(cam, Gravity::Relative(1.0));
 		let r = Entity::new(red  , 1.0);
 		let r = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box r);
 		state.get_body(&r).unwrap().borrow_mut().set_translation(Vec3::new(5.0, 0.0,  0.0));
@@ -66,26 +66,51 @@ impl State {
 		state
 	}
 	
+	#[allow(non_snake_case)]
 	pub fn gen_solar(ctx: &Rc<Context>, cam: Camera) -> State {
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
-		let yellow = box ColoredMesh::with_scale(sphere.clone(), Color::YELLOW, 1.0);
-		let green  = box ColoredMesh::with_scale(sphere.clone(), Color::GREEN , 0.3684);
-		let red    = box ColoredMesh::with_scale(sphere.clone(), Color::RED   , 0.07937);
+		const PI: f32 = ::std::f32::consts::PI;
 		
-		let mut state = GameState::new(cam, Gravity::Relative);
-		let sun  = Entity::new(yellow, 100.0);
-		let sun = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0    ), 1.0, 1.0, 0.0), box sun);
+		const SUN_MASS: f32 = 100.0;
+		const SUN_RADIUS: f32 = 1.0;
+		
+		const EARTH_POS: f32 = 18.0;
+		const EARTH_VEL: f32 = 25.0;
+		const EARTH_SCALE: f32 = 0.05;
+		const EARTH_MASS: f32 = SUN_MASS * EARTH_SCALE;
+		let EARTH_RADIUS: f32 = ((3.0 * EARTH_SCALE) / (4.0 * PI)).cbrt();
+		
+		const MERCURY_POS: f32 = 10.0;
+		const MERCURY_VEL: f32 = 30.0;
+		const MERCURY_SCALE: f32 = 0.0005;
+		const MERCURY_MASS: f32 = SUN_MASS * MERCURY_SCALE;
+		let MERCURY_RADIUS: f32 = ((3.0 * MERCURY_SCALE) / (4.0 * PI)).cbrt();
+		
+		// Equalize forces (momentum = mass * velocity)
+		const SUN_VEL: f32 = (EARTH_MASS * EARTH_VEL + MERCURY_MASS * MERCURY_VEL) / SUN_MASS;
+		
+		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", SUN_VEL, 1.0, SUN_MASS, SUN_RADIUS);
+		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", EARTH_VEL, EARTH_SCALE, EARTH_MASS, EARTH_RADIUS);
+		info!("MERCURY: vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", MERCURY_VEL, MERCURY_SCALE, MERCURY_MASS, MERCURY_RADIUS);
+		
+		let yellow = box ColoredMesh::with_scale(sphere.clone(), Color::YELLOW, SUN_RADIUS);
+		let green  = box ColoredMesh::with_scale(sphere.clone(), Color::GREEN , EARTH_RADIUS);
+		let red    = box ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS);
+		
+		let mut state = GameState::new(cam, Gravity::Relative(0.007));
+		let sun  = Entity::new(yellow, SUN_MASS);
+		let sun = state.add_entity(RigidBody::new_dynamic(Ball::new(SUN_RADIUS), 1.0, 1.0, 0.0), box sun);
 		state.get_body(&sun).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 0.0, 0.0));
-		state.get_body(&sun).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, 1.7505));
-		let earth = Entity::new(green, 5.0);
-		let earth = state.add_entity(RigidBody::new_dynamic(Ball::new(0.3684 ), 1.0, 1.0, 0.0), box earth);
-		state.get_body(&earth).unwrap().borrow_mut().set_translation(Vec3::new(10.0, 0.0, 0.0));
-		state.get_body(&earth).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -35.0));
-		let mercury = Entity::new(red, 0.05);
-		let mercury = state.add_entity(RigidBody::new_dynamic(Ball::new(0.07937), 1.0, 1.0, 0.0), box mercury);
-		state.get_body(&mercury).unwrap().borrow_mut().set_translation(Vec3::new(4.0, 0.0, 0.0));
-		state.get_body(&mercury).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -15.0));
+		state.get_body(&sun).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, SUN_VEL));
+		let earth = Entity::new(green, EARTH_MASS);
+		let earth = state.add_entity(RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), 1.0, 1.0, 0.0), box earth);
+		state.get_body(&earth).unwrap().borrow_mut().set_translation(Vec3::new(EARTH_POS, 0.0, 0.0));
+		state.get_body(&earth).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -EARTH_VEL));
+		let mercury = Entity::new(red, MERCURY_MASS);
+		let mercury = state.add_entity(RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), 1.0, 1.0, 0.0), box mercury);
+		state.get_body(&mercury).unwrap().borrow_mut().set_translation(Vec3::new(MERCURY_POS, 0.0, 0.0));
+		state.get_body(&mercury).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -MERCURY_VEL));
 		
 		state
 	}
@@ -182,7 +207,7 @@ impl State {
 		if !settings.paused {
 			// Apply gravity to all non-static entities.
 			match self.gravity {
-				Gravity::Relative => {
+				Gravity::Relative(g) => {
 					let mut ids = self.bodies.keys().cloned();
 					loop {
 						let a_id = match ids.next() {
@@ -190,8 +215,6 @@ impl State {
 							None => break,
 						};
 						for b_id in ids.clone() {
-							const G: f32 = 1.0;
-							
 							let (mut a_body, a_ent) = self.get_item(&a_id).map(|(b, e)| (b.borrow_mut(), e)).unwrap();
 							let (mut b_body, b_ent) = self.get_item(&b_id).map(|(b, e)| (b.borrow_mut(), e)).unwrap();
 							
@@ -205,7 +228,7 @@ impl State {
 							v = v / len_sq.sqrt();
 							
 							// Calc && apply the force.
-							let f = v * ((G * a_ent.mass() * b_ent.mass()) / len_sq);
+							let f = v * ((g * a_ent.mass() * b_ent.mass()) / len_sq);
 							a_body.apply_central_impulse(f);
 							b_body.apply_central_impulse(-f);
 						}
