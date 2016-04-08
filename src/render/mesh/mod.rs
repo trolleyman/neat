@@ -34,7 +34,7 @@ impl ColoredMesh {
 }
 impl RenderableMesh for ColoredMesh {
 	fn render(&self, r: &mut Render, model: Mat4<f32>) {
-		// TODO: Test
-		self.mesh.render(r, util::mat4_scale(Vec3::new(self.scale, self.scale, self.scale)) * model, self.color);
+		let scale = util::mat4_scale(Vec3::new(self.scale, self.scale, self.scale));
+		self.mesh.render(r, model * scale, self.color);
 	}
 }
