@@ -1,6 +1,7 @@
 use std::rc::Rc;
-use std::mem;
 use std::collections::HashMap;
+use std::collections::hash_map::Keys;
+use std::iter;
 
 use glium::backend::Context;
 use na::{Norm, Vec3};
@@ -51,15 +52,15 @@ impl State {
 		
 		let mut state = GameState::new(cam, Gravity::Relative);
 		let r = Entity::new(red  , 1.0);
-		let r = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.5, 0.5), box r);
+		let r = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box r);
 		state.get_body(&r).unwrap().borrow_mut().set_translation(Vec3::new(5.0, 0.0,  0.0));
 		state.get_body(&r).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 1.0, -1.0));
 		let g = Entity::new(green, 1.0);
-		let g = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.5, 0.5), box g);
+		let g = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box g);
 		state.get_body(&g).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 0.0, -5.0));
 		state.get_body(&g).unwrap().borrow_mut().set_lin_vel(Vec3::new(1.0, -1.0, 1.0));
 		let b = Entity::new(blue , 1.0);
-		let b = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.5, 0.5), box b);
+		let b = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box b);
 		state.get_body(&b).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 5.0,  0.0));
 		state.get_body(&b).unwrap().borrow_mut().set_lin_vel(Vec3::new(-1.0, 1.0, 1.0));
 		state
@@ -74,15 +75,15 @@ impl State {
 		
 		let mut state = GameState::new(cam, Gravity::Relative);
 		let sun  = Entity::new(yellow, 100.0);
-		let sun = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0    ), 1.0, 0.5, 0.5), box sun);
+		let sun = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0    ), 1.0, 1.0, 0.0), box sun);
 		state.get_body(&sun).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 0.0, 0.0));
 		state.get_body(&sun).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, 1.7505));
 		let earth = Entity::new(green, 5.0);
-		let earth = state.add_entity(RigidBody::new_dynamic(Ball::new(0.3684 ), 1.0, 0.5, 0.5), box earth);
+		let earth = state.add_entity(RigidBody::new_dynamic(Ball::new(0.3684 ), 1.0, 1.0, 0.0), box earth);
 		state.get_body(&earth).unwrap().borrow_mut().set_translation(Vec3::new(10.0, 0.0, 0.0));
 		state.get_body(&earth).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -35.0));
 		let mercury = Entity::new(red, 0.05);
-		let mercury = state.add_entity(RigidBody::new_dynamic(Ball::new(0.07937), 1.0, 0.5, 0.5), box mercury);
+		let mercury = state.add_entity(RigidBody::new_dynamic(Ball::new(0.07937), 1.0, 1.0, 0.0), box mercury);
 		state.get_body(&mercury).unwrap().borrow_mut().set_translation(Vec3::new(4.0, 0.0, 0.0));
 		state.get_body(&mercury).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -15.0));
 		
@@ -148,6 +149,10 @@ impl State {
 		}
 	}
 	
+	pub fn ids(&self) -> iter::Cloned<Keys<u64, RigidBodyHandle<f32>>> {
+		self.bodies.keys().cloned()
+	}
+	
 	/// Removed the entity with the specified ID from the simulation.
 	/// If an entity with that ID existed, returns the entity removed.
 	pub fn remove_body(&mut self, id: u64) -> Option<RigidBodyHandle<f32>> {
@@ -188,34 +193,37 @@ impl State {
 		
 		if !settings.paused {
 			// Apply gravity to all non-static entities.
-			let mut ids = self.bodies.keys().cloned();
-			loop {
-				let attractor = match ids.next() {
-					Some(a) => a,
-					None => break,
-				};
-				for other in ids.clone() {
-					const G: f32 = 0.05;
-					
-					let (    att_body, att_ent) = self.get_item(&attractor).map(|(b, e)| (b.borrow()    , e)).unwrap();
-					let (mut oth_body, oth_ent) = self.get_item(&other)    .map(|(b, e)| (b.borrow_mut(), e)).unwrap();
-					
-					if !oth_body.can_move() {
-						continue;
+			match self.gravity {
+				Gravity::Relative => {
+					let mut ids = self.bodies.keys().cloned();
+					loop {
+						let a_id = match ids.next() {
+							Some(a) => a,
+							None => break,
+						};
+						for b_id in ids.clone() {
+							const G: f32 = 1.0;
+							
+							let (mut a_body, a_ent) = self.get_item(&a_id).map(|(b, e)| (b.borrow_mut(), e)).unwrap();
+							let (mut b_body, b_ent) = self.get_item(&b_id).map(|(b, e)| (b.borrow_mut(), e)).unwrap();
+							
+							if !a_body.can_move() && !b_body.can_move() {
+								continue;
+							}
+							
+							// Get unit vector from a to b 
+							let mut v = b_body.position().translation - a_body.position().translation;
+							let len_sq = v.sqnorm();
+							v = v / len_sq.sqrt();
+							
+							// Calc && apply the force.
+							let f = v * ((G * a_ent.mass() * b_ent.mass()) / len_sq);
+							a_body.apply_central_impulse(f);
+							b_body.apply_central_impulse(-f);
+						}
 					}
-					
-					// Get unit vector from o to attractor
-					let mut v = att_body.position().translation - oth_body.position().translation;
-					let len_sq = v.norm();
-					v = v / len_sq.sqrt();
-					
-					// Apply a force towards the attractor.
-					let aw = att_ent.mass();
-					let ow = oth_ent.mass();
-					
-					let f = v * ((G * aw * ow) / len_sq);
-					oth_body.append_lin_force(f);
-				}
+				},
+				Gravity::Constant(v) => self.world.set_gravity(v),
 			}
 			
 			// Tick world

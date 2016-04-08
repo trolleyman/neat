@@ -1,12 +1,6 @@
-use std::rc::Rc;
-
-use na::{Pnt3, Vec3, Sim3, Eye, Rot3, Rotation, Iso3, Translation, ToHomogeneous};
-use nc::shape::{Ball3, Ball};
-use np::world::World;
-use np::object::{RigidBody, RigidBodyHandle};
+use na::{Iso3, ToHomogeneous};
 use np::volumetric::Volumetric;
 
-use game::GameState;
 use render::{Render, RenderableMesh};
 
 pub struct Entity {
