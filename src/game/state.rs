@@ -9,11 +9,13 @@ use nc::shape::Ball;
 use np::world::World;
 use np::object::{RigidBody, RigidBodyHandle};
 
-use game::{KeyboardState, Entity, GameState};
+use game::{KeyboardState, Entity, EntityBuilder, GameState};
 use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
 use settings::Settings;
 
 const FONT_SIZE: f32 = 24.0;
+
+type EntityId = u32;
 
 /// Gravity type of the simulation
 #[derive(Copy, Clone)]
@@ -25,8 +27,8 @@ pub enum Gravity {
 }
 
 pub struct State {
-	next_free_id: u64,
-	bodies: HashMap<u64, RigidBodyHandle<f32>>,
+	next_free_id: EntityId,
+	entities: HashMap<EntityId, Entity>,
 	camera: Camera,
 	gravity: Gravity,
 	world: World<f32>,
@@ -35,7 +37,7 @@ impl State {
 	pub fn new(cam: Camera, g: Gravity) -> State {
 		State {
 			next_free_id: 0,
-			bodies: HashMap::new(),
+			entities: HashMap::new(),
 			camera: cam,
 			gravity: g,
 			world: World::new(),
@@ -119,60 +121,27 @@ impl State {
 		&self.camera
 	}
 	
-	pub fn entities(&self) -> ::std::collections::hash_map::Values<u64, RigidBodyHandle<f32>> {
-		self.bodies.values()
-	}
-	
 	/// Adds an entity to the world
-	pub fn add_entity(&mut self, mut body: RigidBody<f32>, e: Box<Entity>) -> u64 {
+	pub fn add_entity(&mut self, build: EntityBuilder) -> EntityId {
 		let id = self.next_free_id;
-		body.set_deactivation_threshold(None);
-		*body.user_data_mut() = Some(e);
-		let h = self.world.add_body(body);
-		self.bodies.insert(id, h);
 		self.next_free_id += 1;
+		
+		let e = build.build_world(&mut self.world);
+		self.entities.insert(id, e);
 		id
 	}
 	
-	/// Gets the rigid body with the specified id
-	pub fn get_body<'a>(&'a self, id: &u64) -> Option<&'a RigidBodyHandle<f32>> {
-		self.get_item(id).map(|p| p.0)
-	}
-	
 	/// Gets the entity with the specified id
-	pub fn get_entity<'a>(&'a self, id: &u64) -> Option<&'a Entity> {
-		self.get_item(id).map(|p| p.1)
+	pub fn get_entity<'a>(&'a self, id: &EntityId) -> Option<&'a Entity> {
+		self.entities.get(id)
 	}
 	
-	/// Gets the pair (RigidBody, Entity) with the specified id
-	pub fn get_item<'a>(&'a self, id: &u64) -> Option<(&'a RigidBodyHandle<f32>, &'a Entity)> {
-		unsafe {
-			match self.bodies.get(id) {
-				Some(ref b) => {
-					let b_ptr = b.as_unsafe_cell().get();
-					match (*b_ptr).user_data() {
-						&Some(ref any) => match any.downcast_ref::<Entity>() {
-							Some(e) => Some((b, e)),
-							None => None,
-						},
-						&None => None,
-					}
-				},
-				None => None,
-			}
-		}
-	}
-	
-	pub fn ids(&self) -> iter::Cloned<Keys<u64, RigidBodyHandle<f32>>> {
-		self.bodies.keys().cloned()
-	}
-	
-	/// Removed the entity with the specified ID from the simulation.
-	/// If an entity with that ID existed, returns the entity removed.
-	pub fn remove_body(&mut self, id: u64) -> Option<RigidBodyHandle<f32>> {
-		if let Some(b) = self.bodies.remove(&id) {
-			self.world.remove_body(&b);
-			Some(b)
+	/// Remove an entity from the simulation.
+	/// If an entity with the ID specified existed, returns that entity.
+	pub fn remove_entity(&mut self, id: &EntityId) -> Option<Entity> {
+		if let Some(e) = self.entities.remove(id) {
+			e.remove_world(&mut self.world);
+			Some(e)
 		} else {
 			None
 		}
@@ -249,8 +218,7 @@ impl State {
 		for id in self.bodies.keys() {
 			let (body, e) = self.get_item(id).unwrap();
 			let body = body.borrow();
-			let iso = *body.position();
-			e.render(r, iso);
+			e.render(r);
 		}
 		
 		r.draw_str(&format!("{} FPS", fps), 10.0, 10.0, FONT_SIZE);

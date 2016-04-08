@@ -1,4 +1,5 @@
 use std::rc::Rc;
+use std::cell::RefCell;
 
 use na::{Pnt3, Iso3, ToHomogeneous};
 use np::object::{RigidBody, RigidBodyHandle};
@@ -29,13 +30,13 @@ pub struct ComponentHandle {
 
 /// Fixed joint, using Ids
 pub struct FixedIds {
-	a: Id,
+	a: ComponentId,
 	a_pos: Iso3<f32>,
-	b: Id,
+	b: ComponentId,
 	b_pos: Iso3<f32>,
 }
 impl FixedIds {
-	pub fn new(a: Id, a_pos: Iso3<f32>, b: Id, b_pos: Iso3<f32>) -> FixedIds {
+	pub fn new(a: ComponentId, a_pos: Iso3<f32>, b: ComponentId, b_pos: Iso3<f32>) -> FixedIds {
 		FixedIds {
 			a: a,
 			a_pos: a_pos,
@@ -47,13 +48,13 @@ impl FixedIds {
 
 /// Ball in socket joint, using Ids
 pub struct BallInSocketIds {
-	a: Id,
+	a: ComponentId,
 	a_pos: Pnt3<f32>,
-	b: Id,
+	b: ComponentId,
 	b_pos: Pnt3<f32>,
 }
 impl BallInSocketIds {
-	pub fn new(a: Id, a_pos: Pnt3<f32>, b: Id, b_pos: Pnt3<f32>) -> BallInSocketIds {
+	pub fn new(a: ComponentId, a_pos: Pnt3<f32>, b: ComponentId, b_pos: Pnt3<f32>) -> BallInSocketIds {
 		BallInSocketIds {
 			a: a,
 			a_pos: a_pos,
@@ -65,8 +66,8 @@ impl BallInSocketIds {
 
 /// ID of the root component in an entity.
 #[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Debug)]
-struct Id(usize);
-pub const ROOT_ID: Id = Id(0);
+struct ComponentId(usize);
+pub const ROOT_ID: ComponentId = ComponentId(0);
 
 pub struct EntityBuilder {
 	components: Vec<Component>,
@@ -96,12 +97,12 @@ impl EntityBuilder {
 	///
 	/// # Panics
 	/// If the ID is not valid.
-	pub fn add_fixed(&mut self, a_id: Id, a_pos: Iso3<f32>, b: Component, b_pos: Iso3<f32>) -> Id {
-		if a_id >= Id(self.components.len()) {
+	pub fn add_fixed(&mut self, a_id: ComponentId, a_pos: Iso3<f32>, b: Component, b_pos: Iso3<f32>) -> ComponentId {
+		if a_id >= ComponentId(self.components.len()) {
 			panic!("a_id {:?} is not valid.", a_id);
 		}
 		
-		let b_id = Id(self.components.len());
+		let b_id = ComponentId(self.components.len());
 		self.fixed_joints.push(FixedIds::new(a_id, a_pos, b_id, b_pos));
 		b_id
 	}
@@ -119,18 +120,23 @@ impl EntityBuilder {
 	///
 	/// # Panics
 	/// If the ID is not valid.
-	pub fn add_ball_in_socket(&mut self, a_id: Id, a_pos: Iso3<f32>, b: Component, b_pos: Iso3<f32>) -> Id {
-		if a_id >= Id(self.components.len()) {
+	pub fn add_ball_in_socket(&mut self, a_id: ComponentId, a_pos: Iso3<f32>, b: Component, b_pos: Iso3<f32>) -> ComponentId {
+		if a_id >= ComponentId(self.components.len()) {
 			panic!("a_id {:?} is not valid.", a_id);
 		}
 		
-		let b_id = Id(self.components.len());
+		let b_id = ComponentId(self.components.len());
 		self.fixed_joints.push(FixedIds::new(a_id, a_pos, b_id, b_pos));
 		b_id
 	}
 	
+	/// Builds the entity by adding it to a GameState.
+	pub fn build(self, state: &mut GameState) {
+		state.add_entity(self);
+	}
+	
 	/// Builds the entity by adding it to the world.
-	pub fn build(self, world: &mut World<f32>) -> Entity {
+	pub fn build_world(self, world: &mut World<f32>) -> Entity {
 		Entity::with_joints(world, self.components, self.fixed_joints, self.ball_joints)
 	}
 }
@@ -138,8 +144,8 @@ impl EntityBuilder {
 pub struct Entity {
 	mass: f32,
 	components: Vec<ComponentHandle>,
-	fixed_joints: Vec<Fixed<f32>>,
-	ball_joints: Vec<BallInSocket<f32>>,
+	fixed_joints: Vec<Rc<RefCell<Fixed<f32>>>>,
+	ball_joints: Vec<Rc<RefCell<BallInSocket<f32>>>>,
 }
 impl Entity {
 	pub fn new(world: &mut World<f32>, component: Component) -> Entity {
@@ -173,6 +179,24 @@ impl Entity {
 			components  : components,
 			fixed_joints: fixed_joints,
 			ball_joints : ball_joints,
+		}
+	}
+	
+	/// Removes this entity from a world.
+	pub fn remove_world(&self, world: &mut World<f32>) {
+		// Remove ball in socket joints
+		for j in self.ball_joints.iter() {
+			world.remove_ball_in_socket(j);
+		}
+		
+		// Remove fixed joints
+		for j in self.fixed_joints.iter() {
+			world.remove_fixed(j);
+		}
+		
+		// Finally, remove rigid bodies
+		for c in self.components.iter() {
+			world.remove_body(&c.body);
 		}
 	}
 	
