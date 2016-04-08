@@ -136,13 +136,14 @@ impl EntityBuilder {
 }
 
 pub struct Entity {
+	mass: f32,
 	components: Vec<ComponentHandle>,
 	fixed_joints: Vec<Fixed<f32>>,
 	ball_joints: Vec<BallInSocket<f32>>,
 }
 impl Entity {
-	pub fn new(world: &mut World<f32>, components: Vec<Component>) -> Entity {
-		Entity::with_joints(world, components, Vec::new(), Vec::new())
+	pub fn new(world: &mut World<f32>, component: Component) -> Entity {
+		Entity::with_joints(world, vec![component], Vec::new(), Vec::new())
 	}
 	
 	pub fn with_joints(world: &mut World<f32>, components: Vec<Component>, fixed_joints: Vec<FixedIds>, ball_joints: Vec<BallInSocketIds>) -> Entity {
@@ -165,11 +166,19 @@ impl Entity {
 			BallInSocket::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos))
 		}).collect();
 		
+		let mass = components.iter().filter_map(|ch| ch.body.borrow().mass()).sum();
+		
 		Entity {
+			mass: mass,
 			components  : components,
 			fixed_joints: fixed_joints,
 			ball_joints : ball_joints,
 		}
+	}
+	
+	/// Returns the mass of the entity.
+	pub fn mass(&self) -> f32 {
+		self.mass
 	}
 	
 	/// Renders the entity
