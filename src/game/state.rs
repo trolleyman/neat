@@ -2,6 +2,7 @@ use std::rc::Rc;
 use std::collections::HashMap;
 
 use glium::backend::Context;
+use glutin::{ElementState, VirtualKeyCode};
 use na::{Norm, Vec3};
 use nc::shape::{Ball, Cuboid};
 use np::world::World;
@@ -30,6 +31,7 @@ pub struct State {
 	next_free_id: EntityId,
 	entities: HashMap<EntityId, Entity>,
 	camera: Camera,
+	wireframe_mode: bool,
 	gravity: Gravity,
 	world: World<f32>,
 }
@@ -39,6 +41,7 @@ impl State {
 			next_free_id: 0,
 			entities: HashMap::new(),
 			camera: cam,
+			wireframe_mode: false,
 			gravity: g,
 			world: World::new(),
 		}
@@ -276,32 +279,44 @@ impl State {
 		}
 	}
 	
-	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
+	pub fn tick(&mut self, dt: f32, settings: &Settings, keys: &[(ElementState, VirtualKeyCode)], keyboard_state: &KeyboardState, mouse_state: (i32, i32)) {
 		// m/s
 		let speed = 4.0 * dt;
 		
 		// Translate camera based on keyboard state
 		let mut trans = Vec3::new(0.0, 0.0, 0.0);
-		if keyboard.is_pressed(&settings.forward) {
+		if keyboard_state.is_pressed(&settings.forward) {
 			trans = trans + Vec3::new(0.0, 0.0, -speed);
 		}
-		if keyboard.is_pressed(&settings.backward) {
+		if keyboard_state.is_pressed(&settings.backward) {
 			trans = trans + Vec3::new(0.0, 0.0,  speed);
 		}
-		if keyboard.is_pressed(&settings.left) {
+		if keyboard_state.is_pressed(&settings.left) {
 			trans = trans + Vec3::new(-speed, 0.0, 0.0);
 		}
-		if keyboard.is_pressed(&settings.right) {
+		if keyboard_state.is_pressed(&settings.right) {
 			trans = trans + Vec3::new( speed, 0.0, 0.0);
 		}
-		if keyboard.is_pressed(&settings.up) {
+		if keyboard_state.is_pressed(&settings.up) {
 			trans = trans + Vec3::new(0.0,  speed, 0.0);
 		}
-		if keyboard.is_pressed(&settings.down) {
+		if keyboard_state.is_pressed(&settings.down) {
 			trans = trans + Vec3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
+		for &(s, ref key) in keys.iter() {
+			if s == ElementState::Pressed {
+				if Some(*key) == settings.wireframe_toggle {
+					self.wireframe_mode = !self.wireframe_mode;
+					if self.wireframe_mode {
+						info!("Wireframe mode enabled");
+					} else {
+						info!("Wireframe mode disabled");
+					}
+				}
+			}
+		}
 		
 		if !settings.paused {
 			/*info!("=== Entities ===");
@@ -376,6 +391,7 @@ impl State {
 
 	pub fn render(&mut self, r: &mut Render, fps: u32) {
 		r.set_camera(self.camera);
+		r.set_wireframe_mode(self.wireframe_mode);
 		
 		for e in self.entities.values() {
 			e.render(r);

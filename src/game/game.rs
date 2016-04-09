@@ -14,6 +14,7 @@ pub struct Game {
 	
 	current_state: GameState,
 	running: bool,
+	keys: Vec<(ElementState, VirtualKeyCode)>,
 	keyboard_state: KeyboardState,
 	mouse_state: (i32, i32),
 	focused: bool,
@@ -38,6 +39,7 @@ impl Game {
 			
 			current_state: state,
 			running: true,
+			keys: Vec::new(),
 			keyboard_state: KeyboardState::new(),
 			mouse_state: (0, 0),
 			focused: true,
@@ -160,13 +162,14 @@ impl Game {
 						} else {
 							info!("Game resumed");
 						}
-					}
-					if key_state == ElementState::Pressed && Some(code) == self.settings.physics_step {
+					} else if key_state == ElementState::Pressed && Some(code) == self.settings.physics_step {
 						if self.settings.paused {
 							self.settings.paused = false;
 							self.step = true;
 							info!("Game stepped");
 						}
+					} else {
+						self.keys.push((key_state, code));
 					}
 				},
 				_ => {},
@@ -205,7 +208,8 @@ impl Game {
 		trace!("Game tick: {}s ({} iterations)", dt, n);
 		// Tick next state
 		for _ in 0..n {
-			self.current_state.tick(dt, &self.settings, &self.keyboard_state, self.mouse_state);
+			self.current_state.tick(dt, &self.settings, &self.keys, &self.keyboard_state, self.mouse_state);
+			self.keys.clear();
 			self.mouse_state = (0, 0);
 		}
 	}

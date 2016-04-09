@@ -5,16 +5,17 @@ use std::collections::HashSet;
 use glutin::VirtualKeyCode;
 
 pub struct Settings {
-	pub verbose : bool,
-	pub paused  : bool,
-	pub forward : VirtualKeyCode,
-	pub backward: VirtualKeyCode,
-	pub left    : VirtualKeyCode,
-	pub right   : VirtualKeyCode,
-	pub up      : VirtualKeyCode,
-	pub down    : VirtualKeyCode,
+	pub verbose  : bool,
+	pub paused   : bool,
+	pub forward  : VirtualKeyCode,
+	pub backward : VirtualKeyCode,
+	pub left     : VirtualKeyCode,
+	pub right    : VirtualKeyCode,
+	pub up       : VirtualKeyCode,
+	pub down     : VirtualKeyCode,
 	pub physics_pause: Option<VirtualKeyCode>,
 	pub physics_step : Option<VirtualKeyCode>,
+	pub wireframe_toggle: Option<VirtualKeyCode>,
 }
 impl Settings {
 	/// Gets game settings from args passed to executable.
@@ -56,16 +57,17 @@ impl Settings {
 impl Default for Settings {
 	fn default() -> Settings {
 		Settings {
-			verbose : false,
-			paused  : false,
-			forward : VirtualKeyCode::W,
-			backward: VirtualKeyCode::S,
-			left    : VirtualKeyCode::A,
-			right   : VirtualKeyCode::D,
-			up      : VirtualKeyCode::Q,
-			down    : VirtualKeyCode::E,
-			physics_pause: Some(VirtualKeyCode::F4),
-			physics_step : Some(VirtualKeyCode::F5),
+			verbose  : false,
+			paused   : false,
+			forward  : VirtualKeyCode::W,
+			backward : VirtualKeyCode::S,
+			left     : VirtualKeyCode::A,
+			right    : VirtualKeyCode::D,
+			up       : VirtualKeyCode::Q,
+			down     : VirtualKeyCode::E,
+			physics_pause: Some(VirtualKeyCode::F1),
+			physics_step : Some(VirtualKeyCode::F2),
+			wireframe_toggle: Some(VirtualKeyCode::F3),
 		}
 	}
 }

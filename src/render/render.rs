@@ -56,6 +56,7 @@ pub struct Render {
 	projection: Mat4<f32>,
 	camera: Camera,
 	
+	wireframe_mode: bool,
 	simple_shader: Program,
 	font_render: FontRender,
 }
@@ -109,12 +110,17 @@ impl Render {
 			projection: Mat4::new_identity(4),
 			camera: camera,
 			
+			wireframe_mode: false,
 			simple_shader: simple_shader,
 			font_render: font_render,
 		};
 		r.resize();
 		r.win.get_window().map(|w| w.show());
 		r
+	}
+	
+	pub fn set_wireframe_mode(&mut self, mode: bool) {
+		self.wireframe_mode = mode;
 	}
 	
 	pub fn draw_str(&mut self, s: &str, x: f32, y: f32, scale: f32) {
@@ -185,6 +191,28 @@ impl Render {
 	}
 	
 	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u32>, model: Mat4<f32>, col: Color) {
+		let params = if self.wireframe_mode {
+			DrawParameters {
+				depth: Depth {
+					test: DepthTest::IfLess,
+					write: true,
+					..Default::default()
+				},
+				polygon_mode: PolygonMode::Line,
+				..Default::default()
+			}
+		} else {
+			DrawParameters {
+				depth: Depth {
+					test: DepthTest::IfLess,
+					write: true,
+					..Default::default()
+				},
+				backface_culling: BackfaceCullingMode::CullClockwise,
+				..Default::default()
+			}
+		};
+		
 		self.frame.draw(
 			vs,
 			is,
@@ -195,15 +223,7 @@ impl Render {
 				model:      unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(model) },
 				color:      unsafe { mem::transmute::<Color, [f32; 3]>(col) },
 			},
-			&DrawParameters {
-				depth: Depth {
-					test: DepthTest::IfLess,
-					write: true,
-					..Default::default()
-				},
-				backface_culling: BackfaceCullingMode::CullClockwise,
-				..Default::default()
-			}
+			&params
 		).map_err(|e| error!("Draw failed: {:?}", e)).ok();
 	}
 }
