@@ -166,7 +166,8 @@ impl Entity {
 	}
 	
 	pub fn with_joints(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>) -> Entity {
-		let components: Vec<_> = components.drain(..).map(|c| {
+		let components: Vec<_> = components.drain(..).map(|mut c| {
+			c.body.set_deactivation_threshold(None);
 			ComponentHandle {
 				body: world.add_body(c.body),
 				mesh: c.mesh,

@@ -24,7 +24,7 @@ impl Game {
 		let mut render = Render::new(cam);
 		info!("Initialized renderer");
 		
-		let state = GameState::gen_balls(render.context(), cam);
+		let state = GameState::gen_solar(render.context(), cam);
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)
 	}

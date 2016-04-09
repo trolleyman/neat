@@ -92,25 +92,23 @@ impl State {
 		let DENSITY: f32 = SUN_MASS / SUN_VOLUME;
 		
 		const EARTH_POS: f32 = 18.0;
-		const EARTH_VEL: f32 = 25.0;
+		const EARTH_VEL: f32 = 22.0;
 		const EARTH_SCALE: f32 = 0.05;
-		const EARTH_MASS: f32 = SUN_MASS * EARTH_SCALE;
 		let EARTH_RADIUS: f32 = ((3.0 * EARTH_SCALE) / (4.0 * PI)).cbrt();
 		
 		const MERCURY_POS: f32 = 10.0;
 		const MERCURY_VEL: f32 = 30.0;
 		const MERCURY_SCALE: f32 = 0.0005;
-		const MERCURY_MASS: f32 = SUN_MASS * MERCURY_SCALE;
 		let MERCURY_RADIUS: f32 = ((3.0 * MERCURY_SCALE) / (4.0 * PI)).cbrt();
 		
 		// Equalize forces
-		const SUN_VEL: f32 = 0.45;
+		const SUN_VEL: f32 = 0.38;
 		
 		let yellow = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::YELLOW, SUN_RADIUS));
 		let green  = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::GREEN , EARTH_RADIUS));
 		let red    = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS));
 		
-		let mut state = GameState::new(cam, Gravity::Relative(0.007));
+		let mut state = GameState::new(cam, Gravity::Relative(1.0));
 		let sun     = EntityBuilder::new(Component::new(
 			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), DENSITY, 1.0, 0.0),
 			yellow)).build(&mut state);
