@@ -43,7 +43,6 @@ impl State {
 	}
 	
 	pub fn gen_balls(ctx: &Rc<Context>, cam: Camera) -> State {
-		// TODO: RigidBody builder to sort out all of this mess
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
 		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
@@ -52,7 +51,7 @@ impl State {
 		
 		let mut state = GameState::new(cam, Gravity::Relative(1.0));
 		let r = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0),
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1),
 			red)).build(&mut state);
 		{
 			let r = state.get_entity_mut(&r).unwrap();
@@ -61,7 +60,7 @@ impl State {
 		}
 		
 		let g = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0),
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1),
 			green)).build(&mut state);
 		{
 			let g = state.get_entity_mut(&g).unwrap();
@@ -70,7 +69,7 @@ impl State {
 		}
 		
 		let b = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0),
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1),
 			blue)).build(&mut state);
 		{
 			let b = state.get_entity_mut(&b).unwrap();
@@ -89,6 +88,8 @@ impl State {
 		const SUN_POS: f32 = 0.0;
 		const SUN_MASS: f32 = 100.0;
 		const SUN_RADIUS: f32 = 1.0;
+		let SUN_VOLUME: f32 = (4.0 * PI * SUN_RADIUS * SUN_RADIUS * SUN_RADIUS) / 3.0;
+		let DENSITY: f32 = SUN_MASS / SUN_VOLUME;
 		
 		const EARTH_POS: f32 = 18.0;
 		const EARTH_VEL: f32 = 25.0;
@@ -105,17 +106,13 @@ impl State {
 		// Equalize forces
 		const SUN_VEL: f32 = 0.45;
 		
-		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", SUN_VEL, 1.0, SUN_MASS, SUN_RADIUS);
-		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", EARTH_VEL, EARTH_SCALE, EARTH_MASS, EARTH_RADIUS);
-		info!("MERCURY: vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", MERCURY_VEL, MERCURY_SCALE, MERCURY_MASS, MERCURY_RADIUS);
-		
 		let yellow = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::YELLOW, SUN_RADIUS));
 		let green  = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::GREEN , EARTH_RADIUS));
 		let red    = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS));
 		
 		let mut state = GameState::new(cam, Gravity::Relative(0.007));
 		let sun     = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), 1.0, 1.0, 0.0),
+			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), DENSITY, 1.0, 0.0),
 			yellow)).build(&mut state);
 		{
 			let sun     = state.get_entity_mut(&sun).unwrap();
@@ -124,22 +121,38 @@ impl State {
 		}
 		
 		let earth   = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), 1.0, 1.0, 0.0),
+			RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), DENSITY, 1.0, 0.0),
 			green)).build(&mut state);
 		{
 			let earth   = state.get_entity_mut(&earth).unwrap();
 			earth.set_pos(Vec3::new(EARTH_POS, 0.0, 0.0));
-			earth.set_vel(Vec3::new(0.0, 0.0, EARTH_VEL));
+			earth.set_vel(Vec3::new(0.0, 0.0, -EARTH_VEL));
 		}
 		
 		let mercury = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), 1.0, 1.0, 0.0),
+			RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), DENSITY, 1.0, 0.0),
 			red)).build(&mut state);
 		{
 			let mercury = state.get_entity_mut(&mercury).unwrap();
 			mercury.set_pos(Vec3::new(MERCURY_POS, 0.0, 0.0));
-			mercury.set_vel(Vec3::new(0.0, 0.0, MERCURY_VEL));
+			mercury.set_vel(Vec3::new(0.0, 0.0, -MERCURY_VEL));
 		}
+		
+		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
+			SUN_VEL,
+			1.0,
+			state.get_entity(&sun).unwrap().mass(),
+			SUN_RADIUS);
+		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
+			EARTH_VEL,
+			EARTH_SCALE,
+			state.get_entity(&earth).unwrap().mass(),
+			EARTH_RADIUS);
+		info!("MERCURY: vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
+			MERCURY_VEL,
+			MERCURY_SCALE,
+			state.get_entity(&mercury).unwrap().mass(),
+			MERCURY_RADIUS);
 		
 		state
 	}
@@ -207,32 +220,62 @@ impl State {
 		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
 		
 		if !settings.paused {
+			/*info!("=== Entities ===");
+			for (i, e) in self.entities.iter() {
+				let body = e.components()[0].body().borrow();
+				let pos = body.position().translation;
+				let vel = body.lin_vel();
+				info!("{}: pos:[{}, {}, {}], vel:[{}, {}, {}]", i, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z);
+			}*/
+			
 			// Apply gravity to all non-static entities.
 			match self.gravity {
 				Gravity::Relative(g) => {
-					let mut ids = self.bodies.keys().cloned();
+					let mut ids = self.entities.keys().cloned();
+					
 					loop {
-						let a_id = match ids.next() {
-							Some(a) => a,
+						let b_ids = ids.clone();
+						let a_i = match ids.next() {
+							Some(i) => i,
 							None => break,
 						};
-						for b_id in ids.clone() {
-							let (mut a_body, a_ent) = self.get_item(&a_id).map(|(b, e)| (b.borrow_mut(), e)).unwrap();
-							let (mut b_body, b_ent) = self.get_item(&b_id).map(|(b, e)| (b.borrow_mut(), e)).unwrap();
-							
-							if !a_body.can_move() && !b_body.can_move() {
-								continue;
+						//info!("a_i:{}", a_i);
+						for a_j in 0..self.get_entity(&a_i).unwrap().components().len() {
+							//info!(" a_j:{}", a_j);
+							for b_i in b_ids.clone() {
+								//info!("  b_i:{}", b_i);
+								let start = if a_i == b_i {
+									a_j + 1
+								} else {
+									0
+								};
+								for b_j in start..self.get_entity(&b_i).unwrap().components().len() {
+									//info!("   b_j:{}", b_j);
+									let mut a = self.get_entity(&a_i)
+										.unwrap()
+										.components()[a_j]
+										.body()
+										.borrow_mut();
+									let mut b = self.get_entity(&b_i)
+										.unwrap()
+										.components()[b_j]
+										.body()
+										.borrow_mut();
+										
+									let a_mass = match a.mass() { Some(m) => m, None => continue };
+									let b_mass = match b.mass() { Some(m) => m, None => continue };
+									
+									// Get unit vector from a to b
+									let mut v = b.position().translation - a.position().translation;
+									let len_sq = v.sqnorm();
+									v = v / len_sq.sqrt();
+									
+									// Calc && apply the force.
+									let f = v * ((g * a_mass * b_mass) / len_sq);
+									a.apply_central_impulse(f);
+									b.apply_central_impulse(-f);
+								}
 							}
-							
-							// Get unit vector from a to b 
-							let mut v = b_body.position().translation - a_body.position().translation;
-							let len_sq = v.sqnorm();
-							v = v / len_sq.sqrt();
-							
-							// Calc && apply the force.
-							let f = v * ((g * a_ent.mass() * b_ent.mass()) / len_sq);
-							a_body.apply_central_impulse(f);
-							b_body.apply_central_impulse(-f);
 						}
 					}
 				},
