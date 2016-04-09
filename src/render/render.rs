@@ -90,13 +90,7 @@ impl Render {
 		frame.finish().ok();
 		let frame = win.draw();
 		
-		let simple_shader = match load_shader(&win, "simple") {
-			Ok(i)  => i,
-			Err(e) => {
-				error!("{}", e);
-				exit(1);
-			},
-		};
+		let simple_shader = load_shader(&win, "simple");
 		
 		let ctx = win.get_context().clone();
 		

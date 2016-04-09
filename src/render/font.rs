@@ -106,24 +106,12 @@ pub struct FontRender {
 }
 impl FontRender {
 	pub fn new(ctx: Rc<Context>) -> FontRender {
-		let shader = match load_shader(&ctx, "font") {
-			Ok(i)  => i,
-			Err(e) => {
-				error!("{}", e);
-				exit(1);
-			}
-		};
+		let shader = load_shader(&ctx, "font");
 		
-		const FONT_PATH: &'static str = "fonts/consolas.ttf";
+		const FONT_PATH: &'static str = "consolas.ttf";
 		const FONT_INDEX: usize = 0;
 		
-		let font_collection = match load_font(FONT_PATH, FONT_INDEX) {
-			Ok(f) => f,
-			Err(e) => {
-				error!("{}", e);
-				exit(1);
-			}
-		};
+		let font_collection = load_font(FONT_PATH, FONT_INDEX);
 		
 		let img = RawImage2d {
 			data  : Cow::Borrowed(&EMPTY_TEXTURE_DATA as &[u8]),
