@@ -1,13 +1,13 @@
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use na::{Pnt3, Iso3, ToHomogeneous};
+use na::{Vec3, Pnt3, Iso3, ToHomogeneous};
 use np::object::{RigidBody, RigidBodyHandle};
 use np::volumetric::Volumetric;
 use np::detection::joint::{Anchor, Fixed, BallInSocket};
 use np::world::World;
 
-use game::GameState;
+use game::{GameState, EntityId};
 use render::{Render, RenderableMesh};
 
 /// ID of the root component in an entity.
@@ -30,6 +30,15 @@ impl Component {
 pub struct ComponentHandle {
 	body: RigidBodyHandle<f32>,
 	mesh: Rc<RenderableMesh>,
+}
+impl ComponentHandle {
+	pub fn body(&self) -> &RigidBodyHandle<f32> {
+		&self.body
+	}
+	
+	pub fn mesh(&self) -> &Rc<RenderableMesh> {
+		&self.mesh
+	}
 }
 
 /// Fixed joint, using Ids
@@ -132,8 +141,9 @@ impl EntityBuilder {
 	}
 	
 	/// Builds the entity by adding it to a GameState.
-	pub fn build(self, state: &mut GameState) {
-		state.add_entity(self);
+	/// Returns the new entity ID.
+	pub fn build(self, state: &mut GameState) -> EntityId {
+		state.add_entity(self)
 	}
 	
 	/// Builds the entity by adding it to the world.
@@ -153,7 +163,7 @@ impl Entity {
 		Entity::with_joints(world, vec![component], Vec::new(), Vec::new())
 	}
 	
-	pub fn with_joints(world: &mut World<f32>, components: Vec<Component>, fixed_joints: Vec<FixedIds>, ball_joints: Vec<BallInSocketIds>) -> Entity {
+	pub fn with_joints(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>) -> Entity {
 		let components: Vec<_> = components.drain(..).map(|c| {
 			ComponentHandle {
 				body: world.add_body(c.body),
@@ -162,14 +172,14 @@ impl Entity {
 		}).collect();
 		
 		let fixed_joints = fixed_joints.drain(..).map(|j| {
-			let a = components[j.a as usize].body;
-			let b = components[j.b as usize].body;
+			let a = components[j.a as usize].body.clone();
+			let b = components[j.b as usize].body.clone();
 			world.add_fixed(Fixed::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos)))
 		}).collect();
 		
 		let ball_joints = ball_joints.drain(..).map(|j| {
-			let a = components[j.a as usize].body;
-			let b = components[j.b as usize].body;
+			let a = components[j.a as usize].body.clone();
+			let b = components[j.b as usize].body.clone();
 			world.add_ball_in_socket(BallInSocket::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos)))
 		}).collect();
 		
@@ -201,15 +211,36 @@ impl Entity {
 		}
 	}
 	
-	/// Returns the mass of the entity.
+	/// Returns the constituent parts of the entity.
+	pub fn components(&self) -> &[ComponentHandle] {
+		&self.components
+	}
+	
+	/// Returns the total mass of the entity.
 	pub fn mass(&self) -> f32 {
 		self.mass
 	}
 	
 	/// Renders the entity
 	pub fn render(&self, r: &mut Render) {
-		for c in self.components {
+		for c in self.components.iter() {
 			c.mesh.render(r, c.body.borrow().position().to_homogeneous());
+		}
+	}
+	
+	pub fn set_pos(&mut self, pos: Vec3<f32>) {
+		let mut root = self.components[ROOT_ID as usize].body().borrow_mut();
+		let diff = pos - root.position().translation;
+		root.set_translation(pos);
+		
+		for i in 1..self.components.len() {
+			self.components[i].body().borrow_mut().append_translation(&diff);
+		}
+	}
+	
+	pub fn set_vel(&mut self, vel: Vec3<f32>) {
+		for c in self.components.iter() {
+			c.body().borrow_mut().set_lin_vel(vel)
 		}
 	}
 }
