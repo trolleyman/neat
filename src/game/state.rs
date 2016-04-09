@@ -202,7 +202,6 @@ impl State {
 		state
 	}
 	
-	
 	pub fn gen_ball_upside_down_pyramid(ctx: &Rc<Context>) -> State {
 		// Gen planes
 		let mut state = State::new(Camera::new(Vec3::new(0.0, 10.0, 15.0)), Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
