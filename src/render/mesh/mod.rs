@@ -38,3 +38,17 @@ impl RenderableMesh for ColoredMesh {
 		self.mesh.render(r, model * scale, self.color);
 	}
 }
+
+pub struct EmptyMesh {
+	
+}
+impl EmptyMesh {
+	pub fn new() -> EmptyMesh {
+		EmptyMesh {}
+	}
+}
+impl RenderableMesh for EmptyMesh {
+	fn render(&self, _r: &mut Render, _model: Mat4<f32>) {
+		// No-op.
+	}
+}

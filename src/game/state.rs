@@ -3,12 +3,12 @@ use std::collections::HashMap;
 
 use glium::backend::Context;
 use na::{Norm, Vec3};
-use nc::shape::Ball;
+use nc::shape::{Ball, Cuboid};
 use np::world::World;
 use np::object::RigidBody;
 
 use game::{KeyboardState, Entity, EntityBuilder, GameState, Component};
-use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
+use render::{Camera, Render, SimpleMesh, ColoredMesh, EmptyMesh, Color};
 use settings::Settings;
 
 const FONT_SIZE: f32 = 24.0;
@@ -22,6 +22,8 @@ pub enum Gravity {
 	Relative(f32),
 	/// Each object is attracted in a constant direction
 	Constant(Vec3<f32>),
+	/// No gravity is applied
+	None,
 }
 
 pub struct State {
@@ -137,6 +139,65 @@ impl State {
 		state
 	}
 	
+	pub fn gen_rot_test(ctx: &Rc<Context>) -> State {
+		let sphere = Rc::new(SimpleMesh::sphere(ctx, 0));
+		
+		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
+		let green = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
+		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
+		
+		let mut state = State::new(Camera::new(Vec3::new(2.0, 0.0, 10.0)), Gravity::None);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), red.clone()))
+				.pos(Vec3::new(0.0, 0.0,  0.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green.clone()))
+				.pos(Vec3::new(3.0, 0.0, 0.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(1.0, 0.0, 0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue.clone()))
+				.pos(Vec3::new(6.0, 0.0,  0.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(2.0, 0.0, 0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green.clone()))
+				.pos(Vec3::new(0.0, 3.0, 0.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(0.0, 1.0, 0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue.clone()))
+				.pos(Vec3::new(0.0, 6.0,  0.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(0.0, 2.0, 0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green.clone()))
+				.pos(Vec3::new(0.0, 0.0, 3.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(0.0, 0.0, 1.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue.clone()))
+				.pos(Vec3::new(0.0, 0.0,  6.0))
+				.rot(Vec3::new(0.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(0.0, 0.0, 2.0))
+				.build(&mut state);
+		
+		state
+	}
 	
 		
 	pub fn camera(&self) -> &Camera {
@@ -262,6 +323,7 @@ impl State {
 					}
 				},
 				Gravity::Constant(v) => self.world.set_gravity(v),
+				Gravity::None        => self.world.set_gravity(Vec3::new(0.0, 0.0, 0.0)),
 			}
 			
 			// Tick world

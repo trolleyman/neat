@@ -80,6 +80,8 @@ impl BallInSocketIds {
 pub struct EntityBuilder {
 	pos: Vec3<f32>,
 	vel: Vec3<f32>,
+	rot: Vec3<f32>,
+	ang_vel: Vec3<f32>,
 	
 	components: Vec<Component>,
 	fixed_joints: Vec<FixedIds>,
@@ -91,6 +93,8 @@ impl EntityBuilder {
 		EntityBuilder {
 			pos: Vec3::new(0.0, 0.0, 0.0),
 			vel: Vec3::new(0.0, 0.0, 0.0),
+			rot: Vec3::new(0.0, 0.0, 0.0),
+			ang_vel: Vec3::new(0.0, 0.0, 0.0),
 			
 			components  : vec![root],
 			fixed_joints: Vec::new(),
@@ -107,6 +111,16 @@ impl EntityBuilder {
 	/// Sets the velocity that the entity is created with.
 	pub fn vel(mut self, vel: Vec3<f32>) -> EntityBuilder {
 		self.vel = vel;
+		self
+	}
+	
+	pub fn rot(mut self, rot: Vec3<f32>) -> EntityBuilder {
+		self.rot = rot;
+		self
+	}
+	
+	pub fn ang_vel(mut self, ang_vel: Vec3<f32>) -> EntityBuilder {
+		self.ang_vel = ang_vel;
 		self
 	}
 	
@@ -171,6 +185,8 @@ impl EntityBuilder {
 		let mut e = Entity::with_joints(world, self.components, self.fixed_joints, self.ball_joints);
 		e.set_pos(self.pos);
 		e.set_vel(self.vel);
+		e.set_rot(self.vel);
+		e.set_ang_vel(self.ang_vel);
 		e
 	}
 }
@@ -266,5 +282,15 @@ impl Entity {
 		for c in self.components.iter() {
 			c.body().borrow_mut().set_lin_vel(vel)
 		}
+	}
+	
+	pub fn set_rot(&mut self, rot: Vec3<f32>) {
+		// TODO: Rotate all components around root origin
+		self.components[ROOT_ID as usize].body().borrow_mut().set_rotation(rot);
+	}
+	
+	pub fn set_ang_vel(&mut self, ang_vel: Vec3<f32>) {
+		// TODO: Calculate correct angular velocity (and real velocity) for each component
+		self.components[ROOT_ID as usize].body().borrow_mut().set_ang_vel(ang_vel);
 	}
 }
