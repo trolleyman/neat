@@ -9,7 +9,7 @@ use nc::shape::Ball;
 use np::world::World;
 use np::object::{RigidBody, RigidBodyHandle};
 
-use game::{KeyboardState, Entity, EntityBuilder, GameState};
+use game::{KeyboardState, Entity, EntityBuilder, GameState, Component};
 use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
 use settings::Settings;
 
@@ -74,6 +74,7 @@ impl State {
 		
 		const PI: f32 = ::std::f32::consts::PI;
 		
+		const SUN_POS: f32 = 0.0;
 		const SUN_MASS: f32 = 100.0;
 		const SUN_RADIUS: f32 = 1.0;
 		
@@ -96,23 +97,37 @@ impl State {
 		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", EARTH_VEL, EARTH_SCALE, EARTH_MASS, EARTH_RADIUS);
 		info!("MERCURY: vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}", MERCURY_VEL, MERCURY_SCALE, MERCURY_MASS, MERCURY_RADIUS);
 		
-		let yellow = box ColoredMesh::with_scale(sphere.clone(), Color::YELLOW, SUN_RADIUS);
-		let green  = box ColoredMesh::with_scale(sphere.clone(), Color::GREEN , EARTH_RADIUS);
-		let red    = box ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS);
+		let yellow = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::YELLOW, SUN_RADIUS));
+		let green  = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::GREEN , EARTH_RADIUS));
+		let red    = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS));
 		
 		let mut state = GameState::new(cam, Gravity::Relative(0.007));
-		let sun  = Entity::new(yellow, SUN_MASS);
-		let sun = state.add_entity(RigidBody::new_dynamic(Ball::new(SUN_RADIUS), 1.0, 1.0, 0.0), box sun);
-		state.get_body(&sun).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 0.0, 0.0));
-		state.get_body(&sun).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, SUN_VEL));
-		let earth = Entity::new(green, EARTH_MASS);
-		let earth = state.add_entity(RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), 1.0, 1.0, 0.0), box earth);
-		state.get_body(&earth).unwrap().borrow_mut().set_translation(Vec3::new(EARTH_POS, 0.0, 0.0));
-		state.get_body(&earth).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -EARTH_VEL));
-		let mercury = Entity::new(red, MERCURY_MASS);
-		let mercury = state.add_entity(RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), 1.0, 1.0, 0.0), box mercury);
-		state.get_body(&mercury).unwrap().borrow_mut().set_translation(Vec3::new(MERCURY_POS, 0.0, 0.0));
-		state.get_body(&mercury).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 0.0, -MERCURY_VEL));
+		let sun     = EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), 1.0, 1.0, 0.0),
+			yellow)).build(&mut state);
+		{
+			let sun     = state.get_entity_mut(&sun).unwrap();
+			sun.set_pos(Vec3::new(SUN_POS, 0.0, 0.0));
+			sun.set_vel(Vec3::new(0.0, 0.0, SUN_VEL));
+		}
+		
+		let earth   = EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), 1.0, 1.0, 0.0),
+			green)).build(&mut state);
+		{
+			let earth   = state.get_entity_mut(&earth).unwrap();
+			earth.set_pos(Vec3::new(EARTH_POS, 0.0, 0.0));
+			earth.set_vel(Vec3::new(0.0, 0.0, EARTH_VEL));
+		}
+		
+		let mercury = EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), 1.0, 1.0, 0.0),
+			red)).build(&mut state);
+		{
+			let mercury = state.get_entity_mut(&mercury).unwrap();
+			mercury.set_pos(Vec3::new(MERCURY_POS, 0.0, 0.0));
+			mercury.set_vel(Vec3::new(0.0, 0.0, MERCURY_VEL));
+		}
 		
 		state
 	}
@@ -131,9 +146,14 @@ impl State {
 		id
 	}
 	
-	/// Gets the entity with the specified id
+	/// Gets a reference to the entity with the specified id
 	pub fn get_entity<'a>(&'a self, id: &EntityId) -> Option<&'a Entity> {
 		self.entities.get(id)
+	}
+	
+	/// Gets a mutable reference to the entity with the specified id
+	pub fn get_entity_mut<'a>(&'a mut self, id: &EntityId) -> Option<&'a mut Entity> {
+		self.entities.get_mut(id)
 	}
 	
 	/// Remove an entity from the simulation.
@@ -215,9 +235,7 @@ impl State {
 	pub fn render(&mut self, r: &mut Render, fps: u32) {
 		r.set_camera(self.camera);
 		
-		for id in self.bodies.keys() {
-			let (body, e) = self.get_item(id).unwrap();
-			let body = body.borrow();
+		for e in self.entities.values() {
 			e.render(r);
 		}
 		
