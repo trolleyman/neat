@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 
+use na::Vec3;
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
 
 use game::{GameState, KeyboardState};
@@ -20,11 +21,12 @@ pub struct Game {
 	ignore_next_mouse_movement: bool,
 }
 impl Game {
-	pub fn new(settings: Settings, cam: Camera) -> Game {
-		let mut render = Render::new(cam);
+	pub fn new(settings: Settings) -> Game {
+		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)));
 		info!("Initialized renderer");
 		
-		let state = GameState::gen_solar(render.context(), cam);
+		let state = GameState::gen_solar(render.context());
+		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)
 	}

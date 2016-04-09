@@ -19,7 +19,6 @@ extern crate user32;
 use std::io::{self, Write};
 
 pub use glium::glutin;
-use na::Vec3;
 use simplelog::{TermLogger, LogLevelFilter};
 
 pub mod render;
@@ -28,7 +27,6 @@ pub mod util;
 pub mod settings;
 pub mod vfs;
 
-use render::Camera;
 use game::Game;
 use settings::Settings;
 
@@ -39,7 +37,7 @@ pub fn main() {
 		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
 	info!("Initialized logger");
 	
-	let mut g = Game::new(settings, Camera::new(Vec3::new(2.0, 2.0, 10.0)));
+	let mut g = Game::new(settings);
 	info!("Initialized game");
 	
 	g.main_loop();

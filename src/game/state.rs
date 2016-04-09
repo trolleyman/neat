@@ -42,14 +42,14 @@ impl State {
 		}
 	}
 	
-	pub fn gen_balls(ctx: &Rc<Context>, cam: Camera) -> State {
+	pub fn gen_balls(ctx: &Rc<Context>) -> State {
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
 		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
 		let green = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
 		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
 		
-		let mut state = GameState::new(cam, Gravity::Relative(1.0));
+		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Relative(1.0));
 		EntityBuilder::new(Component::new(
 			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), red))
 				.pos(Vec3::new(5.0, 0.0,  0.0))
@@ -71,7 +71,7 @@ impl State {
 	}
 	
 	#[allow(non_snake_case)]
-	pub fn gen_solar(ctx: &Rc<Context>, cam: Camera) -> State {
+	pub fn gen_solar(ctx: &Rc<Context>) -> State {
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
 		const PI: f32 = ::std::f32::consts::PI;
@@ -99,7 +99,7 @@ impl State {
 		let green  = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::GREEN , EARTH_RADIUS));
 		let red    = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS));
 		
-		let mut state = GameState::new(cam, Gravity::Relative(1.0));
+		let mut state = GameState::new(Camera::new(Vec3::new(0.0, 0.0, 20.0)), Gravity::Relative(1.0));
 		let sun     = EntityBuilder::new(Component::new(
 			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), DENSITY, 1.0, 0.0), yellow))
 				.pos(Vec3::new(SUN_POS, 0.0, 0.0))
@@ -136,6 +136,8 @@ impl State {
 		
 		state
 	}
+	
+	
 		
 	pub fn camera(&self) -> &Camera {
 		&self.camera
