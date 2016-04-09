@@ -8,7 +8,7 @@ use np::world::World;
 use np::object::RigidBody;
 
 use game::{KeyboardState, Entity, EntityBuilder, GameState, Component};
-use render::{Camera, Render, SimpleMesh, ColoredMesh, EmptyMesh, Color};
+use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
 use settings::Settings;
 
 const FONT_SIZE: f32 = 24.0;
@@ -199,7 +199,48 @@ impl State {
 		state
 	}
 	
+	
+	pub fn gen_ball_upside_down_pyramid(ctx: &Rc<Context>) -> State {
+		// Gen planes
+		let mut state = State::new(Camera::new(Vec3::new(0.0, 10.0, 15.0)), Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
 		
+		const ANG: f32 = 0.5;
+		
+		let he = Vec3::new(20.0, 1.0, 20.0);
+		let plane_mesh = Rc::new(SimpleMesh::cuboid(ctx, he));
+		let green = Rc::new(ColoredMesh::new(plane_mesh.clone(), Color::GREEN));
+		let blue  = Rc::new(ColoredMesh::new(plane_mesh.clone(), Color::BLUE));
+		let plane_body = RigidBody::new_static(Cuboid::new(he), 0.1, 0.5);
+		// Plane +X
+		EntityBuilder::new(Component::new(plane_body.clone(), green.clone()))
+			.rot(Vec3::new(0.0, 0.0, -ANG)).build(&mut state);
+		// Plane +Z
+		EntityBuilder::new(Component::new(plane_body.clone(), blue .clone()))
+			.rot(Vec3::new(-ANG, 0.0, 0.0)).build(&mut state);
+		// Plane -X
+		EntityBuilder::new(Component::new(plane_body.clone(), green.clone()))
+			.rot(Vec3::new(0.0, 0.0, ANG)).build(&mut state);
+		// Plane -Y
+		EntityBuilder::new(Component::new(plane_body.clone(), blue .clone()))
+			.rot(Vec3::new(ANG, 0.0, 0.0)).build(&mut state);
+		
+		// Gen balls at top
+		const SCALE: f32 = 0.4;
+		let ball_body = RigidBody::new_dynamic(Ball::new(SCALE), 1.0, 0.3, 0.5);
+		let ball_mesh = Rc::new(SimpleMesh::sphere(ctx, 4));
+		const N: i32 = 10;
+		for x in 0..N {
+			let x = (x - N/2) as f32 * 2.0;
+			for z in 0..N {
+				let z = (z - N/2) as f32 * 2.0;
+				let col = Color::new(1.0, 0.0, 0.0);
+				EntityBuilder::new(Component::new(ball_body.clone(), Rc::new(ColoredMesh::with_scale(ball_mesh.clone(), col, SCALE)))).pos(Vec3::new(x, 20.0, z)).build(&mut state);
+			}
+		}
+		
+		state
+	}
+	
 	pub fn camera(&self) -> &Camera {
 		&self.camera
 	}
@@ -273,61 +314,63 @@ impl State {
 			
 			// Apply gravity to all non-static entities.
 			match self.gravity {
-				Gravity::Relative(g) => {
-					let mut ids = self.entities.keys().cloned();
-					
-					loop {
-						let b_ids = ids.clone();
-						let a_i = match ids.next() {
-							Some(i) => i,
-							None => break,
-						};
-						//info!("a_i:{}", a_i);
-						for a_j in 0..self.get_entity(&a_i).unwrap().components().len() {
-							//info!(" a_j:{}", a_j);
-							for b_i in b_ids.clone() {
-								//info!("  b_i:{}", b_i);
-								let start = if a_i == b_i {
-									a_j + 1
-								} else {
-									0
-								};
-								for b_j in start..self.get_entity(&b_i).unwrap().components().len() {
-									//info!("   b_j:{}", b_j);
-									let mut a = self.get_entity(&a_i)
-										.unwrap()
-										.components()[a_j]
-										.body()
-										.borrow_mut();
-									let mut b = self.get_entity(&b_i)
-										.unwrap()
-										.components()[b_j]
-										.body()
-										.borrow_mut();
-										
-									let a_mass = match a.mass() { Some(m) => m, None => continue };
-									let b_mass = match b.mass() { Some(m) => m, None => continue };
-									
-									// Get unit vector from a to b
-									let mut v = b.position().translation - a.position().translation;
-									let len_sq = v.sqnorm();
-									v = v / len_sq.sqrt();
-									
-									// Calc && apply the force.
-									let f = v * ((g * a_mass * b_mass) / len_sq);
-									a.apply_central_impulse(f);
-									b.apply_central_impulse(-f);
-								}
-							}
-						}
-					}
-				},
+				Gravity::Relative(g) => self.calculate_gravity(g),
 				Gravity::Constant(v) => self.world.set_gravity(v),
 				Gravity::None        => self.world.set_gravity(Vec3::new(0.0, 0.0, 0.0)),
 			}
 			
 			// Tick world
 			self.world.step(dt);
+		}
+	}
+	
+	pub fn calculate_gravity(&mut self, g: f32) {
+		let mut ids = self.entities.keys().cloned();
+		
+		loop {
+			let b_ids = ids.clone();
+			let a_i = match ids.next() {
+				Some(i) => i,
+				None => break,
+			};
+			//info!("a_i:{}", a_i);
+			for a_j in 0..self.get_entity(&a_i).unwrap().components().len() {
+				//info!(" a_j:{}", a_j);
+				for b_i in b_ids.clone() {
+					//info!("  b_i:{}", b_i);
+					let start = if a_i == b_i {
+						a_j + 1
+					} else {
+						0
+					};
+					for b_j in start..self.get_entity(&b_i).unwrap().components().len() {
+						//info!("   b_j:{}", b_j);
+						let mut a = self.get_entity(&a_i)
+							.unwrap()
+							.components()[a_j]
+							.body()
+							.borrow_mut();
+						let mut b = self.get_entity(&b_i)
+							.unwrap()
+							.components()[b_j]
+							.body()
+							.borrow_mut();
+							
+						let a_mass = match a.mass() { Some(m) => m, None => continue };
+						let b_mass = match b.mass() { Some(m) => m, None => continue };
+						
+						// Get unit vector from a to b
+						let mut v = b.position().translation - a.position().translation;
+						let len_sq = v.sqnorm();
+						v = v / len_sq.sqrt();
+						
+						// Calc && apply the force.
+						let f = v * ((g * a_mass * b_mass) / len_sq);
+						a.apply_central_impulse(f);
+						b.apply_central_impulse(-f);
+					}
+				}
+			}
 		}
 	}
 

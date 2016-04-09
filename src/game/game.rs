@@ -25,7 +25,7 @@ impl Game {
 		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)));
 		info!("Initialized renderer");
 		
-		let state = GameState::gen_rot_test(render.context());
+		let state = GameState::gen_ball_upside_down_pyramid(render.context());
 		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)

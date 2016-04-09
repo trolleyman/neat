@@ -182,12 +182,7 @@ impl EntityBuilder {
 	
 	/// Builds the entity by adding it to the world.
 	pub fn build_world(self, world: &mut World<f32>) -> Entity {
-		let mut e = Entity::with_joints(world, self.components, self.fixed_joints, self.ball_joints);
-		e.set_pos(self.pos);
-		e.set_vel(self.vel);
-		e.set_rot(self.vel);
-		e.set_ang_vel(self.ang_vel);
-		e
+		Entity::with_matrix(world, self.components, self.fixed_joints, self.ball_joints, self.pos, self.vel, self.rot, self.ang_vel)
 	}
 }
 
@@ -202,8 +197,27 @@ impl Entity {
 		Entity::with_joints(world, vec![component], Vec::new(), Vec::new())
 	}
 	
-	pub fn with_joints(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>) -> Entity {
+	pub fn with_joints(world: &mut World<f32>, components: Vec<Component>, fixed_joints: Vec<FixedIds>, ball_joints: Vec<BallInSocketIds>) -> Entity {
+		let z = Vec3::new(0.0, 0.0, 0.0);
+		Entity::with_matrix(world, components, fixed_joints, ball_joints, z, z, z, z)
+	}
+	
+	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>) -> Entity {
+		// TODO: Sort out rotation for non-root component
+		let mut diff = None;
 		let components: Vec<_> = components.drain(..).map(|mut c| {
+			if let Some(diff) = diff {
+				c.body.append_translation(&diff);
+			} else {
+				let mut root = &mut c.body;
+				diff = Some(pos - root.position().translation);
+				root.set_translation(pos);
+				// Only apply rotation to root, for now.
+				root.set_rotation(rot);
+				root.set_ang_vel(ang_vel);
+			}
+			
+			c.body.set_lin_vel(vel);
 			c.body.set_deactivation_threshold(None);
 			ComponentHandle {
 				body: world.add_body(c.body),

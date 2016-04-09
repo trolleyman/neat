@@ -52,6 +52,14 @@ impl Mesh {
 		Mesh::from_vecs(ctx, vs, is)
 	}
 	
+	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>) -> Mesh {
+		let mut vs: Vec<Vertex> = Vec::new();
+		let mut is: Vec<u32> = Vec::new();
+		
+		Mesh::gen_cuboid(&mut vs, &mut is, half_extents);
+		Mesh::from_vecs(ctx, vs, is)
+	}
+	
 	pub fn cube(ctx: &Rc<Context>) -> Mesh {
 		let mut vs: Vec<Vertex> = Vec::new();
 		let mut is: Vec<u32> = Vec::new();
@@ -83,29 +91,34 @@ impl Mesh {
 	}
 	
 	fn gen_cube(vs: &mut Vec<Vertex>, is: &mut Vec<u32>) {
+		Mesh::gen_cuboid(vs, is, Vec3::new(0.5, 0.5, 0.5))
+	}
+	
+	fn gen_cuboid(vs: &mut Vec<Vertex>, is: &mut Vec<u32>, half_extents: Vec3<f32>) {
 		fn push_quad(is: &mut Vec<u32>, i: u32, v0: u32, v1: u32, v2: u32, v3: u32) {
 			is.extend(&[i+v0, i+v2, i+v1]);
 			is.extend(&[i+v0, i+v3, i+v2]);
 		}
-		let i = vs.len() as u32;
 		
-		let cube_vs: &[Vertex] = &[
-			Vec3::new(-0.5,  0.5, -0.5).into(),
-			Vec3::new( 0.5,  0.5, -0.5).into(),
-			Vec3::new( 0.5, -0.5, -0.5).into(),
-			Vec3::new(-0.5, -0.5, -0.5).into(),
-			Vec3::new(-0.5,  0.5,  0.5).into(),
-			Vec3::new( 0.5,  0.5,  0.5).into(),
-			Vec3::new( 0.5, -0.5,  0.5).into(),
-			Vec3::new(-0.5, -0.5,  0.5).into(),
+		let he = half_extents;
+		let i = vs.len() as u32;
+		let cuboid_vs: &[Vertex] = &[
+			Vec3::new(-he.x,  he.y, -he.z).into(), // FUL
+			Vec3::new( he.x,  he.y, -he.z).into(), // FUR
+			Vec3::new( he.x, -he.y, -he.z).into(), // FDR
+			Vec3::new(-he.x, -he.y, -he.z).into(), // FDL
+			Vec3::new(-he.x,  he.y,  he.z).into(), // BUL
+			Vec3::new( he.x,  he.y,  he.z).into(), // BUR
+			Vec3::new( he.x, -he.y,  he.z).into(), // BDR
+			Vec3::new(-he.x, -he.y,  he.z).into(), // BDL
 		];
 		
-		vs.extend(cube_vs);
-		push_quad(is, i, 0, 1, 2, 3); // F
-		push_quad(is, i, 5, 4, 7, 6); // B
-		push_quad(is, i, 0, 3, 7, 4); // L
+		vs.extend(cuboid_vs);
+		push_quad(is, i, 0, 3, 2, 1); // F
+		push_quad(is, i, 5, 6, 7, 4); // B
+		push_quad(is, i, 0, 4, 7, 3); // L
 		push_quad(is, i, 1, 2, 6, 5); // R
-		push_quad(is, i, 0, 1, 5, 4); // U
+		push_quad(is, i, 1, 5, 4, 0); // U
 		push_quad(is, i, 2, 3, 7, 6); // D
 	}
 	
