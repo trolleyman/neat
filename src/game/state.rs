@@ -50,32 +50,23 @@ impl State {
 		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
 		
 		let mut state = GameState::new(cam, Gravity::Relative(1.0));
-		let r = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1),
-			red)).build(&mut state);
-		{
-			let r = state.get_entity_mut(&r).unwrap();
-			r.set_pos(Vec3::new(5.0, 0.0,  0.0));
-			r.set_vel(Vec3::new(0.0, 1.0, -1.0));
-		}
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), red))
+				.pos(Vec3::new(5.0, 0.0,  0.0))
+				.vel(Vec3::new(0.0, 1.0, -1.0))
+				.build(&mut state);
 		
-		let g = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1),
-			green)).build(&mut state);
-		{
-			let g = state.get_entity_mut(&g).unwrap();
-			g.set_pos(Vec3::new(0.0, 0.0, -5.0));
-			g.set_vel(Vec3::new(1.0, -1.0, 1.0));
-		}
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green))
+				.pos(Vec3::new(0.0, 0.0, -5.0))
+				.vel(Vec3::new(1.0, -1.0, 1.0))
+				.build(&mut state);
 		
-		let b = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1),
-			blue)).build(&mut state);
-		{
-			let b = state.get_entity_mut(&b).unwrap();
-			b.set_pos(Vec3::new(0.0, 5.0,  0.0));
-			b.set_vel(Vec3::new(-1.0, 1.0, 1.0));
-		}
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue))
+				.pos(Vec3::new(0.0, 5.0,  0.0))
+				.vel(Vec3::new(-1.0, 1.0, 1.0))
+				.build(&mut state);
 		state
 	}
 	
@@ -110,31 +101,22 @@ impl State {
 		
 		let mut state = GameState::new(cam, Gravity::Relative(1.0));
 		let sun     = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), DENSITY, 1.0, 0.0),
-			yellow)).build(&mut state);
-		{
-			let sun     = state.get_entity_mut(&sun).unwrap();
-			sun.set_pos(Vec3::new(SUN_POS, 0.0, 0.0));
-			sun.set_vel(Vec3::new(0.0, 0.0, SUN_VEL));
-		}
+			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), DENSITY, 1.0, 0.0), yellow))
+				.pos(Vec3::new(SUN_POS, 0.0, 0.0))
+				.vel(Vec3::new(0.0, 0.0, SUN_VEL))
+				.build(&mut state);
 		
 		let earth   = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), DENSITY, 1.0, 0.0),
-			green)).build(&mut state);
-		{
-			let earth   = state.get_entity_mut(&earth).unwrap();
-			earth.set_pos(Vec3::new(EARTH_POS, 0.0, 0.0));
-			earth.set_vel(Vec3::new(0.0, 0.0, -EARTH_VEL));
-		}
+			RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), DENSITY, 1.0, 0.0), green))
+				.pos(Vec3::new(EARTH_POS, 0.0, 0.0))
+				.vel(Vec3::new(0.0, 0.0, -EARTH_VEL))
+				.build(&mut state);
 		
 		let mercury = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), DENSITY, 1.0, 0.0),
-			red)).build(&mut state);
-		{
-			let mercury = state.get_entity_mut(&mercury).unwrap();
-			mercury.set_pos(Vec3::new(MERCURY_POS, 0.0, 0.0));
-			mercury.set_vel(Vec3::new(0.0, 0.0, -MERCURY_VEL));
-		}
+			RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), DENSITY, 1.0, 0.0), red))
+				.pos(Vec3::new(MERCURY_POS, 0.0, 0.0))
+				.vel(Vec3::new(0.0, 0.0, -MERCURY_VEL))
+				.build(&mut state);
 		
 		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			SUN_VEL,
@@ -154,7 +136,7 @@ impl State {
 		
 		state
 	}
-	
+		
 	pub fn camera(&self) -> &Camera {
 		&self.camera
 	}

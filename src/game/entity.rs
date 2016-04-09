@@ -78,6 +78,9 @@ impl BallInSocketIds {
 }
 
 pub struct EntityBuilder {
+	pos: Vec3<f32>,
+	vel: Vec3<f32>,
+	
 	components: Vec<Component>,
 	fixed_joints: Vec<FixedIds>,
 	ball_joints: Vec<BallInSocketIds>,
@@ -86,10 +89,25 @@ impl EntityBuilder {
 	/// Creates a new EntityBuilder with a root component.
 	pub fn new(root: Component) -> EntityBuilder {
 		EntityBuilder {
+			pos: Vec3::new(0.0, 0.0, 0.0),
+			vel: Vec3::new(0.0, 0.0, 0.0),
+			
 			components  : vec![root],
 			fixed_joints: Vec::new(),
 			ball_joints : Vec::new(),
 		}
+	}
+	
+	/// Sets the position that the entity is created at.
+	pub fn pos(mut self, pos: Vec3<f32>) -> EntityBuilder {
+		self.pos = pos;
+		self
+	}
+	
+	/// Sets the velocity that the entity is created with.
+	pub fn vel(mut self, vel: Vec3<f32>) -> EntityBuilder {
+		self.vel = vel;
+		self
 	}
 	
 	/// Adds a component that is fixed to a component that has already been added to the entity.
@@ -150,7 +168,10 @@ impl EntityBuilder {
 	
 	/// Builds the entity by adding it to the world.
 	pub fn build_world(self, world: &mut World<f32>) -> Entity {
-		Entity::with_joints(world, self.components, self.fixed_joints, self.ball_joints)
+		let mut e = Entity::with_joints(world, self.components, self.fixed_joints, self.ball_joints);
+		e.set_pos(self.pos);
+		e.set_vel(self.vel);
+		e
 	}
 }
 
