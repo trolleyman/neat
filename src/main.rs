@@ -1,4 +1,4 @@
-#![feature(box_syntax, question_mark, associated_consts, as_unsafe_cell)]
+#![feature(box_syntax, question_mark, associated_consts, iter_arith)]
 #[macro_use]
 extern crate glium;
 extern crate nalgebra as na;

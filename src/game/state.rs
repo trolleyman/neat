@@ -1,13 +1,11 @@
 use std::rc::Rc;
 use std::collections::HashMap;
-use std::collections::hash_map::Keys;
-use std::iter;
 
 use glium::backend::Context;
 use na::{Norm, Vec3};
 use nc::shape::Ball;
 use np::world::World;
-use np::object::{RigidBody, RigidBodyHandle};
+use np::object::RigidBody;
 
 use game::{KeyboardState, Entity, EntityBuilder, GameState, Component};
 use render::{Camera, Render, SimpleMesh, ColoredMesh, Color};
@@ -48,23 +46,37 @@ impl State {
 		// TODO: RigidBody builder to sort out all of this mess
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
-		let red   = box ColoredMesh::new(sphere.clone(), Color::RED);
-		let green = box ColoredMesh::new(sphere.clone(), Color::GREEN);
-		let blue  = box ColoredMesh::new(sphere.clone(), Color::BLUE);
+		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
+		let green = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
+		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
 		
 		let mut state = GameState::new(cam, Gravity::Relative(1.0));
-		let r = Entity::new(red  , 1.0);
-		let r = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box r);
-		state.get_body(&r).unwrap().borrow_mut().set_translation(Vec3::new(5.0, 0.0,  0.0));
-		state.get_body(&r).unwrap().borrow_mut().set_lin_vel(Vec3::new(0.0, 1.0, -1.0));
-		let g = Entity::new(green, 1.0);
-		let g = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box g);
-		state.get_body(&g).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 0.0, -5.0));
-		state.get_body(&g).unwrap().borrow_mut().set_lin_vel(Vec3::new(1.0, -1.0, 1.0));
-		let b = Entity::new(blue , 1.0);
-		let b = state.add_entity(RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0), box b);
-		state.get_body(&b).unwrap().borrow_mut().set_translation(Vec3::new(0.0, 5.0,  0.0));
-		state.get_body(&b).unwrap().borrow_mut().set_lin_vel(Vec3::new(-1.0, 1.0, 1.0));
+		let r = EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0),
+			red)).build(&mut state);
+		{
+			let r = state.get_entity_mut(&r).unwrap();
+			r.set_pos(Vec3::new(5.0, 0.0,  0.0));
+			r.set_vel(Vec3::new(0.0, 1.0, -1.0));
+		}
+		
+		let g = EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0),
+			green)).build(&mut state);
+		{
+			let g = state.get_entity_mut(&g).unwrap();
+			g.set_pos(Vec3::new(0.0, 0.0, -5.0));
+			g.set_vel(Vec3::new(1.0, -1.0, 1.0));
+		}
+		
+		let b = EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 1.0, 0.0),
+			blue)).build(&mut state);
+		{
+			let b = state.get_entity_mut(&b).unwrap();
+			b.set_pos(Vec3::new(0.0, 5.0,  0.0));
+			b.set_vel(Vec3::new(-1.0, 1.0, 1.0));
+		}
 		state
 	}
 	
