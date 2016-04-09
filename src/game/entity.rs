@@ -111,6 +111,7 @@ impl EntityBuilder {
 			panic!("a_id {:?} is not valid.", a_id);
 		}
 		
+		self.components.push(b);
 		let b_id = len;
 		self.fixed_joints.push(FixedIds::new(a_id, a_pos, b_id, b_pos));
 		b_id
@@ -135,6 +136,7 @@ impl EntityBuilder {
 			panic!("a_id {:?} is not valid.", a_id);
 		}
 		
+		self.components.push(b);
 		let b_id = len;
 		self.fixed_joints.push(FixedIds::new(a_id, a_pos, b_id, b_pos));
 		b_id
