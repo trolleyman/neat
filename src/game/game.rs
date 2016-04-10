@@ -103,6 +103,9 @@ impl Game {
 				n += 1;
 				lag -= physics_dt;
 			}
+			if n > 4 {
+				warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
+			}
 			self.tick(physics_dt.as_secs_partial() as f32, n);
 			
 			// Render to screen
@@ -127,7 +130,22 @@ impl Game {
 		let mut resized = false;
 		let mut mouse_pos = (mp_x, mp_y);
 		for e in self.render.poll_events() {
-			if let &Event::MouseMoved(_) = &e {
+			
+			// Filter out 'noisy' events
+			let uninportant = match &e {
+				&Event::MouseMoved(_) |
+				&Event::Moved(_, _) => {
+					true
+				},
+				&Event::KeyboardInput(ElementState::Pressed, _, Some(ref code))
+					if self.keyboard_state.is_pressed(code) => {
+						// Repeated key stroke
+						true
+				},
+				_ => false,
+			};
+			
+			if uninportant {
 				trace!("Event recieved: {:?}", e);
 			} else {
 				debug!("Event recieved: {:?}", e);
@@ -221,7 +239,11 @@ impl Game {
 		if n == 0 {
 			return;
 		}
-		trace!("Game tick: {}s ({} iterations)", dt, n);
+		if n == 1 {
+			trace!("Game tick: {}s ({} iteration)", dt, n);
+		} else {
+			trace!("Game tick: {}s ({} iterations)", dt, n);
+		}
 		// Tick next state
 		for _ in 0..n {
 			self.current_state.tick(dt, &self.settings, &self.keys, &self.keyboard_state, self.mouse_state);

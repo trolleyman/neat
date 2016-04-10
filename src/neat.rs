@@ -1,4 +1,4 @@
-#![feature(box_syntax, question_mark, associated_consts, iter_arith)]
+#![feature(box_syntax, question_mark, associated_consts, iter_arith, as_unsafe_cell)]
 #[macro_use]
 extern crate glium;
 extern crate nalgebra as na;
@@ -20,7 +20,7 @@ use std::io::{self, Write};
 use std::rc::Rc;
 
 use glium::backend::Context;
-use simplelog::{TermLogger, LogLevelFilter};
+use simplelog::TermLogger;
 
 pub use glium::glutin;
 pub mod render;
@@ -34,8 +34,7 @@ use settings::Settings;
 
 pub fn with_state<F>(generator: F) where F: FnOnce(&Rc<Context>) -> GameState {
 	let settings = Settings::from_args();
-	let log_level = if settings.verbose { LogLevelFilter::Debug } else { LogLevelFilter::Info };
-	TermLogger::init(log_level)
+	TermLogger::init(settings.log_level)
 		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
 	info!("Initialized logger");
 	

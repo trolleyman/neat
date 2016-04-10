@@ -187,6 +187,11 @@ impl Render {
 		Render::clear_frame(&mut self.frame);
 	}
 	
+	/// Executes all opengl commands in the queue. Use only for debugging purposes
+	pub fn flush(&mut self) {
+		self.ctx.finish();
+	}
+	
 	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u32>, model: Mat4<f32>, col: Color) {
 		let params = if self.wireframe_mode {
 			DrawParameters {
@@ -210,15 +215,15 @@ impl Render {
 			}
 		};
 		
+		let mvp = self.projection * self.camera.view_matrix() * model;
+		
 		self.frame.draw(
 			vs,
 			is,
 			&self.simple_shader,
 			&uniform! {
-				projection: unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(self.projection) },
-				view:       unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()) },
-				model:      unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(model) },
-				color:      unsafe { mem::transmute::<Color, [f32; 3]>(col) },
+				mvp  : unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(mvp) },
+				color: col.into_array(),
 			},
 			&params
 		).map_err(|e| error!("Draw failed: {:?}", e)).ok();

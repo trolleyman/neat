@@ -13,9 +13,12 @@ impl Color {
 	pub const WHITE : Color = Color { r: 1.0, g: 1.0, b: 1.0 };
 	
 	pub const RED   : Color = Color { r: 1.0, g: 0.0, b: 0.0 };
-	pub const YELLOW: Color = Color { r: 1.0, g: 1.0, b: 0.0 };
 	pub const GREEN : Color = Color { r: 0.0, g: 1.0, b: 0.0 };
 	pub const BLUE  : Color = Color { r: 0.0, g: 0.0, b: 1.0 };
+	
+	pub const YELLOW: Color = Color { r: 1.0, g: 1.0, b: 0.0 };
+	pub const CYAN  : Color = Color { r: 0.0, g: 1.0, b: 1.0 };
+	pub const PINK  : Color = Color { r: 1.0, g: 0.0, b: 1.0 };
 	
 	pub fn new(r: f32, g: f32, b: f32) -> Color {
 		Color {
@@ -26,6 +29,12 @@ impl Color {
 	}
 	pub fn uniform(v: f32) -> Color {
 		Color::new(v, v, v)
+	}
+	pub fn into_array(self) -> [f32; 3] {
+		self.into()
+	}
+	pub fn into_vec3(self) -> Vec3<f32> {
+		self.into()
 	}
 }
 
