@@ -32,7 +32,6 @@ pub fn main() {
 	fn print_env(s: &str) {
 		println!("{}: {}", s, env::var(s).unwrap());
 	}
-	
 	print_env("CARGO_MANIFEST_DIR");
 	print_env("OUT_DIR");
 	print_env("TARGET");

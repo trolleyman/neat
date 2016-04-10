@@ -1,7 +1,7 @@
 extern crate neat;
 
-use neat::game::GameState;
+use neat::game::GameStateBuilder;
 
 pub fn main() {
-	neat::with_state(|ctx| GameState::gen_ball_upside_down_pyramid(ctx));
+	neat::with_state(GameStateBuilder::build_default);
 }

@@ -5,7 +5,7 @@ use na::Vec3;
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
 use glium::backend::Context;
 
-use game::{GameState, KeyboardState};
+use game::{GameState, GameStateBuilder, KeyboardState};
 use render::{Render, Camera};
 use settings::Settings;
 use util::DurationExt;
@@ -25,7 +25,7 @@ pub struct Game {
 }
 impl Game {
 	pub fn new(settings: Settings) -> Game {
-		Game::with_state_generator(settings, GameState::gen_ball_upside_down_pyramid)
+		Game::with_state_generator(settings, GameStateBuilder::build_default)
 	}
 	
 	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {

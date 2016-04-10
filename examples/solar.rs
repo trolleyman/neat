@@ -1,5 +1,7 @@
 extern crate neat;
 
+use neat::game::GameStateBuilder;
+
 pub fn main() {
-	neat::with_state(neat::game::GameState::gen_solar);
+	neat::with_state(GameStateBuilder::build_solar);
 }
