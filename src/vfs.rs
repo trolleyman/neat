@@ -10,8 +10,7 @@ use glium::backend::Facade;
 use rusttype::FontCollection;
 
 // TODO: Make sure relative paths are in the right place relative to the executable.
-// For now, just use CARGO_MANIFEST_DIR as the path.
-const BASE_DIR: &'static str = env!("CARGO_MANIFEST_DIR");
+const BASE_DIR: &'static str = ".";
 
 fn assert_is_dir<P: AsRef<Path>>(dir: P) -> Result<(), String> {
 	let dir = dir.as_ref();
