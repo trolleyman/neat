@@ -49,7 +49,7 @@ impl Camera {
 		let x = screen_x as f32 * -0.008;
 		let y = screen_y as f32 * -0.008;
 		if screen_x != 0 && screen_y != 0 {
-			debug!("mouse moved: {:3},{:3} look change: {},{}", x, y, -screen_x, -screen_y);
+			trace!("mouse moved: {:3},{:3} look change: {},{}", x, y, -screen_x, -screen_y);
 		}
 		self.look(x, y);
 	}

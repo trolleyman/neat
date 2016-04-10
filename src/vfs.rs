@@ -9,14 +9,18 @@ use glium::*;
 use glium::backend::Facade;
 use rusttype::FontCollection;
 
-// TODO: Make sure relative paths are in the right place relative to the executable.
-// For now, just use CARGO_MANIFEST_DIR as the path.
-const BASE_DIR: &'static str = env!("CARGO_MANIFEST_DIR");
+fn try_get_base_dir() -> Result<PathBuf, String> {
+	::std::env::current_exe().and_then(|p| p.join("..").canonicalize()).map_err(|e| {
+		format!("Unable to locate current executable: {}", e)
+	})
+}
 
 fn assert_is_dir<P: AsRef<Path>>(dir: P) -> Result<(), String> {
 	let dir = dir.as_ref();
-	if !dir.is_dir() {
-		Err(format!("Not a directory: '{}'", dir.display()))
+	if !dir.exists() {
+		Err(format!("Directory '{}' does not exist.", dir.display()))
+	} else if !dir.is_dir() {
+		Err(format!("Directory '{}' does not exist.", dir.display()))
 	} else {
 		Ok(())
 	}
@@ -65,7 +69,7 @@ pub fn load_shader<F: Facade>(facade: &F, name: &str) -> Program {
 /// Looks for vertex shaders in `"shaders/" + name + ".vert"`
 // TODO: Other shader types
 pub fn try_load_shader<F: Facade>(facade: &F, name: &str) -> Result<Program, String> {
-	let base_dir = PathBuf::from(BASE_DIR);
+	let base_dir = try_get_base_dir()?;
 	
 	let name = String::from(name);
 	
@@ -97,7 +101,7 @@ pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 /// Loads a font from a file in the fonts/ folder.
 /// Ensures that the font at `index` is valid.
 pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
-	let base_dir = PathBuf::from(BASE_DIR);
+	let base_dir = try_get_base_dir()?;
 	let fonts_dir = base_dir.join("fonts");
 	let font_path = fonts_dir.join(name);
 	let bytes = try_read_file_bytes(&font_path)?;

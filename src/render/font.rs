@@ -7,7 +7,7 @@ use glium::{Blend, BlendingFunction, LinearBlendingFactor, Texture2d, Program, S
 use glium::Rect as GlRect;
 use glium::index::PrimitiveType;
 use glium::backend::Context;
-use glium::texture::{RawImage2d, ClientFormat};
+use glium::texture::{RawImage2d, ClientFormat, MipmapsOption};
 use rusttype::*;
 use rusttype::gpu_cache::{Cache, CacheWriteErr};
 use na::{Vec3, Mat4, Eye};
@@ -120,7 +120,7 @@ impl FontRender {
 			format: ClientFormat::U8,
 		};
 		
-		let font_tex = match Texture2d::new(&ctx, img) {
+		let font_tex = match Texture2d::with_mipmaps(&ctx, img, MipmapsOption::NoMipmap) {
 			Ok(t) => t,
 			Err(e) => {
 				error!("Could not create texture: {:?}", e);
@@ -130,7 +130,7 @@ impl FontRender {
 		
 		FontRender {
 			ctx: ctx,
-			cache: Cache::new(SIZE, SIZE, 0.1, 0.1),
+			cache: Cache::new(SIZE, SIZE, 0.1, 1.0),
 			
 			font_collection: font_collection,
 			font_index: FONT_INDEX,
@@ -168,8 +168,13 @@ impl FontRender {
 	}
 }
 
-fn cache_queued(font_tex: &mut Texture2d, cache: &mut Cache) -> Result<(), CacheWriteErr> {
-	cache.cache_queued(|rect: Rect<u32>, data| {
+fn cache_glyphs(font_tex: &mut Texture2d, cache: &mut Cache, glyphs: &[(char, PositionedGlyph)]) -> Result<(), CacheWriteErr> {
+	cache.clear_queue();
+	for &(_, ref glyph) in glyphs.iter() {
+		cache.queue_glyph(0, glyph.clone());
+	}
+	let mut n = 0;
+	let ret = cache.cache_queued(|rect: Rect<u32>, data| {
 		let rect = GlRect {
 			left:   rect.min.x,
 			bottom: rect.min.y,
@@ -183,8 +188,19 @@ fn cache_queued(font_tex: &mut Texture2d, cache: &mut Cache) -> Result<(), Cache
 			format: ClientFormat::U8,
 		};
 		
+		n += 1;
+		
 		font_tex.write(rect, data);
-	})
+	});
+	if n > 0 {
+		let s: String = glyphs.iter().map(|&(c, _)| c).collect();
+		if n == 1 {
+			warn!("{} cache miss while rendering '{}'", n, s)
+		} else {
+			warn!("{} cache misses while rendering '{}'", n, s)
+		}
+	}
+	ret
 }
 
 fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
@@ -219,11 +235,7 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 }
 
 fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Mat4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
-	cache.clear_queue();
-	for &(_, ref glyph) in glyphs.iter() {
-		cache.queue_glyph(0, glyph.clone());
-	}
-	match cache_queued(font_tex, cache) {
+	match cache_glyphs(font_tex, cache, glyphs) {
 		Ok(()) => {
 			let mut vs = Vec::new();
 			let mut is = Vec::new();
@@ -253,9 +265,9 @@ fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Prog
 				&is,
 				&shader,
 				&uniform!{
-					tex:   &*font_tex,
-					color: <Color as Into<[f32; 3]>>::into(color),
-					mat:   *mat.as_ref(),
+					tex  : &*font_tex,
+					color: color.into_array(),
+					mat  : *mat.as_ref(),
 				},
 				&DrawParameters {
 					blend: Blend {
@@ -274,13 +286,12 @@ fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Prog
 		Err(e) => {
 			if glyphs.len() == 0 {
 				// Do nothing, it's fine to not render any glyphs.
-				error!("Error: This should never happen, but it's fine if it does.");
 			} else if glyphs.len() == 1 {
 				// TODO: Maybe render default glyph?
 				let c = glyphs[0].0;
-				error!("Error: Cannot render character '{}' ({:#04X}): {:?}", c, c as u32, e);
+				error!("Cannot render character '{}' ({:#04X}): {:?}", c, c as u32, e);
 			} else {
-				warn!("Error: Cannot render all glyphs in array (len {}): {:?}, splitting at {}", glyphs.len(), e, glyphs.len() / 2);
+				warn!("Cannot render all glyphs in array (len {}): {:?}, splitting at {}", glyphs.len(), e, glyphs.len() / 2);
 				// Split glyphs up into two halves, and draw them seperately.
 				let (a, b) = glyphs.split_at(glyphs.len() / 2);
 				draw_glyphs_mat(ctx, surface, shader, font_tex, cache, mat, a, color);

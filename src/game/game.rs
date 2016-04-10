@@ -1,9 +1,12 @@
 use std::time::{Duration, Instant};
+use std::rc::Rc;
+use std::thread::sleep;
 
 use na::Vec3;
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
+use glium::backend::Context;
 
-use game::{GameState, KeyboardState};
+use game::{GameState, GameStateBuilder, KeyboardState};
 use render::{Render, Camera};
 use settings::Settings;
 use util::DurationExt;
@@ -23,10 +26,14 @@ pub struct Game {
 }
 impl Game {
 	pub fn new(settings: Settings) -> Game {
-		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)));
+		Game::with_state_generator(settings, GameStateBuilder::build_default)
+	}
+	
+	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {
+		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)), &settings);
 		info!("Initialized renderer");
 		
-		let state = GameState::gen_ball_upside_down_pyramid(render.context());
+		let state = generator(render.context());
 		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)
@@ -49,12 +56,16 @@ impl Game {
 	}
 	
 	pub fn main_loop(&mut self) {
+		// How long each physics timestep should be.
+		const PHYSICS_HZ: u32 = 120;
+		let sec = Duration::new(1, 0);
+		let physics_dt = sec / PHYSICS_HZ;
+		
+		// Minimum amount of time to wait between ticks
+		let min_elapsed = Duration::from_millis(5);
+		
 		// Try and focus on the game window
 		self.focused = self.render.try_focus().is_ok();
-		
-		// How long each physics timestep should be.
-		let sec = Duration::new(1, 0);
-		let physics_dt = sec / 120;
 		
 		let mut lag = Duration::from_millis(0);
 		let mut previous = Instant::now();
@@ -66,8 +77,13 @@ impl Game {
 		info!("Starting game main loop");
 		while self.running {
 			// Process timing stuff
-			let current = Instant::now();
-			let elapsed = current - previous;
+			let mut current = Instant::now();
+			let mut elapsed = current - previous;
+			if elapsed < min_elapsed && !self.settings.vsync { // elapsed shouldn't be lower than min when vsync is on anyway, but just in case
+				sleep(min_elapsed - elapsed);
+				current = Instant::now();
+				elapsed = current - previous;
+			}
 			previous = current;
 			lag += elapsed;
 			
@@ -86,6 +102,9 @@ impl Game {
 			while lag >= physics_dt {
 				n += 1;
 				lag -= physics_dt;
+			}
+			if n > 4 {
+				warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
 			}
 			self.tick(physics_dt.as_secs_partial() as f32, n);
 			
@@ -111,7 +130,22 @@ impl Game {
 		let mut resized = false;
 		let mut mouse_pos = (mp_x, mp_y);
 		for e in self.render.poll_events() {
-			if let &Event::MouseMoved(_) = &e {
+			
+			// Filter out 'noisy' events
+			let uninportant = match &e {
+				&Event::MouseMoved(_) |
+				&Event::Moved(_, _) => {
+					true
+				},
+				&Event::KeyboardInput(ElementState::Pressed, _, Some(ref code))
+					if self.keyboard_state.is_pressed(code) => {
+						// Repeated key stroke
+						true
+				},
+				_ => false,
+			};
+			
+			if uninportant {
 				trace!("Event recieved: {:?}", e);
 			} else {
 				debug!("Event recieved: {:?}", e);
@@ -205,7 +239,11 @@ impl Game {
 		if n == 0 {
 			return;
 		}
-		trace!("Game tick: {}s ({} iterations)", dt, n);
+		if n == 1 {
+			trace!("Game tick: {}s ({} iteration)", dt, n);
+		} else {
+			trace!("Game tick: {}s ({} iterations)", dt, n);
+		}
 		// Tick next state
 		for _ in 0..n {
 			self.current_state.tick(dt, &self.settings, &self.keys, &self.keyboard_state, self.mouse_state);

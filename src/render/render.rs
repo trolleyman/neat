@@ -10,6 +10,7 @@ use na::{Mat4, Persp3, Eye};
 
 use util;
 use vfs::load_shader;
+use settings::Settings;
 use render::{FontRender, Camera, Color, SimpleVertex};
 
 cfg_if! {
@@ -61,28 +62,25 @@ pub struct Render {
 	font_render: FontRender,
 }
 impl Render {
-	pub fn new(camera: Camera) -> Render {
-		Render::with_size(camera, 800, 600)
-	}
-	
-	fn clear_frame(frame: &mut Frame) {
-		frame.clear_color(0.0, 0.0, 0.0, 0.0);
-		frame.clear_depth(1.0);
-	}
-
-	pub fn with_size(camera: Camera, w: u32, h: u32) -> Render {
-		let win = match WindowBuilder::new()
-			.with_dimensions(w, h)
-			.with_title("NEAT".into())
-			.with_visibility(false)
-			.with_depth_buffer(24)
-			.with_vsync()
-			.build_glium() {
+	pub fn new(camera: Camera, settings: &Settings) -> Render {
+		let win = {
+			let mut builder = WindowBuilder::new()
+				.with_dimensions(settings.w, settings.h)
+				.with_title("NEAT".into())
+				.with_visibility(false)
+				.with_depth_buffer(24);
+			
+			if settings.vsync {
+				builder = builder.with_vsync();
+			}
+			
+			match builder.build_glium() {
 				Ok(w)  => w,
 				Err(e) => {
 					error!("Could not initialize window: {}", e);
 					exit(1);
 				}
+			}
 		};
 		
 		let mut frame = win.draw();
@@ -111,6 +109,11 @@ impl Render {
 		r.resize();
 		r.win.get_window().map(|w| w.show());
 		r
+	}
+	
+	fn clear_frame(frame: &mut Frame) {
+		frame.clear_color(0.0, 0.0, 0.0, 0.0);
+		frame.clear_depth(1.0);
 	}
 	
 	pub fn set_wireframe_mode(&mut self, mode: bool) {
@@ -184,6 +187,11 @@ impl Render {
 		Render::clear_frame(&mut self.frame);
 	}
 	
+	/// Executes all opengl commands in the queue. Use only for debugging purposes
+	pub fn flush(&mut self) {
+		self.ctx.finish();
+	}
+	
 	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u32>, model: Mat4<f32>, col: Color) {
 		let params = if self.wireframe_mode {
 			DrawParameters {
@@ -207,15 +215,15 @@ impl Render {
 			}
 		};
 		
+		let mvp = self.projection * self.camera.view_matrix() * model;
+		
 		self.frame.draw(
 			vs,
 			is,
 			&self.simple_shader,
 			&uniform! {
-				projection: unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(self.projection) },
-				view:       unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(self.camera.view_matrix()) },
-				model:      unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(model) },
-				color:      unsafe { mem::transmute::<Color, [f32; 3]>(col) },
+				mvp  : unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(mvp) },
+				color: col.into_array(),
 			},
 			&params
 		).map_err(|e| error!("Draw failed: {:?}", e)).ok();

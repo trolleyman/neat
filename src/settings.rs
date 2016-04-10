@@ -3,10 +3,14 @@ use std::env::args;
 use std::collections::HashSet;
 
 use glutin::VirtualKeyCode;
+use simplelog::LogLevelFilter;
 
 pub struct Settings {
-	pub verbose  : bool,
+	pub w: u32,
+	pub h: u32,
+	pub vsync    : bool,
 	pub paused   : bool,
+	pub log_level: LogLevelFilter,
 	pub forward  : VirtualKeyCode,
 	pub backward : VirtualKeyCode,
 	pub left     : VirtualKeyCode,
@@ -35,7 +39,7 @@ impl Settings {
 		// Other args
 		let mut other_args = Vec::<String>::new();
 		
-		for arg in args() {
+		for arg in args().skip(1) {
 			if arg.starts_with(LONG_START) {
 				long_args.insert((&arg[LONG_START.len()..]).into());
 			} else if arg.starts_with(SHORT_START) {
@@ -47,9 +51,20 @@ impl Settings {
 			}
 		}
 		
+		println!("short_args: {:?}", short_args);
+		println!("long_args : {:?}", long_args );
+		println!("other_args: {:?}", other_args);
+		
 		Settings {
-			verbose: short_args.contains(&'v'),
-			paused : short_args.contains(&'p'),
+			paused   : short_args.contains(&'p'),
+			vsync    : !long_args.contains("no-vsync"),
+			log_level: if short_args.contains(&'V') {
+				LogLevelFilter::Trace
+			} else if short_args.contains(&'v') {
+				LogLevelFilter::Debug
+			} else {
+				LogLevelFilter::Info
+			},
 			.. Default::default()
 		}
 	}
@@ -57,8 +72,11 @@ impl Settings {
 impl Default for Settings {
 	fn default() -> Settings {
 		Settings {
-			verbose  : false,
+			w: 800,
+			h: 600,
+			vsync    : true,
 			paused   : false,
+			log_level: LogLevelFilter::Info,
 			forward  : VirtualKeyCode::W,
 			backward : VirtualKeyCode::S,
 			left     : VirtualKeyCode::A,

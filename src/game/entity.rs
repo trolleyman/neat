@@ -278,7 +278,10 @@ impl Entity {
 	/// Renders the entity
 	pub fn render(&self, r: &mut Render) {
 		for c in self.components.iter() {
-			c.mesh.render(r, c.body.borrow().position().to_homogeneous());
+			let model = unsafe {
+				(*c.body.as_unsafe_cell().get()).position().to_homogeneous()
+			};
+			c.mesh.render(r, model);
 		}
 	}
 	
