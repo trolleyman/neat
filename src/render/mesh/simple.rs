@@ -69,14 +69,14 @@ impl Mesh {
 	}
 	
 	fn from_vecs(ctx: &Rc<Context>, vs: Vec<Vertex>, is: Vec<u32>) -> Mesh {
-		let vs = match VertexBuffer::dynamic(ctx, &vs) {
+		let vs = match VertexBuffer::immutable(ctx, &vs) {
 			Ok(vs) => vs,
 			Err(e) => {
 				error!("Could not create vertex buffer: {:?}", e);
 				exit(1);
 			},
 		};
-		let is = match IndexBuffer ::dynamic(ctx, index::PrimitiveType::TrianglesList, &is) {
+		let is = match IndexBuffer ::immutable(ctx, index::PrimitiveType::TrianglesList, &is) {
 			Ok(is) => is,
 			Err(e) => {
 				error!("Could not create index buffer: {:?}", e);
