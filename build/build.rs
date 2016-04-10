@@ -29,9 +29,6 @@ fn copy_to_out(name: &str) {
 }
 
 pub fn main() {
-	copy_to_out("shaders");
-	copy_to_out("fonts");
-	
 	fn print_env(s: &str) {
 		println!("{}: {}", s, env::var(s).unwrap());
 	}
@@ -44,4 +41,7 @@ pub fn main() {
 	print_env("OPT_LEVEL");
 	print_env("PROFILE");
 	print_env("DEBUG");
+	println!("");
+	copy_to_out("shaders");
+	copy_to_out("fonts");
 }
