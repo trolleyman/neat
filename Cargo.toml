@@ -29,6 +29,15 @@ user32-sys = "*"
 [[example]]
 name = "solar"
 path = "examples/solar.rs"
+[[example]]
+name = "balls"
+path = "examples/balls.rs"
+[[example]]
+name = "rot_test"
+path = "examples/rot_test.rs"
+[[example]]
+name = "spaceballs"
+path = "examples/spaceballs.rs"
 
 [[bin]]
 name = "neat"
