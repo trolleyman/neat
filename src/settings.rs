@@ -7,6 +7,7 @@ use glutin::VirtualKeyCode;
 pub struct Settings {
 	pub w: u32,
 	pub h: u32,
+	pub vsync    : bool,
 	pub verbose  : bool,
 	pub paused   : bool,
 	pub forward  : VirtualKeyCode,
@@ -50,8 +51,9 @@ impl Settings {
 		}
 		
 		Settings {
-			verbose: short_args.contains(&'v'),
-			paused : short_args.contains(&'p'),
+			verbose: short_args.contains(&'v') || long_args.contains("verbose"),
+			paused : short_args.contains(&'p') || long_args.contains("paused"),
+			vsync  : !long_args.contains("no-vsync"),
 			.. Default::default()
 		}
 	}
@@ -61,6 +63,7 @@ impl Default for Settings {
 		Settings {
 			w: 800,
 			h: 600,
+			vsync    : true,
 			verbose  : false,
 			paused   : false,
 			forward  : VirtualKeyCode::W,

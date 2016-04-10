@@ -1,5 +1,6 @@
 use std::time::{Duration, Instant};
 use std::rc::Rc;
+use std::thread::sleep;
 
 use na::Vec3;
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
@@ -55,12 +56,16 @@ impl Game {
 	}
 	
 	pub fn main_loop(&mut self) {
+		// How long each physics timestep should be.
+		const PHYSICS_HZ: u32 = 120;
+		let sec = Duration::new(1, 0);
+		let physics_dt = sec / PHYSICS_HZ;
+		
+		// Minimum amount of time to wait between ticks
+		let min_elapsed = Duration::from_millis(5);
+		
 		// Try and focus on the game window
 		self.focused = self.render.try_focus().is_ok();
-		
-		// How long each physics timestep should be.
-		let sec = Duration::new(1, 0);
-		let physics_dt = sec / 120;
 		
 		let mut lag = Duration::from_millis(0);
 		let mut previous = Instant::now();
@@ -72,8 +77,13 @@ impl Game {
 		info!("Starting game main loop");
 		while self.running {
 			// Process timing stuff
-			let current = Instant::now();
-			let elapsed = current - previous;
+			let mut current = Instant::now();
+			let mut elapsed = current - previous;
+			if elapsed < min_elapsed && !self.settings.vsync { // elapsed shouldn't be lower than min when vsync is on anyway, but just in case
+				sleep(min_elapsed - elapsed);
+				current = Instant::now();
+				elapsed = current - previous;
+			}
 			previous = current;
 			lag += elapsed;
 			

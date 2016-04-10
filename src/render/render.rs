@@ -63,18 +63,24 @@ pub struct Render {
 }
 impl Render {
 	pub fn new(camera: Camera, settings: &Settings) -> Render {
-		let win = match WindowBuilder::new()
-			.with_dimensions(settings.w, settings.h)
-			.with_title("NEAT".into())
-			.with_visibility(false)
-			.with_depth_buffer(24)
-			.with_vsync()
-			.build_glium() {
+		let win = {
+			let mut builder = WindowBuilder::new()
+				.with_dimensions(settings.w, settings.h)
+				.with_title("NEAT".into())
+				.with_visibility(false)
+				.with_depth_buffer(24);
+			
+			if settings.vsync {
+				builder = builder.with_vsync();
+			}
+			
+			match builder.build_glium() {
 				Ok(w)  => w,
 				Err(e) => {
 					error!("Could not initialize window: {}", e);
 					exit(1);
 				}
+			}
 		};
 		
 		let mut frame = win.draw();
