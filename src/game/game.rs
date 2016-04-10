@@ -1,7 +1,9 @@
 use std::time::{Duration, Instant};
+use std::rc::Rc;
 
 use na::Vec3;
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
+use glium::backend::Context;
 
 use game::{GameState, KeyboardState};
 use render::{Render, Camera};
@@ -23,10 +25,14 @@ pub struct Game {
 }
 impl Game {
 	pub fn new(settings: Settings) -> Game {
-		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)));
+		Game::with_state_generator(settings, GameState::gen_ball_upside_down_pyramid)
+	}
+	
+	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {
+		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)), &settings);
 		info!("Initialized renderer");
 		
-		let state = GameState::gen_ball_upside_down_pyramid(render.context());
+		let state = generator(render.context());
 		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)

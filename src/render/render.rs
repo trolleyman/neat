@@ -10,6 +10,7 @@ use na::{Mat4, Persp3, Eye};
 
 use util;
 use vfs::load_shader;
+use settings::Settings;
 use render::{FontRender, Camera, Color, SimpleVertex};
 
 cfg_if! {
@@ -61,18 +62,9 @@ pub struct Render {
 	font_render: FontRender,
 }
 impl Render {
-	pub fn new(camera: Camera) -> Render {
-		Render::with_size(camera, 800, 600)
-	}
-	
-	fn clear_frame(frame: &mut Frame) {
-		frame.clear_color(0.0, 0.0, 0.0, 0.0);
-		frame.clear_depth(1.0);
-	}
-
-	pub fn with_size(camera: Camera, w: u32, h: u32) -> Render {
+	pub fn new(camera: Camera, settings: &Settings) -> Render {
 		let win = match WindowBuilder::new()
-			.with_dimensions(w, h)
+			.with_dimensions(settings.w, settings.h)
 			.with_title("NEAT".into())
 			.with_visibility(false)
 			.with_depth_buffer(24)
@@ -111,6 +103,11 @@ impl Render {
 		r.resize();
 		r.win.get_window().map(|w| w.show());
 		r
+	}
+	
+	fn clear_frame(frame: &mut Frame) {
+		frame.clear_color(0.0, 0.0, 0.0, 0.0);
+		frame.clear_depth(1.0);
 	}
 	
 	pub fn set_wireframe_mode(&mut self, mode: bool) {

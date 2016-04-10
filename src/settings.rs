@@ -5,6 +5,8 @@ use std::collections::HashSet;
 use glutin::VirtualKeyCode;
 
 pub struct Settings {
+	pub w: u32,
+	pub h: u32,
 	pub verbose  : bool,
 	pub paused   : bool,
 	pub forward  : VirtualKeyCode,
@@ -57,6 +59,8 @@ impl Settings {
 impl Default for Settings {
 	fn default() -> Settings {
 		Settings {
+			w: 800,
+			h: 600,
 			verbose  : false,
 			paused   : false,
 			forward  : VirtualKeyCode::W,
