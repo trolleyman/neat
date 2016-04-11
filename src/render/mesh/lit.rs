@@ -8,6 +8,7 @@ use glium::index;
 use glium::{Texture2d, IndexBuffer, VertexBuffer};
 
 use render::{RenderableMesh, Material, Render};
+use util;
 
 #[derive(Copy, Clone, Debug)]
 pub struct Vertex {
@@ -39,6 +40,14 @@ impl RenderableMesh for Mesh {
 	}
 }
 impl Mesh {
+	pub fn sphere(ctx: &Rc<Context>, detail: u32, texture: Rc<Texture2d>, material: Material) -> Mesh {
+		let mut vs: Vec<Vertex> = Vec::new();
+		let mut is: Vec<u16> = Vec::new();
+		
+		Mesh::gen_sphere(&mut vs, &mut is, detail);
+		Mesh::from_vecs(ctx, vs, is, texture, material)
+	}
+	
 	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, texture: Rc<Texture2d>, material: Material) -> Mesh {
 		let mut vs: Vec<Vertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
@@ -68,6 +77,90 @@ impl Mesh {
 			index_buffer : is,
 			texture      : texture,
 			material     : material,
+		}
+	}
+	
+	fn gen_sphere(vs: &mut Vec<Vertex>, is: &mut Vec<u16>, detail: u32) {
+		let start = vs.len();
+		Mesh::gen_dodec(vs, is, detail);
+		for i in start..vs.len() {
+			{(&mut vs[i].pos).into(): &mut Vec3<f32>}.normalize_mut();
+			vs[i].normal = vs[i].pos;
+		}
+	}
+	
+	fn gen_dodec(vs: &mut Vec<Vertex>, is: &mut Vec<u16>, detail: u32) {
+		// v0 is top
+		// v1 through v4 are vertices going anti-clockwise (looking down) around the dodecahedron
+		// v5 is bottom
+		let v0 = Vec3::new( 0.0,  0.5,  0.0);
+		let v1 = Vec3::new( 0.0,  0.0,  0.5);
+		let v2 = Vec3::new( 0.5,  0.0,  0.0);
+		let v3 = Vec3::new( 0.0,  0.0, -0.5);
+		let v4 = Vec3::new(-0.5,  0.0,  0.0);
+		let v5 = Vec3::new( 0.0, -0.5,  0.0);
+		
+		let start_len = vs.len() as u16;
+		
+		// Top half
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v1, v2);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v2, v3);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v3, v4);
+		Mesh::gen_dodec_face_tris(vs, detail, v0, v4, v1);
+		// Bottom half
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v4, v3);
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v3, v2);
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v2, v1);
+		Mesh::gen_dodec_face_tris(vs, detail, v5, v1, v4);
+		
+		let tris_per_face = (vs.len() as u16 - start_len) / 8;
+		
+		for face in 0..8 { // Generate index buffer
+			let i = tris_per_face * face + start_len;
+			Mesh::gen_dodec_face_inds(is, detail, i);
+		}
+	}
+	
+	fn gen_dodec_face_tris(vs: &mut Vec<Vertex>, detail: u32, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>) {
+		let normal = (v1 - v0).cross(&(v2 - v0));
+		let rows = 2u32.pow(detail) + 1;
+		for row in 0..rows {
+			// Create row + 1 vertices.
+			let k_row = row as f32 / (rows - 1) as f32;
+			let start = util::lerp(v0, v1, k_row); // Pos of start of row
+			let end   = util::lerp(v0, v2, k_row); // Pos of end of row
+			
+			let cols = row + 1;
+			for col in 0..cols {
+				let k_col = if cols != 1 { col as f32 / (cols - 1) as f32 } else { 0.5 };
+				let v = util::lerp(start, end, k_col);
+				vs.push(Vertex::new(v, normal, Vec2::new(0.0, 0.0)));
+			}
+		}
+	}
+	
+	fn gen_dodec_face_inds(is: &mut Vec<u16>, detail: u32, offset: u16) {
+		let mut prev_start = 0;
+		let rows = 2u32.pow(detail) + 1;
+		for row in 1..rows {
+			let start = prev_start + row as u16;
+			
+			is.push(offset+prev_start);
+			is.push(offset+start);
+			is.push(offset+start+1);
+			
+			for i in 0..row - 1 {
+				let i = i as u16;
+				// Triangle pointing down
+				is.push(offset+i+prev_start+1);
+				is.push(offset+i+prev_start);
+				is.push(offset+i+start+1);
+				// Triangle pointing up
+				is.push(offset+i+prev_start+1);
+				is.push(offset+i+start+1);
+				is.push(offset+i+start+2);
+			}
+			prev_start = start;
 		}
 	}
 	
