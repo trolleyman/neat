@@ -2,7 +2,7 @@ use std::rc::Rc;
 use std::process::exit;
 use std::mem;
 
-use na::{Vec2, Vec3, Mat4, Cross};
+use na::{Vec2, Vec3, Mat4, Cross, Norm};
 use glium::backend::Context;
 use glium::index;
 use glium::{Texture2d, IndexBuffer, VertexBuffer};
@@ -79,7 +79,7 @@ impl Mesh {
 			let i = vs.len() as u16;
 			let v02 = v2-v0;
 			let v01 = v1-v0;
-			let normal = v02.cross(&v01);
+			let normal = v02.cross(&v01).normalize();
 			let v3 = v0 + v01 + v02;
 			
 			vs.push(Vertex::new(v0, normal, uv_min));

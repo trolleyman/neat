@@ -244,8 +244,9 @@ impl Render {
 				kA: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_ambient) },
 				kS: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_specular) },
 				kD: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_diffuse) },
-				shininess: material.shininess,
-				light_pos: unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.light.pos) },
+				shininess : material.shininess,
+				light_pos : unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.light.pos) },
+				camera_pos: unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.camera.pos()) }
 			},
 			&DrawParameters {
 				depth: Depth {
