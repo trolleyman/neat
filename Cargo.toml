@@ -43,3 +43,4 @@ path = "examples/spaceballs.rs"
 [[bin]]
 name = "neat"
 path = "src/main.rs"
+doc = false
