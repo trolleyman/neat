@@ -236,6 +236,7 @@ impl Render {
 			&self.phong_shader,
 			&uniform! {
 				mvp       : unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(mvp) },
+				model_view: unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(mv) },
 				normal_mat: unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(normal_mat) },
 				tex       : texture,
 				iA: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(self.light.intensity_ambient) },
@@ -246,7 +247,6 @@ impl Render {
 				kD: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_diffuse) },
 				shininess : material.shininess,
 				light_pos : unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.light.pos) },
-				camera_pos: unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.camera.pos()) }
 			},
 			&DrawParameters {
 				depth: Depth {
