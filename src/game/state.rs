@@ -5,7 +5,7 @@ use na::{Norm, Vec3};
 use np::world::World;
 
 use game::{KeyboardState, Entity, EntityBuilder};
-use render::{Camera, Render};
+use render::{Camera, Render, Light};
 use settings::Settings;
 
 const FONT_SIZE: f32 = 24.0;
@@ -30,6 +30,7 @@ pub struct State {
 	wireframe_mode: bool,
 	gravity: Gravity,
 	world: World<f32>,
+	light: Light,
 }
 impl State {
 	pub fn new(cam: Camera, g: Gravity) -> State {
@@ -40,7 +41,12 @@ impl State {
 			wireframe_mode: false,
 			gravity: g,
 			world: World::new(),
+			light: Light::off(),
 		}
+	}
+	
+	pub fn set_light(&mut self, l: Light) {
+		self.light = l;
 	}
 	
 	pub fn camera(&self) -> &Camera {
@@ -190,6 +196,7 @@ impl State {
 
 	pub fn render(&mut self, r: &mut Render, fps: u32) {
 		r.set_camera(self.camera);
+		r.set_light(self.light);
 		r.set_wireframe_mode(self.wireframe_mode);
 		
 		for e in self.entities.values() {

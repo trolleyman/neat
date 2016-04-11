@@ -4,12 +4,13 @@ use std::io;
 use std::path::{Path, PathBuf};
 use std::fs::File;
 use std::process::exit;
+use std::rc::Rc;
 
 use glium::*;
-use glium::texture::{RawImage2d, Texture2d};
-use glium::backend::Facade;
+use glium::texture::RawImage2d;
+use glium::backend::Context;
 use rusttype::FontCollection;
-use image;
+use image::{self, DynamicImage, ConvertBuffer};
 
 fn try_get_base_dir() -> Result<PathBuf, String> {
 	::std::env::current_exe().and_then(|p| p.join("..").canonicalize()).map_err(|e| {
@@ -66,8 +67,8 @@ fn try_read_file_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
 /// Looks for fragment shaders in `"shaders/" + name + ".frag"`
 /// Looks for vertex shaders in `"shaders/" + name + ".vert"`
 /// Panics if the shader cannot be found or is invalid.
-pub fn load_shader<F: Facade>(facade: &F, name: &str) -> Program {
-	match try_load_shader(facade, name) {
+pub fn load_shader(ctx: &Rc<Context>, name: &str) -> Program {
+	match try_load_shader(ctx, name) {
 		Ok(program) => program,
 		Err(e) => {
 			error!("Cannot load shader '{}': {}", name, e);
@@ -80,7 +81,7 @@ pub fn load_shader<F: Facade>(facade: &F, name: &str) -> Program {
 /// Looks for fragment shaders in `"shaders/" + name + ".frag"`
 /// Looks for vertex shaders in `"shaders/" + name + ".vert"`
 // TODO: Other shader types
-pub fn try_load_shader<F: Facade>(facade: &F, name: &str) -> Result<Program, String> {
+pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
 	let base_dir = try_get_base_dir()?;
 	
 	let name = String::from(name);
@@ -92,7 +93,7 @@ pub fn try_load_shader<F: Facade>(facade: &F, name: &str) -> Result<Program, Str
 	
 	let frag = try_read_file_string(shaders_dir.join(name.clone() + ".frag"))?;
 	
-	match Program::from_source(facade, &vert, &frag, None) {
+	match Program::from_source(ctx, &vert, &frag, None) {
 		Ok(p) => Ok(p),
 		Err(e) => Err(format!("Shader '{}' could not be compiled:\n{}", name, e)),
 	}
@@ -128,9 +129,9 @@ pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>
 
 /// Loads a texture from a file in the textures/ folder and uploads it to OpenGL.
 /// Panics if the texture could not be found.
-pub fn load_texture(name: &str, ctx: &Rc<Context>) -> Result<Texture2d, String> {
-	match try_load_texture(name, ctx) {
-		Ok(font) => font,
+pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
+	match try_load_texture(ctx, name) {
+		Ok(texture) => texture,
 		Err(e) => {
 			error!("Cannot load texture '{}': {}", name, e);
 			exit(1);
@@ -139,7 +140,7 @@ pub fn load_texture(name: &str, ctx: &Rc<Context>) -> Result<Texture2d, String> 
 }
 
 /// Loads a texture from a file in the textures/ folder and uploads it to OpenGL.
-pub fn try_load_texture(name: &str, ctx: &Rc<Context>) -> Result<Texture2d, String> {
+pub fn try_load_texture(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
 	let base_dir = try_get_base_dir()?;
 	let textures_dir = base_dir.join("textures");
 	let texture_path = textures_dir.join(name);

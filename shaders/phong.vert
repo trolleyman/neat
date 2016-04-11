@@ -2,7 +2,7 @@
 
 uniform mat4 mvp;
 // normalMatrix = (modelView).transpose().inverse()
-uniform mat4 normalMatrix;
+uniform mat4 normal_mat;
 
 in vec3 pos;
 in vec3 normal;
@@ -13,6 +13,6 @@ out vec2 t_uv;
 
 void main() {
 	t_uv = uv;
-	t_normal = (normalMatrix * vec4(normal, 1.0)).xyz;
+	t_normal = (normal_mat * vec4(normal, 1.0)).xyz;
 	gl_Position = mvp * vec4(pos, 1.0);
 }

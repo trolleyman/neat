@@ -1,6 +1,45 @@
 use std::convert::{Into, From};
 
-use na::Vec3;
+use na::{Vec3, Vec4};
+
+#[derive(Copy, Clone)]
+pub struct Light {
+	pub pos: Vec3<f32>,
+	pub intensity_ambient: Vec4<f32>,
+	pub intensity_specular: Vec4<f32>,
+	pub intensity_diffuse: Vec4<f32>,
+}
+impl Light {
+	pub fn new(pos: Vec3<f32>, ambient: Vec4<f32>, specular: Vec4<f32>, diffuse: Vec4<f32>) -> Light {
+		Light {
+			pos: pos,
+			intensity_ambient: ambient,
+			intensity_specular: specular,
+			intensity_diffuse: diffuse,
+		}
+	}
+	pub fn off() -> Light {
+		let z = Vec4::new(0.0, 0.0, 0.0, 0.0);
+		Light::new(Vec3::new(0.0, 0.0, 0.0), z, z, z)
+	}
+}
+#[derive(Copy, Clone)]
+pub struct Material {
+	pub reflection_ambient: Vec4<f32>,
+	pub reflection_specular: Vec4<f32>,
+	pub reflection_diffuse: Vec4<f32>,
+	pub shininess: f32,
+}
+impl Material {
+	pub fn new(ambient: Vec4<f32>, specular: Vec4<f32>, diffuse: Vec4<f32>, shininess: f32) -> Material {
+		Material {
+			reflection_ambient: ambient,
+			reflection_specular: specular,
+			reflection_diffuse: diffuse,
+			shininess: shininess,
+		}
+	}
+}
 
 #[derive(Copy, Clone, Debug)]
 pub struct Color {
@@ -43,22 +82,12 @@ impl From<[f32; 3]> for Color {
 		Color::new(c[0], c[1], c[2])
 	}
 }
-impl From<(f32, f32, f32)> for Color {
-	fn from(c: (f32, f32, f32)) -> Color {
-		Color::new(c.0, c.1, c.2)
-	}
-}
 impl From<Vec3<f32>> for Color {
 	fn from(c: Vec3<f32>) -> Color {
 		Color::new(c.x, c.y, c.z)
 	}
 }
 
-impl Into<(f32, f32, f32)> for Color {
-	fn into(self) -> (f32, f32, f32) {
-		(self.r, self.g, self.b)
-	}
-}
 impl Into<[f32; 3]> for Color {
 	fn into(self) -> [f32; 3] {
 		[self.r, self.g, self.b]

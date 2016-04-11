@@ -7,8 +7,11 @@ use util;
 
 pub use self::simple::Mesh as SimpleMesh;
 pub use self::simple::Vertex as SimpleVertex;
+pub use self::lit::Mesh as LitMesh;
+pub use self::lit::Vertex as LitVertex;
 
 mod simple;
+mod lit;
 
 pub trait RenderableMesh {
 	fn render(&self, r: &mut Render, model: Mat4<f32>);

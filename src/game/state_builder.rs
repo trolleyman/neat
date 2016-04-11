@@ -1,17 +1,18 @@
 use std::rc::Rc;
 
 use glium::backend::Context;
-use na::Vec3;
+use na::{Vec3, Vec4};
 use nc::shape::{Ball, Cuboid};
 use np::object::RigidBody;
 
 use game::{EntityBuilder, GameState, Gravity, Component};
-use render::{Camera, SimpleMesh, ColoredMesh, Color};
+use render::{Camera, SimpleMesh, ColoredMesh, Material, LitMesh, Light, Color};
+use vfs;
 
 pub struct StateBuilder {}
 impl StateBuilder {
 	pub fn build_default(ctx: &Rc<Context>) -> GameState {
-		StateBuilder::build_balls(ctx)
+		StateBuilder::build_phong(ctx)
 	}
 	
 	pub fn build_spaceballs(ctx: &Rc<Context>) -> GameState {
@@ -206,6 +207,44 @@ impl StateBuilder {
 				EntityBuilder::new(Component::new(ball_body.clone(), Rc::new(ColoredMesh::with_scale(ball_mesh.clone(), col, SCALE)))).pos(Vec3::new(x, 20.0, z)).build(&mut state);
 			}
 		}
+		
+		state
+	}
+	
+	pub fn build_phong(ctx: &Rc<Context>) -> GameState {
+		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::None);
+		
+		let he = Vec3::new(0.5, 0.5, 0.5);
+		
+		let texture = Rc::new(vfs::load_texture(ctx, "test.png"));
+		
+		let material = Material::new(
+			Vec4::new(0.7, 0.7, 0.7, 1.0),
+			Vec4::new(0.5, 0.5, 0.5, 1.0),
+			Vec4::new(1.0, 1.0, 1.0, 1.0),
+			5.0);
+		
+		let mesh = Rc::new(LitMesh::cuboid(ctx, he, texture, material));
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
+				.pos(Vec3::new(5.0, 0.0,  0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
+				.pos(Vec3::new(0.0, 5.0,  0.0))
+				.build(&mut state);
+		
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
+				.pos(Vec3::new(0.0, 0.0,  5.0))
+				.build(&mut state);
+		
+		state.set_light(Light::new(
+			Vec3::new(0.0, 0.0, 0.0),
+			Vec4::new(0.1, 0.1, 0.1, 1.0),
+			Vec4::new(0.7, 0.7, 0.7, 1.0),
+			Vec4::new(0.7, 0.7, 0.7, 1.0)));
 		
 		state
 	}

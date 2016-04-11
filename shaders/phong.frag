@@ -3,13 +3,13 @@
 // Texture of the object
 uniform sampler2D tex;
 
-uniform vec3 iA; // Ambient intensity
-uniform vec3 iS; // Specular intensity
-uniform vec3 iD; // Diffuse intensity
+uniform vec4 iA; // Ambient intensity
+uniform vec4 iS; // Specular intensity
+uniform vec4 iD; // Diffuse intensity
 
-uniform float kA; // Ambient reflection constant
-uniform float kS; // Specular reflection constant
-uniform float kD; // Diffuse reflection constant
+uniform vec4 kA; // Ambient reflection constant
+uniform vec4 kS; // Specular reflection constant
+uniform vec4 kD; // Diffuse reflection constant
 uniform float shininess;
 
 uniform vec3 light_pos;
@@ -17,6 +17,8 @@ uniform vec3 light_pos;
 in vec3 t_normal;
 in vec2 t_uv;
 
+out vec4 color;
+
 void main() {
-	gl_FragColor = kA * iA;
+	color = texture(tex, t_uv) * kA * iA;
 }
