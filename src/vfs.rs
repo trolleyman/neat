@@ -6,8 +6,10 @@ use std::fs::File;
 use std::process::exit;
 
 use glium::*;
+use glium::texture::{RawImage2d, Texture2d};
 use glium::backend::Facade;
 use rusttype::FontCollection;
+use image;
 
 fn try_get_base_dir() -> Result<PathBuf, String> {
 	::std::env::current_exe().and_then(|p| p.join("..").canonicalize()).map_err(|e| {
@@ -35,6 +37,9 @@ fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 	}
 	
 	let path = path.as_ref();
+	if !path.exists() {
+		return Err(format!("The file '{}' does not exist.", path.display()));
+	}
 	get_contents(path).map_err(|e| {
 		format!("Unreadable file '{}': {}", path.display(), e)
 	})
@@ -49,11 +54,18 @@ fn try_read_file_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
 	}
 	
 	let path = path.as_ref();
+	if !path.exists() {
+		return Err(format!("The file '{}' does not exist.", path.display()));
+	}
 	get_contents(path).map_err(|e| {
 		format!("Unreadable file '{}': {}", path.display(), e)
 	})
 }
 
+/// Loads a shader named `name`.
+/// Looks for fragment shaders in `"shaders/" + name + ".frag"`
+/// Looks for vertex shaders in `"shaders/" + name + ".vert"`
+/// Panics if the shader cannot be found or is invalid.
 pub fn load_shader<F: Facade>(facade: &F, name: &str) -> Program {
 	match try_load_shader(facade, name) {
 		Ok(program) => program,
@@ -88,6 +100,7 @@ pub fn try_load_shader<F: Facade>(facade: &F, name: &str) -> Result<Program, Str
 
 /// Loads a font from a file in the fonts/ folder.
 /// Ensures that the font at `index` is valid.
+/// Panics if the font is not valid.
 pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 	match try_load_font(name, index) {
 		Ok(font) => font,
@@ -111,4 +124,37 @@ pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>
 		Some(_) => Ok(collection),
 		None => Err(format!("Invalid font: '{}'", font_path.display()))
 	}
+}
+
+/// Loads a texture from a file in the textures/ folder and uploads it to OpenGL.
+/// Panics if the texture could not be found.
+pub fn load_texture(name: &str, ctx: &Rc<Context>) -> Result<Texture2d, String> {
+	match try_load_texture(name, ctx) {
+		Ok(font) => font,
+		Err(e) => {
+			error!("Cannot load texture '{}': {}", name, e);
+			exit(1);
+		}
+	}
+}
+
+/// Loads a texture from a file in the textures/ folder and uploads it to OpenGL.
+pub fn try_load_texture(name: &str, ctx: &Rc<Context>) -> Result<Texture2d, String> {
+	let base_dir = try_get_base_dir()?;
+	let textures_dir = base_dir.join("textures");
+	let texture_path = textures_dir.join(name);
+	let bytes = try_read_file_bytes(&texture_path)?;
+	
+	let img = image::load_from_memory(&bytes).map_err(|e| format!("{}", e))?;
+	let img_buffer = match img {
+		DynamicImage::ImageLuma8(img)  => img.convert(),
+		DynamicImage::ImageLumaA8(img) => img.convert(),
+		DynamicImage::ImageRgb8(img)   => img.convert(),
+		DynamicImage::ImageRgba8(img)  => img,
+	};
+	
+	// Upload to OpenGL
+	let dimensions = img_buffer.dimensions();
+	let img = RawImage2d::from_raw_rgba(img_buffer.into_raw(), dimensions);
+	Texture2d::new(ctx, img).map_err(|e| format!("{}", e))
 }
