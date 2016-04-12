@@ -1,4 +1,5 @@
 //! Virtual File System
+use prelude::*;
 use std::io::prelude::*;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -8,7 +9,6 @@ use std::rc::Rc;
 
 use glium::*;
 use glium::texture::RawImage2d;
-use glium::backend::Context;
 use rusttype::FontCollection;
 use image::{self, DynamicImage, ConvertBuffer};
 

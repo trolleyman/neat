@@ -1,7 +1,7 @@
+use prelude::*;
 use std::collections::HashMap;
 
 use glutin::{ElementState, VirtualKeyCode};
-use na::{Norm, Vec3};
 use np::world::World;
 
 use game::{KeyboardState, Entity, EntityBuilder};
@@ -23,7 +23,7 @@ pub enum Gravity {
 	None,
 }
 
-pub struct State {
+pub struct GameState {
 	next_free_id: EntityId,
 	entities: HashMap<EntityId, Entity>,
 	camera: Camera,
@@ -32,9 +32,9 @@ pub struct State {
 	world: World<f32>,
 	light: Light,
 }
-impl State {
-	pub fn new(cam: Camera, g: Gravity) -> State {
-		State {
+impl GameState {
+	pub fn new(cam: Camera, g: Gravity) -> GameState {
+		GameState {
 			next_free_id: 0,
 			entities: HashMap::new(),
 			camera: cam,

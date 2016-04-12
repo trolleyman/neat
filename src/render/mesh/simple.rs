@@ -1,25 +1,23 @@
+use prelude::*;
 use std::mem;
 use std::rc::Rc;
 use std::process::exit;
-use std::convert::From;
 
-use glium::backend::Context;
 use glium::{IndexBuffer, VertexBuffer};
 use glium::index;
-use na::{Vec3, Mat4, Norm};
 
 use render::{Render, Color};
 use util;
 
 #[derive(Copy, Clone, Debug)]
-pub struct Vertex {
+pub struct SimpleVertex {
 	pub pos: [f32; 3],
 }
-implement_vertex!(Vertex, pos);
+implement_vertex!(SimpleVertex, pos);
 
-impl From<Vec3<f32>> for Vertex {
-	fn from(v: Vec3<f32>) -> Vertex {
-		Vertex{
+impl From<Vec3<f32>> for SimpleVertex {
+	fn from(v: Vec3<f32>) -> SimpleVertex {
+		SimpleVertex{
 			pos: unsafe { mem::transmute(v) },
 		}
 	}
@@ -27,48 +25,48 @@ impl From<Vec3<f32>> for Vertex {
 
 /// A simple mesh is basically just a list of triangles
 #[derive(Debug)]
-pub struct Mesh {
-	vertex_buffer: VertexBuffer<Vertex>,
+pub struct SimpleMesh {
+	vertex_buffer: VertexBuffer<SimpleVertex>,
 	index_buffer: IndexBuffer<u16>,
 }
-impl Mesh {
+impl SimpleMesh {
 	pub fn render(&self, r: &mut Render, model: Mat4<f32>, color: Color) {
 		r.render_simple(&self.vertex_buffer, &self.index_buffer, model, color);
 	}
 	
-	pub fn sphere(ctx: &Rc<Context>, detail: u32) -> Mesh {
-		let mut vs: Vec<Vertex> = Vec::new();
+	pub fn sphere(ctx: &Rc<Context>, detail: u32) -> SimpleMesh {
+		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
 		
-		Mesh::gen_sphere(&mut vs, &mut is, detail);
-		Mesh::from_vecs(ctx, vs, is)
+		SimpleMesh::gen_sphere(&mut vs, &mut is, detail);
+		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
-	pub fn dodecahedron(ctx: &Rc<Context>) -> Mesh {
-		let mut vs: Vec<Vertex> = Vec::new();
+	pub fn dodecahedron(ctx: &Rc<Context>) -> SimpleMesh {
+		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
 		
-		Mesh::gen_dodec(&mut vs, &mut is, 0);
-		Mesh::from_vecs(ctx, vs, is)
+		SimpleMesh::gen_dodec(&mut vs, &mut is, 0);
+		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
-	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>) -> Mesh {
-		let mut vs: Vec<Vertex> = Vec::new();
+	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>) -> SimpleMesh {
+		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
 		
-		Mesh::gen_cuboid(&mut vs, &mut is, half_extents);
-		Mesh::from_vecs(ctx, vs, is)
+		SimpleMesh::gen_cuboid(&mut vs, &mut is, half_extents);
+		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
-	pub fn cube(ctx: &Rc<Context>) -> Mesh {
-		let mut vs: Vec<Vertex> = Vec::new();
+	pub fn cube(ctx: &Rc<Context>) -> SimpleMesh {
+		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
 		
-		Mesh::gen_cube(&mut vs, &mut is);
-		Mesh::from_vecs(ctx, vs, is)
+		SimpleMesh::gen_cube(&mut vs, &mut is);
+		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
-	fn from_vecs(ctx: &Rc<Context>, vs: Vec<Vertex>, is: Vec<u16>) -> Mesh {
+	fn from_vecs(ctx: &Rc<Context>, vs: Vec<SimpleVertex>, is: Vec<u16>) -> SimpleMesh {
 		let vs = match VertexBuffer::immutable(ctx, &vs) {
 			Ok(vs) => vs,
 			Err(e) => {
@@ -84,17 +82,17 @@ impl Mesh {
 			},
 		};
 		
-		Mesh {
+		SimpleMesh {
 			vertex_buffer: vs,
 			index_buffer : is,
 		}
 	}
 	
-	fn gen_cube(vs: &mut Vec<Vertex>, is: &mut Vec<u16>) {
-		Mesh::gen_cuboid(vs, is, Vec3::new(0.5, 0.5, 0.5))
+	fn gen_cube(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>) {
+		SimpleMesh::gen_cuboid(vs, is, Vec3::new(0.5, 0.5, 0.5))
 	}
 	
-	fn gen_cuboid(vs: &mut Vec<Vertex>, is: &mut Vec<u16>, half_extents: Vec3<f32>) {
+	fn gen_cuboid(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>, half_extents: Vec3<f32>) {
 		fn push_quad(is: &mut Vec<u16>, i: u16, v0: u16, v1: u16, v2: u16, v3: u16) {
 			is.extend(&[i+v0, i+v2, i+v1]);
 			is.extend(&[i+v0, i+v3, i+v2]);
@@ -102,7 +100,7 @@ impl Mesh {
 		
 		let he = half_extents;
 		let i = vs.len() as u16;
-		let cuboid_vs: &[Vertex] = &[
+		let cuboid_vs: &[SimpleVertex] = &[
 			Vec3::new(-he.x,  he.y, -he.z).into(), // FUL
 			Vec3::new( he.x,  he.y, -he.z).into(), // FUR
 			Vec3::new( he.x, -he.y, -he.z).into(), // FDR
@@ -122,9 +120,9 @@ impl Mesh {
 		push_quad(is, i, 2, 3, 7, 6); // D
 	}
 	
-	fn gen_sphere(vs: &mut Vec<Vertex>, is: &mut Vec<u16>, detail: u32) {
+	fn gen_sphere(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>, detail: u32) {
 		// Generate dodecohedron
-		Mesh::gen_dodec(vs, is, detail);
+		SimpleMesh::gen_dodec(vs, is, detail);
 		
 		// Now scale vertices to proper locations.
 		// (by normalising them)
@@ -134,11 +132,11 @@ impl Mesh {
 				let into: &Vec3<f32> = add.into();
 				*into
 			};
-			*v = Vertex::from(pos.normalize());
+			*v = SimpleVertex::from(pos.normalize());
 		}
 	}
 	
-	fn gen_dodec(vs: &mut Vec<Vertex>, is: &mut Vec<u16>, detail: u32) {
+	fn gen_dodec(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>, detail: u32) {
 		// v0 is top
 		// v1 through v4 are vertices going anti-clockwise (looking down) around the dodecahedron
 		// v5 is bottom
@@ -152,25 +150,25 @@ impl Mesh {
 		let start_len = vs.len() as u16;
 		
 		// Top half
-		Mesh::gen_dodec_face_tris(vs, detail, v0, v1, v2);
-		Mesh::gen_dodec_face_tris(vs, detail, v0, v2, v3);
-		Mesh::gen_dodec_face_tris(vs, detail, v0, v3, v4);
-		Mesh::gen_dodec_face_tris(vs, detail, v0, v4, v1);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v0, v1, v2);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v0, v2, v3);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v0, v3, v4);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v0, v4, v1);
 		// Bottom half
-		Mesh::gen_dodec_face_tris(vs, detail, v5, v4, v3);
-		Mesh::gen_dodec_face_tris(vs, detail, v5, v3, v2);
-		Mesh::gen_dodec_face_tris(vs, detail, v5, v2, v1);
-		Mesh::gen_dodec_face_tris(vs, detail, v5, v1, v4);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v5, v4, v3);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v5, v3, v2);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v5, v2, v1);
+		SimpleMesh::gen_dodec_face_tris(vs, detail, v5, v1, v4);
 		
 		let tris_per_face = (vs.len() as u16 - start_len) / 8;
 		
 		for face in 0..8 { // Generate index buffer
 			let i = tris_per_face * face + start_len;
-			Mesh::gen_dodec_face_inds(is, detail, i);
+			SimpleMesh::gen_dodec_face_inds(is, detail, i);
 		}
 	}
 	
-	fn gen_dodec_face_tris(vs: &mut Vec<Vertex>, detail: u32, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>) {
+	fn gen_dodec_face_tris(vs: &mut Vec<SimpleVertex>, detail: u32, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>) {
 		let rows = 2u32.pow(detail) + 1;
 		for row in 0..rows {
 			// Create row + 1 vertices.
@@ -212,7 +210,7 @@ impl Mesh {
 		}
 	}
 	
-	pub fn vertices(&self) -> &VertexBuffer<Vertex> {
+	pub fn vertices(&self) -> &VertexBuffer<SimpleVertex> {
 		&self.vertex_buffer
 	}
 	

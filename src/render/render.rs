@@ -1,12 +1,12 @@
+use prelude::*;
 use std::rc::Rc;
 use std::mem;
 use std::process::exit;
 
-use glium::backend::{Context, Facade};
+use glium::backend::Facade;
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
 use glium::*;
 use glutin::{CursorState, WindowBuilder, Window};
-use na::{Vec3, Vec4, Mat4, Persp3, Eye, Inv, Transpose};
 
 use util;
 use vfs;
@@ -102,7 +102,7 @@ impl Render {
 			ctx: ctx,
 			frame: frame,
 			
-			projection: Mat4::new_identity(4),
+			projection: Mat4::one(),
 			camera: camera,
 			
 			light: Light::off(),
@@ -228,21 +228,7 @@ impl Render {
 	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, texture: &Texture2d, material: &Material) {
 		let mv = self.camera.view_matrix() * model;
 		let mvp = self.projection * mv;
-		let normal_mat = mv.inv().unwrap_or(Mat4::new_identity(4)).transpose();
-		
-		fn mat4_to_string(m: Mat4<f32>) -> String {
-			let mut s = String::new();
-			for (i, col) in m.as_ref().iter().enumerate() {
-				s.push(if i == 0 { '[' } else { ' ' });
-				s.push_str(&format!("{:?}", col));
-				s.push_str(if i == 3 { "]" } else { ",\n" });
-			}
-			s
-		}
-		
-		trace!("mv    :\n{}", mat4_to_string(mv));
-		trace!("mvinv :\n{}", mat4_to_string(mv.inv().unwrap_or(Mat4::new_identity(4))));
-		trace!("normal:\n{}", mat4_to_string(normal_mat));
+		let normal_mat = mv.inv().unwrap_or(Mat4::one()).transpose();
 		
 		self.frame.draw(
 			vs,

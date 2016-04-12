@@ -1,6 +1,4 @@
-use std::convert::{Into, From};
-
-use na::{Vec3, Vec4};
+use prelude::*;
 
 #[derive(Copy, Clone)]
 pub struct Light {

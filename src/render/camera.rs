@@ -1,6 +1,5 @@
+use prelude::*;
 use std::f32;
-
-use na::{Vec3, Mat4, UnitQuat, Eye, ToHomogeneous, Rot3};
 
 use util;
 
@@ -17,7 +16,7 @@ impl Camera {
 			pos: pos,
 			yrot: 0.0,
 			xrot: 0.0,
-			view_mat: Mat4::new_identity(4),
+			view_mat: Mat4::one(),
 		};
 		c.calculate_view_matrix();
 		c

@@ -1,14 +1,11 @@
+use prelude::*;
 use std::rc::Rc;
-
-use na::{Vec3, Mat4};
 
 use super::{Color, Render};
 use util;
 
-pub use self::simple::Mesh as SimpleMesh;
-pub use self::simple::Vertex as SimpleVertex;
-pub use self::lit::Mesh as LitMesh;
-pub use self::lit::Vertex as LitVertex;
+pub use self::simple::{SimpleVertex, SimpleMesh};
+pub use self::lit::{LitVertex, LitMesh};
 
 mod simple;
 mod lit;

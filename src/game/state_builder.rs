@@ -1,16 +1,17 @@
+use prelude::*;
 use std::rc::Rc;
 
-use glium::backend::Context;
-use na::{Vec3, Vec4};
+use glium::Texture2d;
 use nc::shape::{Ball, Cuboid};
 use np::object::RigidBody;
+use rand;
 
 use game::{EntityBuilder, GameState, Gravity, Component};
 use render::{Camera, SimpleMesh, ColoredMesh, Material, LitMesh, Light, Color};
 use vfs;
 
-pub struct StateBuilder {}
-impl StateBuilder {
+pub struct GameStateBuilder {}
+impl GameStateBuilder {
 	pub fn build_default(ctx: &Rc<Context>) -> GameState {
 		StateBuilder::build_phong(ctx)
 	}

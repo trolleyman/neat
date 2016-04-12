@@ -6,6 +6,8 @@ extern crate ncollide as nc;
 extern crate nphysics3d as np;
 extern crate rusttype;
 extern crate image;
+extern crate rand;
+extern crate num;
 
 #[macro_use]
 extern crate log;
@@ -17,14 +19,16 @@ extern crate cfg_if;
 #[cfg(windows)]
 extern crate user32;
 
+use prelude::*;
 use std::io::{self, Write, BufWriter};
 use std::fs::File;
 use std::rc::Rc;
 
-use glium::backend::Context;
 use simplelog::{CombinedLogger, TermLogger, WriteLogger, SharedLogger};
 
 pub use glium::glutin;
+
+pub mod prelude;
 pub mod render;
 pub mod game;
 pub mod util;

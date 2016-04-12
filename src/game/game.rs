@@ -1,15 +1,12 @@
-use std::time::{Duration, Instant};
+use prelude::*;
 use std::rc::Rc;
 use std::thread::sleep;
 
-use na::Vec3;
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
-use glium::backend::Context;
 
 use game::{GameState, GameStateBuilder, KeyboardState};
 use render::{Render, Camera};
 use settings::Settings;
-use util::DurationExt;
 
 pub struct Game {
 	render: Render,
@@ -64,8 +61,11 @@ impl Game {
 		// Minimum amount of time to wait between ticks
 		let min_elapsed = Duration::from_millis(5);
 		
-		// Try and focus on the game window
+		// Try and focus on the game window. If error, pause game.
 		self.focused = self.render.try_focus().is_ok();
+		if !self.focused {
+			self.settings.paused = true;
+		}
 		
 		let mut lag = Duration::from_millis(0);
 		let mut previous = Instant::now();

@@ -1,19 +1,22 @@
+use prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use na::{Vec3, Pnt3, Iso3, ToHomogeneous};
+use nc::shape::Cuboid;
 use np::object::{RigidBody, RigidBodyHandle};
 use np::volumetric::Volumetric;
 use np::detection::joint::{Anchor, Fixed, BallInSocket};
 use np::world::World;
+use glium::Texture2d;
 
 use game::{GameState, EntityId};
-use render::{Render, RenderableMesh};
+use render::{Render, RenderableMesh, Material, LitMesh};
 
 /// ID of the root component in an entity.
 pub type ComponentId = u32;
 pub const ROOT_ID: ComponentId = 0;
 
+#[derive(Clone)]
 pub struct Component {
 	body: RigidBody<f32>,
 	mesh: Rc<RenderableMesh>,
@@ -24,6 +27,13 @@ impl Component {
 			body: body,
 			mesh: mesh,
 		}
+	}
+	
+	pub fn new_cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, density: f32, restitution: f32, friction: f32, texture: Rc<Texture2d>, material: Material) -> Component {
+		Component::new(
+			RigidBody::new_dynamic(Cuboid::new(half_extents), density, restitution, friction),
+			Rc::new(LitMesh::cuboid(ctx, half_extents, texture, material)),
+		)
 	}
 }
 

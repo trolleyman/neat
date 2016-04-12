@@ -1,23 +1,5 @@
-use std::time::Duration;
+use prelude::*;
 use std::cmp::PartialOrd;
-use na::{Vec3, Mat4};
-
-pub trait DurationExt {
-	fn as_millis(&self) -> u64;
-
-	fn as_secs_partial(&self) -> f64;
-}
-impl DurationExt for Duration {
-	fn as_millis(&self) -> u64 {
-		let secs = self.as_secs();
-		let subsec_millis = self.subsec_nanos() as u64 / 1_000_000;
-		(secs * 1000) + subsec_millis
-	}
-
-	fn as_secs_partial(&self) -> f64 {
-		self.as_secs() as f64 + (self.subsec_nanos() as f64 / 1_000_000_000.0)
-	}
-}
 
 pub fn clamp<T: PartialOrd>(v: T, min: T, max: T) -> T {
 	if v > min {
@@ -75,6 +57,17 @@ pub fn mat4_translation(t: Vec3<f32>) -> Mat4<f32> {
 		0.0,0.0,1.0,t.z,
 		0.0,0.0,0.0,1.0,
 		)
+}
+
+#[allow(dead_code)]
+fn mat4_to_string(m: Mat4<f32>) -> String {
+	let mut s = String::new();
+	for (i, col) in m.as_ref().iter().enumerate() {
+		s.push(if i == 0 { '[' } else { ' ' });
+		s.push_str(&format!("{:?}", col));
+		s.push_str(if i == 3 { "]" } else { ",\n" });
+	}
+	s
 }
 
 #[cfg(test)]

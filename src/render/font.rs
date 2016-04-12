@@ -1,3 +1,4 @@
+use prelude::*;
 use std::io::Write;
 use std::rc::Rc;
 use std::borrow::Cow;
@@ -6,11 +7,9 @@ use std::process::exit;
 use glium::{Blend, BlendingFunction, LinearBlendingFactor, Texture2d, Program, Surface, VertexBuffer, IndexBuffer, DrawParameters, BackfaceCullingMode};
 use glium::Rect as GlRect;
 use glium::index::PrimitiveType;
-use glium::backend::Context;
 use glium::texture::{RawImage2d, ClientFormat, MipmapsOption};
 use rusttype::*;
 use rusttype::gpu_cache::{Cache, CacheWriteErr};
-use na::{Vec3, Mat4, Eye};
 use unicode_normalization::UnicodeNormalization;
 
 use render::Color;
@@ -227,7 +226,7 @@ fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVerte
 fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[(char, PositionedGlyph)], color: Color) {
 	// Calculate matrix
 	let (w, h) = size;
-	let mut mat = Mat4::new_identity(4);
+	let mut mat = Mat4::one();
 	mat = mat * util::mat4_scale(Vec3::new(1.0, -1.0, 1.0));
 	mat = mat * util::mat4_translation(Vec3::new(-1.0, -1.0, 0.0));
 	mat = mat * util::mat4_scale(Vec3::new(2.0 / w, 2.0 / h, 1.0));
