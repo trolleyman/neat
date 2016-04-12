@@ -295,8 +295,7 @@ impl GameStateBuilder {
 			
 			let mut builder = EntityBuilder::new(
 				Component::new_cuboid(ctx, Vec3::new(table_size2, top_h2, table_size2), 1.0, 0.9, 0.1, top_tex, material.with_scale_rgba(col)))
-					.pos(pos)
-					.ang_vel(Vec3::new(r_neg(), r_neg(), r_neg()));
+					.pos(pos);
 			
 			let id = Vec3::x();
 			let off = table_size2 - leg_w2;
