@@ -29,7 +29,7 @@ fn assert_is_dir<P: AsRef<Path>>(dir: P) -> Result<(), String> {
 fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 	fn get_contents(path: &Path) -> io::Result<Vec<u8>> {
 		let mut f = File::open(path)?;
-		let mut contents = Vec::with_capacity(f.metadata()?.len() as usize);
+		let mut contents = Vec::with_capacity(f.metadata()?.len() as usize + 1);
 		f.read_to_end(&mut contents)?;
 		Ok(contents)
 	}
@@ -43,7 +43,7 @@ fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 fn try_read_file_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
 	fn get_contents(path: &Path) -> io::Result<String> {
 		let mut f = File::open(path)?;
-		let mut contents = String::with_capacity(f.metadata()?.len() as usize);
+		let mut contents = String::with_capacity(f.metadata()?.len() as usize + 1);
 		f.read_to_string(&mut contents)?;
 		Ok(contents)
 	}
