@@ -34,7 +34,7 @@ pub mod vfs;
 use game::{Game, GameState};
 use settings::Settings;
 
-pub fn with_state<F>(generator: F) where F: FnOnce(&Rc<Context>) -> GameState {
+pub fn run<F>(generator: F) where F: FnOnce(&Rc<Context>) -> GameState {
 	let settings = Settings::from_args();
 	let mut loggers: Vec<Box<SharedLogger>> = Vec::new();
 	let file_result = File::create(&settings.log_file);

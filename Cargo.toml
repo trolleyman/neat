@@ -27,6 +27,17 @@ user32-sys = "*"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 
+[[bin]]
+name = "neat"
+path = "src/main.rs"
+doc = false
+
+[[example]]
+name = "spaceballs"
+path = "examples/spaceballs.rs"
+[[example]]
+name = "rot_test"
+path = "examples/rot_test.rs"
 [[example]]
 name = "solar"
 path = "examples/solar.rs"
@@ -34,13 +45,5 @@ path = "examples/solar.rs"
 name = "balls"
 path = "examples/balls.rs"
 [[example]]
-name = "rot_test"
-path = "examples/rot_test.rs"
-[[example]]
-name = "spaceballs"
-path = "examples/spaceballs.rs"
-
-[[bin]]
-name = "neat"
-path = "src/main.rs"
-doc = false
+name = "phong"
+path = "examples/phong.rs"
