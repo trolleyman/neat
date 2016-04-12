@@ -228,16 +228,19 @@ impl StateBuilder {
 		EntityBuilder::new(Component::new(
 			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
 				.pos(Vec3::new(5.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(1.0, 0.0, 0.0))
 				.build(&mut state);
 		
 		EntityBuilder::new(Component::new(
 			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
 				.pos(Vec3::new(0.0, 5.0, 0.0))
+				.ang_vel(Vec3::new(0.0, 1.0, 0.0))
 				.build(&mut state);
 		
 		EntityBuilder::new(Component::new(
 			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
 				.pos(Vec3::new(0.0, 0.0, 5.0))
+				.ang_vel(Vec3::new(0.0, 0.0, 1.0))
 				.build(&mut state);
 		
 		let red = Rc::new(ColoredMesh::new(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED));

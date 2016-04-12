@@ -228,7 +228,7 @@ impl Render {
 	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, texture: &Texture2d, material: &Material) {
 		let mv = self.camera.view_matrix() * model;
 		let mvp = self.projection * mv;
-		let normal_mat = mv.transpose().inv().unwrap_or(Mat4::new_identity(4));
+		let normal_mat = mv.inv().unwrap_or(Mat4::new_identity(4)).transpose();
 		
 		self.frame.draw(
 			vs,

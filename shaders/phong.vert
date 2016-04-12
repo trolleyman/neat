@@ -2,7 +2,7 @@
 
 uniform mat4 mvp;
 uniform mat4 model;
-// normalMatrix = (modelView).transpose().inverse()
+// normalMatrix = (modelView).inverse().transpose()
 uniform mat4 normal_mat;
 
 uniform vec3 light_pos;
@@ -23,7 +23,7 @@ void main() {
 	t_light = normalize(vec3(light_pos - m_pos));
 	t_view = normalize(vec3(camera_pos - m_pos));
 	t_uv = uv;
-	vec4 normal4 = normal_mat * vec4(normal, 1.0);
-	t_normal = normal;//normalize(vec3(normal4) / normal4.w);
+	vec4 normal4 = normal_mat * vec4(normal, 0.0);
+	t_normal = normal;//normalize(vec3(normal4) / normal4.w); // FIXME: Why doesn't this work?
 	gl_Position = mvp * vec4(pos, 1.0);
 }
