@@ -1,6 +1,7 @@
 use prelude::*;
 use std::rc::Rc;
 use std::cell::RefCell;
+use std::collections::HashMap;
 
 use nc::shape::Cuboid;
 use np::object::{RigidBody, RigidBodyHandle};
@@ -220,11 +221,37 @@ impl Entity {
 	}
 	
 	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>) -> Entity {
+		enum Joint {
+			Fixed(FixedIds),
+			BallInSocket(BallInSocketIds),
+		}
+		// Maps a component id to it's joint.
+		let mut joints_map: HashMap<ComponentId, Joint> = HashMap::new();
+		for j in fixed_joints.drain(..) {
+			assert!(joints_map.insert(j.b, Joint::Fixed(j)).is_none(), "Component has more than one root joint.");
+		}
+		for j in ball_joints.drain(..) {
+			assert!(joints_map.insert(j.b, Joint::BallInSocket(j)).is_none(), "Component has more than one root joint.");
+		}
+		
 		// TODO: Sort out rotation for non-root component
+		// Add all the components to the world
 		let mut diff = None;
-		let components: Vec<_> = components.drain(..).map(|mut c| {
+		let components: Vec<_> = components.drain(..).enumerate().map(|(i, mut c)| {
 			if let Some(diff) = diff {
+				let j = joints_map.get(&(i as ComponentId)).expect("Component in Entity not attached to root.");
 				c.body.append_translation(&diff);
+				match j {
+					&Joint::Fixed(ref j) => {
+						// TODO: Sort out what happens when the joint has rotated.
+						c.body.append_translation(&j.a_pos.translation);
+						c.body.append_translation(&-j.b_pos.translation);
+					},
+					&Joint::BallInSocket(ref j) => {
+						c.body.append_translation(&j.a_pos.to_vec());
+						c.body.append_translation(&-j.b_pos.to_vec());
+					}
+				}
 			} else {
 				let mut root = &mut c.body;
 				diff = Some(pos - root.position().translation);
@@ -242,18 +269,26 @@ impl Entity {
 			}
 		}).collect();
 		
-		let fixed_joints = fixed_joints.drain(..).map(|j| {
-			let a = components[j.a as usize].body.clone();
-			let b = components[j.b as usize].body.clone();
-			world.add_fixed(Fixed::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos)))
-		}).collect();
+		// Add all the joints to the world
+		let mut fixed_joints = Vec::new();
+		let mut ball_joints = Vec::new();
 		
-		let ball_joints = ball_joints.drain(..).map(|j| {
-			let a = components[j.a as usize].body.clone();
-			let b = components[j.b as usize].body.clone();
-			world.add_ball_in_socket(BallInSocket::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos)))
-		}).collect();
+		for (_, j) in joints_map.drain() {
+			match j {
+				Joint::Fixed(j) => {
+					let a = components[j.a as usize].body.clone();
+					let b = components[j.b as usize].body.clone();
+					fixed_joints.push(world.add_fixed(Fixed::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos))));
+				},
+				Joint::BallInSocket(j) => {
+					let a = components[j.a as usize].body.clone();
+					let b = components[j.b as usize].body.clone();
+					ball_joints.push(world.add_ball_in_socket(BallInSocket::new(Anchor::new(Some(a), j.a_pos), Anchor::new(Some(b), j.b_pos))));
+				}
+			}
+		}
 		
+		// Get total mass.
 		let mass = components.iter().filter_map(|ch| ch.body.borrow().mass()).sum();
 		
 		Entity {

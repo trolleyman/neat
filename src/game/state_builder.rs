@@ -277,7 +277,7 @@ impl GameStateBuilder {
 	pub fn build_entities(ctx: &Rc<Context>) -> GameState {
 		fn build_table(ctx: &Rc<Context>, state: &mut GameState, top_tex: Rc<Texture2d>, leg_tex: Rc<Texture2d>, pos: Vec3<f32>, material: Material) {
 			let r = move || { rand::thread_rng().next_f32() };
-			let r_neg = move || { rand::thread_rng().next_f32() * 2.0 - 1.0 };
+			//let r_neg = move || { rand::thread_rng().next_f32() * 2.0 - 1.0 };
 			
 			let col = Vec4::new(r(), r(), r(), 1.0);
 			
@@ -308,7 +308,7 @@ impl GameStateBuilder {
 		}
 		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
 		
-		let light_pos = Vec3::new(3.0, 5.0, 0.0);
+		let light_pos = Vec3::new(3.0, 3.0, 0.0);
 		
 		let material = Material::new(
 			Vec4::new(0.9, 0.9, 0.9, 1.0),
@@ -337,8 +337,8 @@ impl GameStateBuilder {
 		
 		state.set_light(Light::new(
 			light_pos,
-			Vec4::new(0.0, 0.0, 0.0, 1.0),
-			Vec4::new(0.2, 0.2, 0.2, 1.0),
+			Vec4::new(0.1, 0.1, 0.1, 1.0),
+			Vec4::new(0.3, 0.3, 0.3, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0)));
 		
 		state
