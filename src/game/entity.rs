@@ -35,6 +35,13 @@ impl Component {
 			Rc::new(LitMesh::cuboid(ctx, half_extents, texture, material)),
 		)
 	}
+	
+	pub fn new_static_cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, restitution: f32, friction: f32, texture: Rc<Texture2d>, material: Material) -> Component {
+		Component::new(
+			RigidBody::new_static(Cuboid::new(half_extents), restitution, friction),
+			Rc::new(LitMesh::cuboid(ctx, half_extents, texture, material)),
+		)
+	}
 }
 
 pub struct ComponentHandle {

@@ -324,7 +324,7 @@ impl GameStateBuilder {
 		
 		// Plane
 		let he = Vec3::new(20.0, 1.0, 20.0);
-		EntityBuilder::new(Component::new_cuboid(ctx, he, 1.0, 0.9, 0.1, top_tex, material))
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex, material))
 			.pos(Vec3::new(0.0, -3.0, 0.0))
 			.build(&mut state);
 		
