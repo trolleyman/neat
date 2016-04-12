@@ -4,7 +4,7 @@ A basic physics sim that will eventually become a platform for learning about th
 ## Usage
 `cargo run --release` to run the default simulation
 
-`cargo run --release --example <example>` to run <example>. [List of examples](examples)
+`cargo run --release --example <example>` to run \<example\>. [List of examples](examples) (without the '.rs')
 
 ## Arguments
 - `-p` pauses the simulation
