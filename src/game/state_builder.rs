@@ -306,7 +306,7 @@ impl GameStateBuilder {
 			
 			builder.build(state);
 		}
-		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::None);
+		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
 		
 		let light_pos = Vec3::new(3.0, 5.0, 0.0);
 		
