@@ -13,7 +13,7 @@ use vfs;
 pub struct GameStateBuilder {}
 impl GameStateBuilder {
 	pub fn build_default(ctx: &Rc<Context>) -> GameState {
-		StateBuilder::build_phong(ctx)
+		GameStateBuilder::build_entities(ctx)
 	}
 	
 	pub fn build_spaceballs(ctx: &Rc<Context>) -> GameState {
@@ -267,6 +267,77 @@ impl GameStateBuilder {
 		
 		state.set_light(Light::new(
 			Vec3::new(0.0, 0.0, 0.0),
+			Vec4::new(0.0, 0.0, 0.0, 1.0),
+			Vec4::new(0.2, 0.2, 0.2, 1.0),
+			Vec4::new(0.7, 0.7, 0.7, 1.0)));
+		
+		state
+	}
+	
+	pub fn build_entities(ctx: &Rc<Context>) -> GameState {
+		fn build_table(ctx: &Rc<Context>, state: &mut GameState, top_tex: Rc<Texture2d>, leg_tex: Rc<Texture2d>, pos: Vec3<f32>, material: Material) {
+			let r = move || { rand::thread_rng().next_f32() };
+			let r_neg = move || { rand::thread_rng().next_f32() * 2.0 - 1.0 };
+			
+			let col = Vec4::new(r(), r(), r(), 1.0);
+			
+			let table_size = 2.0;
+			let top_h = 0.5;
+			let leg_h = 1.2;
+			let leg_w = 0.4;
+			
+			let table_size2 = table_size / 2.0;
+			let top_h2 = top_h / 2.0;
+			let leg_h2 = leg_h / 2.0;
+			let leg_w2 = leg_w / 2.0;
+			
+			let leg = Component::new_cuboid(ctx, Vec3::new(leg_w2, leg_h2, leg_w2), 1.0, 0.9, 0.1, leg_tex, material.with_scale_rgba(col));
+			
+			let mut builder = EntityBuilder::new(
+				Component::new_cuboid(ctx, Vec3::new(table_size2, top_h2, table_size2), 1.0, 0.9, 0.1, top_tex, material.with_scale_rgba(col)))
+					.pos(pos)
+					.ang_vel(Vec3::new(r_neg(), r_neg(), r_neg()));
+			
+			let id = Vec3::x();
+			let off = table_size2 - leg_w2;
+			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			
+			builder.build(state);
+		}
+		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::None);
+		
+		let light_pos = Vec3::new(3.0, 5.0, 0.0);
+		
+		let material = Material::new(
+			Vec4::new(0.9, 0.9, 0.9, 1.0),
+			Vec4::new(0.9, 0.9, 0.9, 1.0),
+			Vec4::new(0.5, 0.5, 0.5, 1.0),
+			1.0);
+		
+		let top_tex = Rc::new(vfs::load_texture(ctx, "test.png"));
+		let leg_tex = Rc::new(vfs::load_texture(ctx, "white.png"));
+		
+		// Table
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex, Vec3::new(0.0, 1.0, 0.0), material);
+		
+		// Plane
+		let he = Vec3::new(20.0, 1.0, 20.0);
+		EntityBuilder::new(Component::new_cuboid(ctx, he, 1.0, 0.9, 0.1, top_tex, material))
+			.pos(Vec3::new(0.0, -3.0, 0.0))
+			.build(&mut state);
+		
+		// Light indicator
+		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
+		EntityBuilder::new(Component::new(
+			RigidBody::new_static(Ball::new(0.1), 0.9, 0.1), red))
+				.pos(light_pos)
+				.build(&mut state);
+		
+		state.set_light(Light::new(
+			light_pos,
 			Vec4::new(0.0, 0.0, 0.0, 1.0),
 			Vec4::new(0.2, 0.2, 0.2, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0)));
