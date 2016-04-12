@@ -17,11 +17,12 @@ extern crate cfg_if;
 #[cfg(windows)]
 extern crate user32;
 
-use std::io::{self, Write};
+use std::io::{self, Write, BufWriter};
+use std::fs::File;
 use std::rc::Rc;
 
 use glium::backend::Context;
-use simplelog::TermLogger;
+use simplelog::{CombinedLogger, TermLogger, WriteLogger, SharedLogger};
 
 pub use glium::glutin;
 pub mod render;
@@ -35,8 +36,16 @@ use settings::Settings;
 
 pub fn with_state<F>(generator: F) where F: FnOnce(&Rc<Context>) -> GameState {
 	let settings = Settings::from_args();
-	TermLogger::init(settings.log_level)
+	let mut loggers: Vec<Box<SharedLogger>> = Vec::new();
+	let file_result = File::create(&settings.log_file);
+	match file_result {
+		Ok(f) => loggers.push(WriteLogger::new(settings.file_log_level, box BufWriter::new(f))),
+		Err(e) => {let _ = writeln!(io::stderr(), "Error: Could not open log file '{}': {}", settings.log_file.display(), e); },
+	}
+	loggers.push(TermLogger::new(settings.term_log_level));
+	CombinedLogger::init(loggers)
 		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
+	
 	info!("Initialized logger");
 	
 	let mut g = Game::with_state_generator(settings, generator);

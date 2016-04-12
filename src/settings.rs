@@ -1,6 +1,7 @@
 use std::default::Default;
 use std::env::args;
 use std::collections::HashSet;
+use std::path::PathBuf;
 
 use glutin::VirtualKeyCode;
 use simplelog::LogLevelFilter;
@@ -10,7 +11,9 @@ pub struct Settings {
 	pub h: u32,
 	pub vsync    : bool,
 	pub paused   : bool,
-	pub log_level: LogLevelFilter,
+	pub log_file : PathBuf,
+	pub term_log_level: LogLevelFilter,
+	pub file_log_level: LogLevelFilter,
 	pub forward  : VirtualKeyCode,
 	pub backward : VirtualKeyCode,
 	pub left     : VirtualKeyCode,
@@ -55,16 +58,19 @@ impl Settings {
 		println!("long_args : {:?}", long_args );
 		println!("other_args: {:?}", other_args);
 		
+		let (term_log_level, file_log_level) = if short_args.contains(&'V') {
+				(LogLevelFilter::Trace, LogLevelFilter::Trace)
+			} else if short_args.contains(&'v') {
+				(LogLevelFilter::Debug, LogLevelFilter::Trace)
+			} else {
+				(<Settings as Default>::default().term_log_level, <Settings as Default>::default().file_log_level)
+			};
+		
 		Settings {
 			paused   : short_args.contains(&'p'),
 			vsync    : !long_args.contains("no-vsync"),
-			log_level: if short_args.contains(&'V') {
-				LogLevelFilter::Trace
-			} else if short_args.contains(&'v') {
-				LogLevelFilter::Debug
-			} else {
-				LogLevelFilter::Info
-			},
+			term_log_level: term_log_level,
+			file_log_level: file_log_level,
 			.. Default::default()
 		}
 	}
@@ -76,7 +82,9 @@ impl Default for Settings {
 			h: 600,
 			vsync    : true,
 			paused   : false,
-			log_level: LogLevelFilter::Info,
+			log_file : PathBuf::from("log.txt"),
+			term_log_level: LogLevelFilter::Info,
+			file_log_level: LogLevelFilter::Debug,
 			forward  : VirtualKeyCode::W,
 			backward : VirtualKeyCode::S,
 			left     : VirtualKeyCode::A,

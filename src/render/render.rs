@@ -230,6 +230,20 @@ impl Render {
 		let mvp = self.projection * mv;
 		let normal_mat = mv.inv().unwrap_or(Mat4::new_identity(4)).transpose();
 		
+		fn mat4_to_string(m: Mat4<f32>) -> String {
+			let mut s = String::new();
+			for (i, col) in m.as_ref().iter().enumerate() {
+				s.push(if i == 0 { '[' } else { ' ' });
+				s.push_str(&format!("{:?}", col));
+				s.push_str(if i == 3 { "]" } else { ",\n" });
+			}
+			s
+		}
+		
+		trace!("mv    :\n{}", mat4_to_string(mv));
+		trace!("mvinv :\n{}", mat4_to_string(mv.inv().unwrap_or(Mat4::new_identity(4))));
+		trace!("normal:\n{}", mat4_to_string(normal_mat));
+		
 		self.frame.draw(
 			vs,
 			is,

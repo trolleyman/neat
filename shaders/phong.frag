@@ -30,7 +30,7 @@ void main() {
 	
 	if (ldotn > 0.0) {
 		diffuse = kD * ldotn * iD;
-		specular = vec4(0.0);//kS * pow(max(dot(reflected, t_view), 0.0), shininess) * iS;
+		//specular = kS * pow(max(dot(reflected, t_view), 0.0), shininess) * iS;
 	}
 	vec4 intensity = ambient + diffuse + specular;
 	color = texture(tex, t_uv) * intensity;
