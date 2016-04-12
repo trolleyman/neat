@@ -23,7 +23,6 @@ void main() {
 	t_light = normalize(vec3(light_pos - m_pos));
 	t_view = normalize(vec3(camera_pos - m_pos));
 	t_uv = uv;
-	vec4 normal4 = normal_mat * vec4(normal, 0.0);
-	t_normal = normal;//normalize(vec3(normal4) / normal4.w); // FIXME: Why doesn't this work?
+	t_normal = vec3(model * vec4(normal, 0.0));
 	gl_Position = mvp * vec4(pos, 1.0);
 }

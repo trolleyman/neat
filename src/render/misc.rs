@@ -6,38 +6,68 @@ use na::{Vec3, Vec4};
 pub struct Light {
 	pub pos: Vec3<f32>,
 	pub intensity_ambient: Vec4<f32>,
-	pub intensity_specular: Vec4<f32>,
 	pub intensity_diffuse: Vec4<f32>,
+	pub intensity_specular: Vec4<f32>,
 }
 impl Light {
-	pub fn new(pos: Vec3<f32>, ambient: Vec4<f32>, specular: Vec4<f32>, diffuse: Vec4<f32>) -> Light {
+	pub fn new(pos: Vec3<f32>, ambient: Vec4<f32>, diffuse: Vec4<f32>, specular: Vec4<f32>) -> Light {
 		Light {
 			pos: pos,
 			intensity_ambient: ambient,
-			intensity_specular: specular,
 			intensity_diffuse: diffuse,
+			intensity_specular: specular,
 		}
 	}
 	pub fn off() -> Light {
 		let z = Vec4::new(0.0, 0.0, 0.0, 0.0);
 		Light::new(Vec3::new(0.0, 0.0, 0.0), z, z, z)
 	}
+	pub fn with_ambient(mut self, r: Vec4<f32>) -> Light {
+		self.intensity_ambient = r;
+		self
+	}
+	pub fn with_diffuse(mut self, r: Vec4<f32>) -> Light {
+		self.intensity_diffuse = r;
+		self
+	}
+	pub fn with_specular(mut self, r: Vec4<f32>) -> Light {
+		self.intensity_specular = r;
+		self
+	}
 }
 #[derive(Copy, Clone)]
 pub struct Material {
 	pub reflection_ambient: Vec4<f32>,
-	pub reflection_specular: Vec4<f32>,
 	pub reflection_diffuse: Vec4<f32>,
+	pub reflection_specular: Vec4<f32>,
 	pub shininess: f32,
 }
 impl Material {
-	pub fn new(ambient: Vec4<f32>, specular: Vec4<f32>, diffuse: Vec4<f32>, shininess: f32) -> Material {
+	pub fn new(ambient: Vec4<f32>, diffuse: Vec4<f32>, specular: Vec4<f32>, shininess: f32) -> Material {
 		Material {
 			reflection_ambient: ambient,
-			reflection_specular: specular,
 			reflection_diffuse: diffuse,
+			reflection_specular: specular,
 			shininess: shininess,
 		}
+	}
+	pub fn with_ambient(mut self, r: Vec4<f32>) -> Material {
+		self.reflection_ambient = r;
+		self
+	}
+	pub fn with_diffuse(mut self, r: Vec4<f32>) -> Material {
+		self.reflection_diffuse = r;
+		self
+	}
+	pub fn with_specular(mut self, r: Vec4<f32>) -> Material {
+		self.reflection_specular = r;
+		self
+	}
+	pub fn with_scale_rgba(mut self, scale: Vec4<f32>) -> Material {
+		self.reflection_ambient  = self.reflection_ambient  * scale;
+		self.reflection_diffuse  = self.reflection_diffuse  * scale;
+		self.reflection_specular = self.reflection_specular * scale;
+		self
 	}
 }
 

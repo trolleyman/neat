@@ -219,33 +219,35 @@ impl StateBuilder {
 		let texture = Rc::new(vfs::load_texture(ctx, "test.png"));
 		
 		let material = Material::new(
+			Vec4::new(0.2, 0.2, 0.2, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
-			Vec4::new(0.9, 0.9, 0.9, 1.0),
-			Vec4::new(0.7, 0.7, 0.7, 1.0),
+			Vec4::new(0.5, 0.5, 0.5, 1.0),
 			1.0);
 		
-		let mesh = Rc::new(LitMesh::cuboid(ctx, he, texture, material));
 		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1),
+			Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(1.0, 0.0, 0.0, 1.0))))))
 				.pos(Vec3::new(5.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(1.0, 0.0, 0.0))
+				.ang_vel(Vec3::new(1.0, 2.0, 0.0))
 				.build(&mut state);
 		
 		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1),
+			Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(0.0, 1.0, 0.0, 1.0))))))
 				.pos(Vec3::new(0.0, 5.0, 0.0))
-				.ang_vel(Vec3::new(0.0, 1.0, 0.0))
+				.ang_vel(Vec3::new(2.0, 1.0, 0.0))
 				.build(&mut state);
 		
 		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), mesh.clone()))
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1),
+			Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(0.0, 0.0, 1.0, 1.0))))))
 				.pos(Vec3::new(0.0, 0.0, 5.0))
-				.ang_vel(Vec3::new(0.0, 0.0, 1.0))
+				.ang_vel(Vec3::new(0.0, 2.0, 1.0))
 				.build(&mut state);
 		
-		let red = Rc::new(ColoredMesh::new(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED));
+		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
 		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), red))
+			RigidBody::new_dynamic(Ball::new(0.1), 1.0, 0.9, 0.1), red))
 				.build(&mut state);
 		
 		let sphere_mesh = Rc::new(LitMesh::sphere(ctx, 4, Rc::new(vfs::load_texture(ctx, "white.png")), material));
@@ -255,9 +257,16 @@ impl StateBuilder {
 				.pos(Vec3::new(3.0, 2.0, 5.0))
 				.build(&mut state);
 		
+		let he = Vec3::new(20.0, 1.0, 20.0);
+		let plane_mesh = Rc::new(LitMesh::cuboid(ctx, he, texture, material));
+		EntityBuilder::new(Component::new(
+			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), plane_mesh))
+				.pos(Vec3::new(0.0, -3.0, 0.0))
+				.build(&mut state);
+		
 		state.set_light(Light::new(
 			Vec3::new(0.0, 0.0, 0.0),
-			Vec4::new(0.2, 0.2, 0.2, 1.0),
+			Vec4::new(0.1, 0.1, 0.1, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0)));
 		

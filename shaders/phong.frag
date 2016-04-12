@@ -20,16 +20,19 @@ in vec2 t_uv;
 out vec4 color;
 
 void main() {
-	float ldotn = max(dot(t_light, t_normal), 0.0);
+	float len2 = dot(t_light, t_light);
+	vec3 norm_light = t_light / sqrt(len2);
+	float ldotn = max(dot(norm_light, t_normal), 0.0);
 	// Direction that a perfect light ray would travel in when reflecting off this point
-	vec3 reflected = 2.0 * ldotn * t_normal - t_light;
+	vec3 reflected = 2.0 * ldotn * t_normal - norm_light;
 	// Calculate intensity at this point
+	float lightIntensity = 1.0 / len2;
 	vec4 ambient = kA * iA;
 	vec4 diffuse = vec4(0.0);
 	vec4 specular = vec4(0.0);
 	
 	if (ldotn > 0.0) {
-		diffuse = kD * ldotn * iD;
+		diffuse = kD * ldotn * iD * lightIntensity;
 		//specular = kS * pow(max(dot(reflected, t_view), 0.0), shininess) * iS;
 	}
 	vec4 intensity = ambient + diffuse + specular;
