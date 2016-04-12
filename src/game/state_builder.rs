@@ -13,7 +13,7 @@ use vfs;
 pub struct GameStateBuilder {}
 impl GameStateBuilder {
 	pub fn build_default(ctx: &Rc<Context>) -> GameState {
-		GameStateBuilder::build_entities(ctx)
+		GameStateBuilder::build_tables(ctx)
 	}
 	
 	pub fn build_spaceballs(ctx: &Rc<Context>) -> GameState {
@@ -274,7 +274,7 @@ impl GameStateBuilder {
 		state
 	}
 	
-	pub fn build_entities(ctx: &Rc<Context>) -> GameState {
+	pub fn build_tables(ctx: &Rc<Context>) -> GameState {
 		fn build_table(ctx: &Rc<Context>, state: &mut GameState, top_tex: Rc<Texture2d>, leg_tex: Rc<Texture2d>, pos: Vec3<f32>, material: Material) {
 			let r = move || { rand::thread_rng().next_f32() };
 			//let r_neg = move || { rand::thread_rng().next_f32() * 2.0 - 1.0 };
