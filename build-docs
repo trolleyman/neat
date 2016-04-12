@@ -1,24 +1,28 @@
-set -v # Echo
-set -e # Exit on failed commands
+build-docs() {
+	set -v # Echo
+	set -e # Exit on failed commands
 
-dir=../.docs/
-mkdir $dir                     # Make temp dir
-cargo doc                      # Create documentation
-mv target/doc $dir/            # Move output to temp dir
-git checkout gh-pages          # Switch to gh-pages branch
-cp index.html $dir/            # Move index.html redirect page to temp dir
-git checkout master
-git branch -D gh-pages
-git branch gh-pages
-git checkout gh-pages
-rm -rf ./*                     # Delete all files in current directory
-mv $dir/doc/* ./               # Move documentation from temp dir to this dir
-mv $dir/index.html ./          # Restore redirect index.html
-rm -rf $dir                    # Delete temp dir
+	dir=../.docs/
+	mkdir $dir                     # Make temp dir
+	cargo doc                      # Create documentation
+	mv target/doc $dir/            # Move output to temp dir
+	git checkout gh-pages          # Switch to gh-pages branch
+	cp index.html $dir/            # Move index.html redirect page to temp dir
+	git checkout master
+	git branch -D gh-pages
+	git branch gh-pages
+	git checkout gh-pages
+	rm -rf ./*                     # Delete all files in current directory
+	mv $dir/doc/* ./               # Move documentation from temp dir to this dir
+	mv $dir/index.html ./          # Restore redirect index.html
+	rm -rf $dir                    # Delete temp dir
 
-# Commit files to git
-git add -A
-git commit -m "Updated docs"
-git push --set-upstream origin gh-pages -f
-git checkout master
+	# Commit files to git
+	git add -A
+	git commit -m "Updated docs"
+	git push --set-upstream origin gh-pages -f
+	git checkout master
 
+	set +v
+	set +e
+}
