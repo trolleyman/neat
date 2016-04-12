@@ -20,7 +20,7 @@ in vec2 t_uv;
 out vec4 color;
 
 void main() {
-	float ldotn = dot(t_light, t_normal);
+	float ldotn = max(dot(t_light, t_normal), 0.0);
 	// Direction that a perfect light ray would travel in when reflecting off this point
 	vec3 reflected = 2.0 * ldotn * t_normal - t_light;
 	// Calculate intensity at this point
@@ -30,7 +30,7 @@ void main() {
 	
 	if (ldotn > 0.0) {
 		diffuse = kD * ldotn * iD;
-		specular = vec4(0.0);//kS * pow(dot(reflected, t_view), shininess) * iS;
+		specular = vec4(0.0);//kS * pow(max(dot(reflected, t_view), 0.0), shininess) * iS;
 	}
 	vec4 intensity = ambient + diffuse + specular;
 	color = texture(tex, t_uv) * intensity;
