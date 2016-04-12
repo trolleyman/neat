@@ -57,8 +57,12 @@ impl GameState {
 	pub fn add_entity(&mut self, build: EntityBuilder) -> EntityId {
 		let id = self.next_free_id;
 		self.next_free_id += 1;
+		// TODO: Fix has limit of 29 collision groups, as 29 for some reason is reserved for STATICs
+		if id >= 29 {
+			panic!("Collision group cannot be larger than 28.");
+		}
 		
-		let e = build.build_world(&mut self.world);
+		let e = build.build_world(&mut self.world, Some(id as usize));
 		self.entities.insert(id, e);
 		id
 	}

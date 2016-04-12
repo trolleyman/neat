@@ -4,7 +4,7 @@ use std::cell::RefCell;
 use std::collections::HashMap;
 
 use nc::shape::Cuboid;
-use np::object::{RigidBody, RigidBodyHandle};
+use np::object::{RigidBody, RigidBodyHandle, RigidBodyCollisionGroups};
 use np::volumetric::Volumetric;
 use np::detection::joint::{Anchor, Fixed, BallInSocket};
 use np::world::World;
@@ -199,8 +199,8 @@ impl EntityBuilder {
 	}
 	
 	/// Builds the entity by adding it to the world.
-	pub fn build_world(self, world: &mut World<f32>) -> Entity {
-		Entity::with_matrix(world, self.components, self.fixed_joints, self.ball_joints, self.pos, self.vel, self.rot, self.ang_vel)
+	pub fn build_world(self, world: &mut World<f32>, collision_group: Option<usize>) -> Entity {
+		Entity::with_matrix(world, self.components, self.fixed_joints, self.ball_joints, collision_group, self.pos, self.vel, self.rot, self.ang_vel)
 	}
 }
 
@@ -212,15 +212,14 @@ pub struct Entity {
 }
 impl Entity {
 	pub fn new(world: &mut World<f32>, component: Component) -> Entity {
-		Entity::with_joints(world, vec![component], Vec::new(), Vec::new())
+		Entity::with_joints(world, vec![component], Vec::new(), Vec::new(), None)
 	}
 	
-	pub fn with_joints(world: &mut World<f32>, components: Vec<Component>, fixed_joints: Vec<FixedIds>, ball_joints: Vec<BallInSocketIds>) -> Entity {
-		let z = Vec3::new(0.0, 0.0, 0.0);
-		Entity::with_matrix(world, components, fixed_joints, ball_joints, z, z, z, z)
+	pub fn with_joints(world: &mut World<f32>, components: Vec<Component>, fixed_joints: Vec<FixedIds>, ball_joints: Vec<BallInSocketIds>, collision_group: Option<usize>) -> Entity {
+		Entity::with_matrix(world, components, fixed_joints, ball_joints, collision_group, Vec3::zero(), Vec3::zero(), Vec3::zero(), Vec3::zero())
 	}
 	
-	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>) -> Entity {
+	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, mut fixed_joints: Vec<FixedIds>, mut ball_joints: Vec<BallInSocketIds>, collision_group: Option<usize>, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>) -> Entity {
 		enum Joint {
 			Fixed(FixedIds),
 			BallInSocket(BallInSocketIds),
@@ -261,6 +260,14 @@ impl Entity {
 				root.set_ang_vel(ang_vel);
 			}
 			
+			// Add to `collision_group`
+			if let Some(collision_group) = collision_group {
+				let mut groups = RigidBodyCollisionGroups::new_dynamic();
+				groups.modify_membership(collision_group, true);
+				groups.disable_self_collision();
+				c.body.set_collision_groups(groups);
+				debug!("Added component to collision group {}", collision_group);
+			}
 			c.body.set_lin_vel(vel);
 			c.body.set_deactivation_threshold(None);
 			ComponentHandle {
