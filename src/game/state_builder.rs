@@ -5,7 +5,6 @@ use std::sync::Arc;
 use glium::Texture2d;
 use nc::inspection::Repr;
 use nc::shape::{Ball, Cuboid};
-use np::object::RigidBody;
 use rand;
 
 use game::{EntityBuilder, GameState, Gravity, Component};
@@ -320,8 +319,6 @@ impl GameStateBuilder {
 	/// Builds the `tables` scene.
 	/// 
 	/// This is basically an entity test scene, testing how entities interact with themselves and other objects.
-	/// 
-	/// Currently the table just goes glitching off somewhere.
 	pub fn build_tables(ctx: &Rc<Context>) -> GameState {
 		fn build_table(ctx: &Rc<Context>, state: &mut GameState, top_tex: Rc<Texture2d>, leg_tex: Rc<Texture2d>, pos: Vec3<f32>, material: Material) {
 			let r = move || { rand::thread_rng().next_f32() };
@@ -349,7 +346,7 @@ impl GameStateBuilder {
 			let top = Component::new(Cuboid::new(top_he), top_mesh);
 			
 			let off = table_size2 - leg_w2;
-			EntityBuilder::new(1.0, 0.9, 0.1)
+			EntityBuilder::new(1.0, 0.3, 0.6)
 				// Add legs
 				.component(leg.clone().with_pos(Vec3::new( off, -top_h2,  off)))
 				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2,  off)))
@@ -380,7 +377,7 @@ impl GameStateBuilder {
 		let he = Vec3::new(1.0, 20.0, 20.0);
 		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
 		let plane = Component::new(Cuboid::new(he), mesh);
-		EntityBuilder::new_static(0.9, 0.1)
+		EntityBuilder::new_static(0.3, 0.7)
 			.component(plane.clone().with_pos(Vec3::new(-20.0, -3.0 + 20.0, 0.0))) // X-
 			.component(plane.clone().with_pos(Vec3::new(20.0, -3.0 + 20.0, 0.0)))  // X+
 			.build(&mut state);
@@ -389,7 +386,7 @@ impl GameStateBuilder {
 		let he = Vec3::new(20.0, 20.0, 1.0);
 		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
 		let plane = Component::new(Cuboid::new(he), mesh);
-		EntityBuilder::new_static(0.9, 0.1)
+		EntityBuilder::new_static(0.3, 0.7)
 			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0 + 20.0, -20.0))) // Z-
 			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0 + 20.0, 20.0)))  // Z+
 			.build(&mut state);
@@ -398,17 +395,19 @@ impl GameStateBuilder {
 		let he = Vec3::new(20.0, 1.0, 20.0);
 		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
 		let plane = Component::new(Cuboid::new(he), mesh);
-		EntityBuilder::new_static(0.9, 0.1)
+		EntityBuilder::new_static(0.3, 0.7)
 			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0, 0.0)))        // Y-
 			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0 + 40.0, 0.0))) // Y+
 			.build(&mut state);
 		
-		// Table
-		build_table(ctx, &mut state, top_tex.clone(), leg_tex, Vec3::new(0.0, 1.0, 0.0), material);
+		// Tables
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.0, 1.0, 0.0)  , material);
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.3, 2.0, 0.1)  , material);
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(-0.5, 4.0, -0.4), material);
 		
 		// Light indicator
 		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
-		EntityBuilder::new_static(0.9, 0.1)
+		EntityBuilder::new_static(0.3, 0.7)
 			.component(Component::new(Ball::new(0.1), red))
 			.pos(light_pos)
 			.build(&mut state);
