@@ -1,7 +1,9 @@
 use prelude::*;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use glium::Texture2d;
+use nc::inspection::Repr;
 use nc::shape::{Ball, Cuboid};
 use np::object::RigidBody;
 use rand;
@@ -30,23 +32,24 @@ impl GameStateBuilder {
 		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
 		
 		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Relative(1.0));
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), red))
-				.pos(Vec3::new(5.0, 0.0,  0.0))
-				.vel(Vec3::new(0.0, 1.0, -1.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), red))
+			.pos(Vec3::new(5.0, 0.0,  0.0))
+			.vel(Vec3::new(0.0, 1.0, -1.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green))
-				.pos(Vec3::new(0.0, 0.0, -5.0))
-				.vel(Vec3::new(1.0, -1.0, 1.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), green))
+			.pos(Vec3::new(0.0, 0.0, -5.0))
+			.vel(Vec3::new(1.0, -1.0, 1.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue))
-				.pos(Vec3::new(0.0, 5.0,  0.0))
-				.vel(Vec3::new(-1.0, 1.0, 1.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), blue))
+			.pos(Vec3::new(0.0, 5.0,  0.0))
+			.vel(Vec3::new(-1.0, 1.0, 1.0))
+			.build(&mut state);
+		
 		state
 	}
 	
@@ -88,38 +91,38 @@ impl GameStateBuilder {
 		let red    = Rc::new(ColoredMesh::with_scale(sphere.clone(), Color::RED   , MERCURY_RADIUS));
 		
 		let mut state = GameState::new(Camera::new(Vec3::new(0.0, 0.0, 20.0)), Gravity::Relative(1.0));
-		let sun     = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(SUN_RADIUS), DENSITY, 1.0, 0.0), yellow))
-				.pos(Vec3::new(SUN_POS, 0.0, 0.0))
-				.vel(Vec3::new(0.0, 0.0, SUN_VEL))
-				.build(&mut state);
+		let sun     = EntityBuilder::new(DENSITY, 1.0, 0.0)
+			.component(Component::new(Ball::new(SUN_RADIUS), yellow))
+			.pos(Vec3::new(SUN_POS, 0.0, 0.0))
+			.vel(Vec3::new(0.0, 0.0, SUN_VEL))
+			.build(&mut state);
 		
-		let earth   = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(EARTH_RADIUS), DENSITY, 1.0, 0.0), green))
-				.pos(Vec3::new(EARTH_POS, 0.0, 0.0))
-				.vel(Vec3::new(0.0, 0.0, -EARTH_VEL))
-				.build(&mut state);
+		let earth   = EntityBuilder::new(DENSITY, 1.0, 0.0)
+			.component(Component::new(Ball::new(EARTH_RADIUS), green))
+			.pos(Vec3::new(EARTH_POS, 0.0, 0.0))
+			.vel(Vec3::new(0.0, 0.0, -EARTH_VEL))
+			.build(&mut state);
 		
-		let mercury = EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(MERCURY_RADIUS), DENSITY, 1.0, 0.0), red))
-				.pos(Vec3::new(MERCURY_POS, 0.0, 0.0))
-				.vel(Vec3::new(0.0, 0.0, -MERCURY_VEL))
-				.build(&mut state);
+		let mercury = EntityBuilder::new(DENSITY, 1.0, 0.0)
+			.component(Component::new(Ball::new(MERCURY_RADIUS), red))
+			.pos(Vec3::new(MERCURY_POS, 0.0, 0.0))
+			.vel(Vec3::new(0.0, 0.0, -MERCURY_VEL))
+			.build(&mut state);
 		
 		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			SUN_VEL,
 			1.0,
-			state.get_entity(&sun).unwrap().mass(),
+			1.0 / state.get_entity(&sun).unwrap().body().borrow().inv_mass(),
 			SUN_RADIUS);
 		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			EARTH_VEL,
 			EARTH_SCALE,
-			state.get_entity(&earth).unwrap().mass(),
+			1.0 / state.get_entity(&earth).unwrap().body().borrow().inv_mass(),
 			EARTH_RADIUS);
 		info!("MERCURY: vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			MERCURY_VEL,
 			MERCURY_SCALE,
-			state.get_entity(&mercury).unwrap().mass(),
+			1.0 / state.get_entity(&mercury).unwrap().body().borrow().inv_mass(),
 			MERCURY_RADIUS);
 		
 		state
@@ -137,53 +140,53 @@ impl GameStateBuilder {
 		
 		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 0.0, 10.0)), Gravity::None);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), red.clone()))
-				.pos(Vec3::new(0.0, 0.0,  0.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), red.clone()))
+			.pos(Vec3::new(0.0, 0.0,  0.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green.clone()))
-				.pos(Vec3::new(3.0, 0.0, 0.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(1.0, 0.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), green.clone()))
+			.pos(Vec3::new(3.0, 0.0, 0.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(1.0, 0.0, 0.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue.clone()))
-				.pos(Vec3::new(6.0, 0.0,  0.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(2.0, 0.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), blue.clone()))
+			.pos(Vec3::new(6.0, 0.0,  0.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(2.0, 0.0, 0.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green.clone()))
-				.pos(Vec3::new(0.0, 3.0, 0.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(0.0, 1.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), green.clone()))
+			.pos(Vec3::new(0.0, 3.0, 0.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(0.0, 1.0, 0.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue.clone()))
-				.pos(Vec3::new(0.0, 6.0,  0.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(0.0, 2.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), blue.clone()))
+			.pos(Vec3::new(0.0, 6.0,  0.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(0.0, 2.0, 0.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), green.clone()))
-				.pos(Vec3::new(0.0, 0.0, 3.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(0.0, 0.0, 1.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), green.clone()))
+			.pos(Vec3::new(0.0, 0.0, 3.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(0.0, 0.0, 1.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), blue.clone()))
-				.pos(Vec3::new(0.0, 0.0,  6.0))
-				.rot(Vec3::new(0.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(0.0, 0.0, 2.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), blue.clone()))
+			.pos(Vec3::new(0.0, 0.0,  6.0))
+			.rot(Vec3::new(0.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(0.0, 0.0, 2.0))
+			.build(&mut state);
 		
 		state
 	}
@@ -203,31 +206,46 @@ impl GameStateBuilder {
 		let plane_mesh = Rc::new(SimpleMesh::cuboid(ctx, he));
 		let green = Rc::new(ColoredMesh::new(plane_mesh.clone(), Color::GREEN));
 		let blue  = Rc::new(ColoredMesh::new(plane_mesh.clone(), Color::BLUE));
-		let plane_body = RigidBody::new_static(Cuboid::new(he), 0.1, 0.5);
 		// Plane +X
-		EntityBuilder::new(Component::new(plane_body.clone(), green.clone()))
-			.rot(Vec3::new(0.0, 0.0, -ANG)).build(&mut state);
+		EntityBuilder::new_static(0.1, 0.5)
+			.component(Component::new(Cuboid::new(he), green.clone()))
+			.rot(Vec3::new(0.0, 0.0, -ANG))
+			.build(&mut state);
 		// Plane +Z
-		EntityBuilder::new(Component::new(plane_body.clone(), blue .clone()))
-			.rot(Vec3::new(-ANG, 0.0, 0.0)).build(&mut state);
+		EntityBuilder::new_static(0.1, 0.5)
+			.component(Component::new(Cuboid::new(he), blue .clone()))
+			.rot(Vec3::new(-ANG, 0.0, 0.0))
+			.build(&mut state);
 		// Plane -X
-		EntityBuilder::new(Component::new(plane_body.clone(), green.clone()))
-			.rot(Vec3::new(0.0, 0.0, ANG)).build(&mut state);
+		EntityBuilder::new_static(0.1, 0.5)
+			.component(Component::new(Cuboid::new(he), green.clone()))
+			.rot(Vec3::new(0.0, 0.0, ANG)).
+			build(&mut state);
 		// Plane -Y
-		EntityBuilder::new(Component::new(plane_body.clone(), blue .clone()))
-			.rot(Vec3::new(ANG, 0.0, 0.0)).build(&mut state);
+		EntityBuilder::new_static(0.1, 0.5)
+			.component(Component::new(Cuboid::new(he), blue .clone()))
+			.rot(Vec3::new(ANG, 0.0, 0.0)).
+			build(&mut state);
 		
 		// Gen balls at top
 		const SCALE: f32 = 0.4;
-		let ball_body = RigidBody::new_dynamic(Ball::new(SCALE), 1.0, 0.3, 0.5);
+		let ball = Arc::new(box Ball::new(SCALE) as Box<Repr<Pnt3<f32>, Iso3<f32>>>);
 		let ball_mesh = Rc::new(SimpleMesh::sphere(ctx, 4));
+		
+		let r = move || { rand::thread_rng().next_f32() };
+		
 		const N: i32 = 10;
 		for x in 0..N {
 			let x = (x - N/2) as f32 * 2.0;
 			for z in 0..N {
 				let z = (z - N/2) as f32 * 2.0;
-				let col = Color::new(1.0, 0.0, 0.0);
-				EntityBuilder::new(Component::new(ball_body.clone(), Rc::new(ColoredMesh::with_scale(ball_mesh.clone(), col, SCALE)))).pos(Vec3::new(x, 20.0, z)).build(&mut state);
+				let col = Color::new(r(), r(), r());
+				let ball_mesh = Rc::new(ColoredMesh::with_scale(ball_mesh.clone(), col, SCALE));
+				
+				EntityBuilder::new(1.0, 0.3, 0.5)
+					.component(Component::with_arc(ball.clone(), ball_mesh))
+					.pos(Vec3::new(x, 20.0, z))
+					.build(&mut state);
 			}
 		}
 		
@@ -250,45 +268,45 @@ impl GameStateBuilder {
 			Vec4::new(0.5, 0.5, 0.5, 1.0),
 			1.0);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1),
-			Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(1.0, 0.0, 0.0, 1.0))))))
-				.pos(Vec3::new(5.0, 0.0, 0.0))
-				.ang_vel(Vec3::new(1.0, 2.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Cuboid::new(he),
+				Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(1.0, 0.0, 0.0, 1.0))))))
+			.pos(Vec3::new(5.0, 0.0, 0.0))
+			.ang_vel(Vec3::new(1.0, 2.0, 0.0))
+			.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1),
-			Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(0.0, 1.0, 0.0, 1.0))))))
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Cuboid::new(he),
+				Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(0.0, 1.0, 0.0, 1.0))))))
 				.pos(Vec3::new(0.0, 5.0, 0.0))
 				.ang_vel(Vec3::new(2.0, 1.0, 0.0))
 				.build(&mut state);
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1),
-			Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(0.0, 0.0, 1.0, 1.0))))))
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Cuboid::new(he),
+				Rc::new(LitMesh::cuboid(ctx, he, texture.clone(), material.with_scale_rgba(Vec4::new(0.0, 0.0, 1.0, 1.0))))))
 				.pos(Vec3::new(0.0, 0.0, 5.0))
 				.ang_vel(Vec3::new(0.0, 2.0, 1.0))
 				.build(&mut state);
 		
 		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(0.1), 1.0, 0.9, 0.1), red))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(0.1), red))
+			.build(&mut state);
 		
 		let sphere_mesh = Rc::new(LitMesh::sphere(ctx, 4, Rc::new(vfs::load_texture(ctx, "white.png")), material));
 		
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Ball::new(1.0), 1.0, 0.9, 0.1), sphere_mesh.clone()))
-				.pos(Vec3::new(3.0, 2.0, 5.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), sphere_mesh))
+			.pos(Vec3::new(3.0, 2.0, 5.0))
+			.build(&mut state);
 		
 		let he = Vec3::new(20.0, 1.0, 20.0);
 		let plane_mesh = Rc::new(LitMesh::cuboid(ctx, he, texture, material));
-		EntityBuilder::new(Component::new(
-			RigidBody::new_dynamic(Cuboid::new(he), 1.0, 0.9, 0.1), plane_mesh))
-				.pos(Vec3::new(0.0, -3.0, 0.0))
-				.build(&mut state);
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Cuboid::new(he), plane_mesh))
+			.pos(Vec3::new(0.0, -3.0, 0.0))
+			.build(&mut state);
 		
 		state.set_light(Light::new(
 			Vec3::new(0.0, 0.0, 0.0),
@@ -310,6 +328,7 @@ impl GameStateBuilder {
 			//let r_neg = move || { rand::thread_rng().next_f32() * 2.0 - 1.0 };
 			
 			let col = Vec4::new(r(), r(), r(), 1.0);
+			let material = material.with_scale_rgba(col);
 			
 			let table_size = 2.0;
 			let top_h = 0.5;
@@ -321,23 +340,30 @@ impl GameStateBuilder {
 			let leg_h2 = leg_h / 2.0;
 			let leg_w2 = leg_w / 2.0;
 			
-			let leg = Component::new_cuboid(ctx, Vec3::new(leg_w2, leg_h2, leg_w2), 1.0, 0.9, 0.1, leg_tex, material.with_scale_rgba(col));
+			let leg_he = Vec3::new(leg_w2, leg_h2, leg_w2);
+			let leg_mesh = Rc::new(LitMesh::cuboid(ctx, leg_he, leg_tex, material));
+			let leg = Component::new(Cuboid::new(leg_he), leg_mesh);
 			
-			let mut builder = EntityBuilder::new(
-				Component::new_cuboid(ctx, Vec3::new(table_size2, top_h2, table_size2), 1.0, 0.9, 0.1, top_tex, material.with_scale_rgba(col)))
-					.pos(pos);
+			let top_he = Vec3::new(table_size2, top_h2, table_size2);
+			let top_mesh = Rc::new(LitMesh::cuboid(ctx, top_he, top_tex, material));
+			let top = Component::new(Cuboid::new(top_he), top_mesh);
 			
-			let id = Vec3::x();
-			let hoff = 0.04;
 			let off = table_size2 - leg_w2;
-			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2-hoff,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2-hoff,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2-hoff, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2-hoff, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			
-			builder.build(state);
+			EntityBuilder::new(1.0, 0.9, 0.1)
+				// Add legs
+				.component(leg.clone().with_pos(Vec3::new( off, -top_h2,  off)))
+				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2,  off)))
+				.component(leg.clone().with_pos(Vec3::new( off, -top_h2, -off)))
+				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2, -off)))
+				// Add table top
+				.component(top)
+				.pos(pos)
+				.build(state);
 		}
-		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
+		
+		let mut state = GameState::new(
+			Camera::new(Vec3::new(2.0, 2.0, 10.0)),
+			Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
 		
 		let light_pos = Vec3::new(3.0, 3.0, 0.0);
 		
@@ -352,35 +378,29 @@ impl GameStateBuilder {
 		
 		// X- Plane
 		let he = Vec3::new(1.0, 20.0, 20.0);
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
-			.pos(Vec3::new(-20.0, -3.0 + 20.0, 0.0))
-			.build(&mut state);
-		
-		// X+ Plane
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
-			.pos(Vec3::new(20.0, -3.0 + 20.0, 0.0))
+		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
+		let plane = Component::new(Cuboid::new(he), mesh);
+		EntityBuilder::new_static(0.9, 0.1)
+			.component(plane.clone().with_pos(Vec3::new(-20.0, -3.0 + 20.0, 0.0))) // X-
+			.component(plane.clone().with_pos(Vec3::new(20.0, -3.0 + 20.0, 0.0)))  // X+
 			.build(&mut state);
 		
 		// Z- Plane
 		let he = Vec3::new(20.0, 20.0, 1.0);
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
-			.pos(Vec3::new(0.0, -3.0 + 20.0, -20.0))
-			.build(&mut state);
-		
-		// Z+ Plane
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
-			.pos(Vec3::new(00.0, -3.0 + 20.0, 20.0))
+		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
+		let plane = Component::new(Cuboid::new(he), mesh);
+		EntityBuilder::new_static(0.9, 0.1)
+			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0 + 20.0, -20.0))) // Z-
+			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0 + 20.0, 20.0)))  // Z+
 			.build(&mut state);
 		
 		// Y- Plane
 		let he = Vec3::new(20.0, 1.0, 20.0);
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
-			.pos(Vec3::new(0.0, -3.0, 0.0))
-			.build(&mut state);
-		
-		// Y+ Plane
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
-			.pos(Vec3::new(0.0, -3.0 + 40.0, 0.0))
+		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
+		let plane = Component::new(Cuboid::new(he), mesh);
+		EntityBuilder::new_static(0.9, 0.1)
+			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0, 0.0)))        // Y-
+			.component(plane.clone().with_pos(Vec3::new(0.0, -3.0 + 40.0, 0.0))) // Y+
 			.build(&mut state);
 		
 		// Table
@@ -388,10 +408,10 @@ impl GameStateBuilder {
 		
 		// Light indicator
 		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
-		EntityBuilder::new(Component::new(
-			RigidBody::new_static(Ball::new(0.1), 0.9, 0.1), red))
-				.pos(light_pos)
-				.build(&mut state);
+		EntityBuilder::new_static(0.9, 0.1)
+			.component(Component::new(Ball::new(0.1), red))
+			.pos(light_pos)
+			.build(&mut state);
 		
 		state.set_light(Light::new(
 			light_pos,
