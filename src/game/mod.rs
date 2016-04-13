@@ -8,5 +8,5 @@ pub use self::state::GameState;
 pub use self::state_builder::GameStateBuilder;
 pub use self::state::{EntityId, Gravity};
 pub use self::game::Game;
-pub use self::entity::{Entity, EntityBuilder, Component, ComponentHandle};
+pub use self::entity::{Entity, EntityBuilder, Component};
 pub use self::key::KeyboardState;

@@ -61,12 +61,8 @@ impl GameState {
 	pub fn add_entity(&mut self, build: EntityBuilder) -> EntityId {
 		let id = self.next_free_id;
 		self.next_free_id += 1;
-		// TODO: Fix has limit of 29 collision groups, as 29 for some reason is reserved for STATICs
-		if id >= 29 {
-			panic!("Collision group cannot be larger than 28.");
-		}
 		
-		let e = build.build_world(&mut self.world, Some(id as usize));
+		let e = build.build_world(&mut self.world);
 		self.entities.insert(id, e);
 		id
 	}
@@ -161,51 +157,39 @@ impl GameState {
 	
 	/// Calculates relative gravity for all the entities in the scene.
 	pub fn calculate_gravity(&mut self, g: f32) {
-		let mut ids = self.entities.keys().cloned();
-		
+		let id_vec: Vec<_> = self.entities.keys().cloned().collect();
+		let mut ids = id_vec.iter();
 		loop {
-			let b_ids = ids.clone();
-			let a_i = match ids.next() {
-				Some(i) => i,
+			let a_id = match ids.next() {
+				Some(a) => a,
 				None => break,
 			};
-			//info!("a_i:{}", a_i);
-			for a_j in 0..self.get_entity(&a_i).unwrap().components().len() {
-				//info!(" a_j:{}", a_j);
-				for b_i in b_ids.clone() {
-					//info!("  b_i:{}", b_i);
-					let start = if a_i == b_i {
-						a_j + 1
-					} else {
-						0
-					};
-					for b_j in start..self.get_entity(&b_i).unwrap().components().len() {
-						//info!("   b_j:{}", b_j);
-						let mut a = self.get_entity(&a_i)
-							.unwrap()
-							.components()[a_j]
-							.body()
-							.borrow_mut();
-						let mut b = self.get_entity(&b_i)
-							.unwrap()
-							.components()[b_j]
-							.body()
-							.borrow_mut();
-							
-						let a_mass = match a.mass() { Some(m) => m, None => continue };
-						let b_mass = match b.mass() { Some(m) => m, None => continue };
-						
-						// Get unit vector from a to b
-						let mut v = b.position().translation - a.position().translation;
-						let len_sq = v.sqnorm();
-						v = v / len_sq.sqrt();
-						
-						// Calc && apply the force.
-						let f = v * ((g * a_mass * b_mass) / len_sq);
-						a.apply_central_impulse(f);
-						b.apply_central_impulse(-f);
+			for b_id in ids.clone() {
+				let f = {
+					let a = self.get_entity(&a_id).map(|b| b.body().borrow()).unwrap();
+					let b = self.get_entity(&b_id).map(|b| b.body().borrow()).unwrap();
+					
+					if !a.can_move() && !b.can_move() {
+						continue;
 					}
-				}
+					let (a_mass, b_mass) = {
+						if a.inv_mass() == 0.0 || b.inv_mass() == 0.0 {
+							continue;
+						}
+						(1.0 / a.inv_mass(), 1.0 / b.inv_mass())
+					};
+					
+					// Get unit vector from a to b 
+					let mut v = b.position().translation - a.position().translation;
+					let len_sq = v.sqnorm();
+					v = v / len_sq.sqrt();
+					
+					// Calc force.
+					v * ((g * a_mass * b_mass) / len_sq)
+				};
+				// Apply force
+				self.entities.get_mut(&a_id).map(|e| e.body().borrow_mut().apply_central_impulse(f));
+				self.entities.get_mut(&b_id).map(|e| e.body().borrow_mut().apply_central_impulse(-f));
 			}
 		}
 	}
