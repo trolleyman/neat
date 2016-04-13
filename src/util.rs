@@ -1,5 +1,4 @@
 use prelude::*;
-use std::cmp::PartialOrd;
 
 /// Linearly interpolate `a` and `b`
 pub fn lerp(a: Vec3<f32>, b: Vec3<f32>, s: f32) -> Vec3<f32> {

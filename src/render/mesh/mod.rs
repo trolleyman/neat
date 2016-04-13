@@ -10,6 +10,7 @@ pub use self::lit::{LitVertex, LitMesh};
 mod simple;
 mod lit;
 
+/// Represents a mesh that can be rendered.
 pub trait RenderableMesh {
 	fn render(&self, r: &mut Render, model: Mat4<f32>);
 }

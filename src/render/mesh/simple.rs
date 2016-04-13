@@ -23,17 +23,28 @@ impl From<Vec3<f32>> for SimpleVertex {
 	}
 }
 
-/// A simple mesh is basically just a list of triangles
+/// A simple mesh is a list of triangles.
+/// 
+/// It is not a RenderableMesh on its own. Use ColoredMesh to wrap it.
 #[derive(Debug)]
 pub struct SimpleMesh {
+	/// The list of vertices
 	vertex_buffer: VertexBuffer<SimpleVertex>,
+	/// The list of triangles, in counter-clockwise order.
 	index_buffer: IndexBuffer<u16>,
 }
 impl SimpleMesh {
+	/// Render the mesh
 	pub fn render(&self, r: &mut Render, model: Mat4<f32>, color: Color) {
 		r.render_simple(&self.vertex_buffer, &self.index_buffer, model, color);
 	}
 	
+	/// Construct a new mesh that is an approximation of a sphere.
+	/// 
+	/// Takes a `detail` which specifies how much to subdivide the sphere.
+	/// *Be warned:* The number of faces is proportional to 2^detail.
+	///
+	/// Detail 0 is the same as a dodecahedron.
 	pub fn sphere(ctx: &Rc<Context>, detail: u32) -> SimpleMesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
@@ -42,6 +53,7 @@ impl SimpleMesh {
 		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
+	/// Construct a new mesh that is a dodecahedron.
 	pub fn dodecahedron(ctx: &Rc<Context>) -> SimpleMesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
@@ -50,6 +62,7 @@ impl SimpleMesh {
 		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
+	/// Construct a cuboid from it's half extents.
 	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>) -> SimpleMesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
@@ -58,6 +71,7 @@ impl SimpleMesh {
 		SimpleMesh::from_vecs(ctx, vs, is)
 	}
 	
+	/// Construct a cube with size 1.0 on all sides.
 	pub fn cube(ctx: &Rc<Context>) -> SimpleMesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
