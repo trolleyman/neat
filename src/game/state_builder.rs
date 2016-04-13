@@ -349,14 +349,41 @@ impl GameStateBuilder {
 		let top_tex = Rc::new(vfs::load_texture(ctx, "test.png"));
 		let leg_tex = Rc::new(vfs::load_texture(ctx, "white.png"));
 		
-		// Table
-		build_table(ctx, &mut state, top_tex.clone(), leg_tex, Vec3::new(0.0, 1.0, 0.0), material);
+		// X- Plane
+		let he = Vec3::new(1.0, 20.0, 20.0);
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
+			.pos(Vec3::new(-20.0, -3.0 + 20.0, 0.0))
+			.build(&mut state);
 		
-		// Plane
+		// X+ Plane
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
+			.pos(Vec3::new(20.0, -3.0 + 20.0, 0.0))
+			.build(&mut state);
+		
+		// Z- Plane
+		let he = Vec3::new(20.0, 20.0, 1.0);
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
+			.pos(Vec3::new(0.0, -3.0 + 20.0, -20.0))
+			.build(&mut state);
+		
+		// Z+ Plane
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
+			.pos(Vec3::new(00.0, -3.0 + 20.0, 20.0))
+			.build(&mut state);
+		
+		// Y- Plane
 		let he = Vec3::new(20.0, 1.0, 20.0);
-		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex, material))
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
 			.pos(Vec3::new(0.0, -3.0, 0.0))
 			.build(&mut state);
+		
+		// Y+ Plane
+		EntityBuilder::new(Component::new_static_cuboid(ctx, he, 0.9, 0.1, top_tex.clone(), material))
+			.pos(Vec3::new(0.0, -3.0 + 40.0, 0.0))
+			.build(&mut state);
+		
+		// Table
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex, Vec3::new(0.0, 1.0, 0.0), material);
 		
 		// Light indicator
 		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
