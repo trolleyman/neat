@@ -58,12 +58,14 @@ impl LitMesh {
 	/// Generates a cuboid with the specified half extents, texture and material.
 	/// 
 	/// The uvs are layed out like this:
+	/// ```
 	///   0           1
 	/// 0 +---+---+---+
 	///   | F | U | B | // Front, Up, Back
 	///   +---+---+---+
 	///   | L | D | R | // Left, Down, Right
 	/// 1 +---+---+---+
+	/// ```
 	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, texture: Rc<Texture2d>, material: Material) -> LitMesh {
 		let mut vs: Vec<LitVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
