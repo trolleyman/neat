@@ -328,11 +328,12 @@ impl GameStateBuilder {
 					.pos(pos);
 			
 			let id = Vec3::x();
+			let hoff = 0.04;
 			let off = table_size2 - leg_w2;
-			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
-			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2-hoff,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2-hoff,  off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new( off, -top_h2-hoff, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
+			builder.add_fixed(0, Iso3::new(Vec3::new(-off, -top_h2-hoff, -off), id), leg.clone(), Iso3::new(Vec3::y() * leg_h2, id));
 			
 			builder.build(state);
 		}
