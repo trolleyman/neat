@@ -194,12 +194,12 @@ impl Render {
 		}
 	}
 	
-	/// Grabs the cursor
+	/// Grabs the cursor.
 	pub fn input_grab(&self) {
 		self.get_window().map(|w| w.set_cursor_state(CursorState::Grab));
 	}
 	
-	/// Lets the cursor go
+	/// Lets the cursor go.
 	pub fn input_normal(&self) {
 		self.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
 	}
