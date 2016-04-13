@@ -248,7 +248,7 @@ impl Entity {
 			if let Some(diff) = diff {
 				let j = joints_map.get(&(i as ComponentId)).expect("Component in Entity not attached to root.");
 				c.body.append_translation(&diff);
-				/// FIXME: Doesn't work with a component linked to a component linked to the root component.
+				// FIXME: Doesn't work with a component linked to a component linked to the root component.
 				match j {
 					&Joint::Fixed(ref j) => {
 						// TODO: Sort out what happens when the joint has rotated.
