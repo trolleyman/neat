@@ -19,7 +19,8 @@ use vfs::{load_shader, load_font};
 const SIZE: u32 = 8192;
 static EMPTY_TEXTURE_DATA: [u8; SIZE as usize * SIZE as usize] = [0; SIZE as usize * SIZE as usize];
 
-struct State {
+/// The state of the formatter
+struct FormatState {
 	init_x: f32,
 	_init_y: f32,
 	
@@ -29,12 +30,12 @@ struct State {
 	
 	v_metrics: VMetrics,
 }
-impl State {
-	pub fn new(x: f32, y: f32, scale: f32, font: &Font) -> State {
+impl FormatState {
+	pub fn new(x: f32, y: f32, scale: f32, font: &Font) -> FormatState {
 		let scale = Scale::uniform(scale);
 		let v_metrics = font.v_metrics(scale);
 		let y = y + v_metrics.ascent;
-		State{
+		FormatState{
 			init_x: x,
 			_init_y: y,
 			
@@ -46,11 +47,17 @@ impl State {
 		}
 	}
 	
+	/// Processes a newline
 	pub fn newline(&mut self) {
 		self.x = self.init_x;
 		self.y = self.y + self.v_metrics.descent + self.v_metrics.ascent + self.v_metrics.line_gap;
 	}
 	
+	/// Lays out a char at the current posiion, and updated the current position to be after it.
+	/// 
+	/// Handles newlines properly.
+	/// 
+	/// Returns None if the char does not have a glyph.
 	pub fn layout_char<'a, 'b>(&'b mut self, font: &'a Font, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
 		let c = match (cprev, c) {
 			(Some('\r'), '\n') => {
@@ -93,6 +100,7 @@ impl FontVertex {
 
 implement_vertex!(FontVertex, pos, uv);
 
+/// Font rendering handler.
 pub struct FontRender {
 	ctx: Rc<Context>,
 	cache: Cache,
@@ -104,6 +112,9 @@ pub struct FontRender {
 	shader: Program,
 }
 impl FontRender {
+	/// Constructs a new font renderer with an OpenGL context.
+	/// 
+	/// Loads the default font from the filesystem.
 	pub fn new(ctx: Rc<Context>) -> FontRender {
 		let shader = load_shader(&ctx, "font");
 		
@@ -152,7 +163,7 @@ impl FontRender {
 		//println!("Rendering string: {}", s);
 		let mut glyphs = Vec::new();
 		
-		let mut state = State::new(x, y, scale, &font);
+		let mut state = FormatState::new(x, y, scale, &font);
 		
 		let mut cprev = None;
 		for c in s.chars().nfc() {
@@ -167,6 +178,11 @@ impl FontRender {
 	}
 }
 
+/// Render and cache the specified glyphs.
+/// 
+/// # Returns
+/// Err if the cache is too small to cache all of the glyphs and render them at once.
+/// Retry with a smaller slice.
 fn cache_glyphs(font_tex: &mut Texture2d, cache: &mut Cache, glyphs: &[(char, PositionedGlyph)]) -> Result<(), CacheWriteErr> {
 	cache.clear_queue();
 	for &(_, ref glyph) in glyphs.iter() {
@@ -202,6 +218,7 @@ fn cache_glyphs(font_tex: &mut Texture2d, cache: &mut Cache, glyphs: &[(char, Po
 	ret
 }
 
+/// Adds the vertices necessary to `vs` and `is` to draw the glyph to the screen, if it is in `cache`.
 fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
 	if let Ok(Some((uv, pos))) = cache.rect_for(0, glyph) {
 		// 0--1
@@ -223,6 +240,9 @@ fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVerte
 	}
 }
 
+/// Draws the glyphs at a specified point on `surface`.
+/// 
+/// Properly calculates matrix.
 fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[(char, PositionedGlyph)], color: Color) {
 	// Calculate matrix
 	let (w, h) = size;
@@ -233,6 +253,7 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 	draw_glyphs_mat(ctx, surface, shader, font_tex, cache, mat, glyphs, color)
 }
 
+/// Transforms the glyphs by `mat` and then draws the glyphs on `surface`.
 fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Mat4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
 	match cache_glyphs(font_tex, cache, glyphs) {
 		Ok(()) => {

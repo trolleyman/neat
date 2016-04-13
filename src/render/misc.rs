@@ -1,5 +1,6 @@
 use prelude::*;
 
+/// Represents a light.
 #[derive(Copy, Clone)]
 pub struct Light {
 	pub pos: Vec3<f32>,
@@ -16,18 +17,21 @@ impl Light {
 			intensity_specular: specular,
 		}
 	}
+	/// Constructs a light that is off. (It has no output).
 	pub fn off() -> Light {
-		let z = Vec4::new(0.0, 0.0, 0.0, 0.0);
-		Light::new(Vec3::new(0.0, 0.0, 0.0), z, z, z)
+		Light::new(Vec3::new(0.0, 0.0, 0.0), Vec4::zero(), Vec4::zero(), Vec4::zero())
 	}
+	/// Returns a copy of the light, but with ambient intensity `r`.
 	pub fn with_ambient(mut self, r: Vec4<f32>) -> Light {
 		self.intensity_ambient = r;
 		self
 	}
+	/// Returns a copy of the light, but with diffuse intensity `r`.
 	pub fn with_diffuse(mut self, r: Vec4<f32>) -> Light {
 		self.intensity_diffuse = r;
 		self
 	}
+	/// Returns a copy of the light, but with specular intensity `r`.
 	pub fn with_specular(mut self, r: Vec4<f32>) -> Light {
 		self.intensity_specular = r;
 		self
@@ -49,18 +53,22 @@ impl Material {
 			shininess: shininess,
 		}
 	}
+	/// Returns a copy of the material, but with ambient reflection `r`.
 	pub fn with_ambient(mut self, r: Vec4<f32>) -> Material {
 		self.reflection_ambient = r;
 		self
 	}
+	/// Returns a copy of the material, but with diffuse reflection `r`.
 	pub fn with_diffuse(mut self, r: Vec4<f32>) -> Material {
 		self.reflection_diffuse = r;
 		self
 	}
+	/// Returns a copy of the material, but with specular reflection `r`.
 	pub fn with_specular(mut self, r: Vec4<f32>) -> Material {
 		self.reflection_specular = r;
 		self
 	}
+	/// Returns a copy of the material, but with ambient, diffuse and specular reflection scaled by a color.
 	pub fn with_scale_rgba(mut self, scale: Vec4<f32>) -> Material {
 		self.reflection_ambient  = self.reflection_ambient  * scale;
 		self.reflection_diffuse  = self.reflection_diffuse  * scale;
@@ -69,6 +77,7 @@ impl Material {
 	}
 }
 
+/// RGB Color
 #[derive(Copy, Clone, Debug)]
 pub struct Color {
 	r: f32,
@@ -94,6 +103,7 @@ impl Color {
 			b: b,
 		}
 	}
+	/// Constructs a new color with `r`, `g` and `b` being the same.
 	pub fn uniform(v: f32) -> Color {
 		Color::new(v, v, v)
 	}

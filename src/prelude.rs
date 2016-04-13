@@ -6,9 +6,13 @@ pub use num::{Zero, One};
 pub use glium::backend::Context;
 pub use rand::Rng;
 
+/// Helper trait extending Duration
+///
+/// Note: these functions should not be used when the Duration could be large, as they will be very innacurate
 pub trait DurationExt {
+	/// Returns the number of milliseconds in the Duration, rounded down
 	fn as_millis(&self) -> u64;
-
+	/// Returns the number of seconds in the Duration, as a floating point number
 	fn as_secs_partial(&self) -> f64;
 }
 impl DurationExt for Duration {

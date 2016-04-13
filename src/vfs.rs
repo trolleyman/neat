@@ -1,4 +1,6 @@
-//! Virtual File System
+//! Virtual File System.
+//!
+//! Handles the loading of shaders, textures and fonts.
 use prelude::*;
 use std::io::prelude::*;
 use std::io;
@@ -12,23 +14,28 @@ use glium::texture::RawImage2d;
 use rusttype::FontCollection;
 use image::{self, DynamicImage, ConvertBuffer};
 
+/// Gets the base directory for all of the vfs operations.
 fn try_get_base_dir() -> Result<PathBuf, String> {
 	::std::env::current_exe().and_then(|p| p.join("..").canonicalize()).map_err(|e| {
 		format!("Unable to locate current executable: {}", e)
 	})
 }
 
-fn assert_is_dir<P: AsRef<Path>>(dir: P) -> Result<(), String> {
-	let dir = dir.as_ref();
-	if !dir.exists() {
-		Err(format!("Directory '{}' does not exist.", dir.display()))
-	} else if !dir.is_dir() {
-		Err(format!("Directory '{}' does not exist.", dir.display()))
+/// Returns Err if the `path` is not a directory with a custom error message.
+fn assert_is_dir<P: AsRef<Path>>(path: P) -> Result<(), String> {
+	let path = path.as_ref();
+	if !path.exists() {
+		Err(format!("Directory '{}' does not exist.", path.display()))
+	} else if !path.is_dir() {
+		Err(format!("'{}' is not a directory.", path.display()))
 	} else {
 		Ok(())
 	}
 }
 
+/// Trys to read the file at `path`.
+///
+/// Returns a custom error message on failure.
 fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 	fn get_contents(path: &Path) -> io::Result<Vec<u8>> {
 		let mut f = File::open(path)?;
@@ -40,12 +47,17 @@ fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 	let path = path.as_ref();
 	if !path.exists() {
 		return Err(format!("The file '{}' does not exist.", path.display()));
+	} else if !path.is_file() {
+		return Err(format!("'{}' is not a file.", path.display()));
 	}
 	get_contents(path).map_err(|e| {
 		format!("Unreadable file '{}': {}", path.display(), e)
 	})
 }
 
+/// Trys to read the file at `path`, converting it to a string.
+///
+/// Returns a custom error message on failure.
 fn try_read_file_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
 	fn get_contents(path: &Path) -> io::Result<String> {
 		let mut f = File::open(path)?;
@@ -57,16 +69,24 @@ fn try_read_file_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
 	let path = path.as_ref();
 	if !path.exists() {
 		return Err(format!("The file '{}' does not exist.", path.display()));
+	} else if !path.is_file() {
+		return Err(format!("'{}' is not a file.", path.display()));
 	}
 	get_contents(path).map_err(|e| {
 		format!("Unreadable file '{}': {}", path.display(), e)
 	})
 }
 
-/// Loads a shader named `name`.
-/// Looks for fragment shaders in `"shaders/" + name + ".frag"`
-/// Looks for vertex shaders in `"shaders/" + name + ".vert"`
-/// Panics if the shader cannot be found or is invalid.
+/// Loads the shader `name` from the `shaders/` folder.
+/// 
+/// If it finds a file with the name of the shader and the extension
+/// - `.vert` it will load it as a vertex shader.
+/// - `.frag` it will load it as a fragment shader.
+/// - TODO: More shader types
+/// 
+/// Exits if
+/// - the vertex shader could not be found/compiled.
+/// - the fragment shader could not be found/compiled.
 pub fn load_shader(ctx: &Rc<Context>, name: &str) -> Program {
 	match try_load_shader(ctx, name) {
 		Ok(program) => program,
@@ -77,10 +97,14 @@ pub fn load_shader(ctx: &Rc<Context>, name: &str) -> Program {
 	}
 }
 
-/// Loads a shader named `name`.
-/// Looks for fragment shaders in `"shaders/" + name + ".frag"`
-/// Looks for vertex shaders in `"shaders/" + name + ".vert"`
-// TODO: Other shader types
+/// Loads the shader `name` from the `shaders/` folder.
+/// 
+/// If it finds a file with the name of the shader and the extension
+/// - `.vert` it will load it as a vertex shader
+/// - `.frag` it will load it as a fragment shader
+/// - TODO: More shader types
+/// 
+/// Returns an `Err` if the shader cannot be found or is invalid.
 pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
 	let base_dir = try_get_base_dir()?;
 	
@@ -99,9 +123,9 @@ pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String>
 	}
 }
 
-/// Loads a font from a file in the fonts/ folder.
-/// Ensures that the font at `index` is valid.
-/// Panics if the font is not valid.
+/// Loads the font `name` at `index` from a file in the fonts/ folder.
+/// 
+/// Exits if the font is not valid.
 pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 	match try_load_font(name, index) {
 		Ok(font) => font,
@@ -112,8 +136,9 @@ pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 	}
 }
 
-/// Loads a font from a file in the fonts/ folder.
-/// Ensures that the font at `index` is valid.
+/// Loads the font `name` at `index` from a file in the fonts/ folder.
+/// 
+/// Returns an `Err` if the font is not valid.
 pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
 	let base_dir = try_get_base_dir()?;
 	let fonts_dir = base_dir.join("fonts");
@@ -127,8 +152,9 @@ pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>
 	}
 }
 
-/// Loads a texture from a file in the textures/ folder and uploads it to OpenGL.
-/// Panics if the texture could not be found.
+/// Loads the texture `name` from a file in the textures/ folder and uploads it to OpenGL.
+/// 
+/// Exits if the texture could not be found, the texture was invalid, or it could not be uploaded to OpenGL.
 pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
 	match try_load_texture(ctx, name) {
 		Ok(texture) => texture,
@@ -139,7 +165,9 @@ pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
 	}
 }
 
-/// Loads a texture from a file in the textures/ folder and uploads it to OpenGL.
+/// Loads the texture `name` from a file in the textures/ folder and uploads it to OpenGL.
+/// 
+/// Returns an `Err` if the texture could not be found, the texture was invalid, or it could not be uploaded to OpenGL.
 pub fn try_load_texture(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
 	let base_dir = try_get_base_dir()?;
 	let textures_dir = base_dir.join("textures");

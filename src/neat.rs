@@ -38,6 +38,9 @@ pub mod vfs;
 use game::{Game, GameState};
 use settings::Settings;
 
+/// Runs `neat` with a custom [`GameState`](game/struct.GameState.html) generator.
+///
+/// This will get the settings from the program's arguments.
 pub fn run<F>(generator: F) where F: FnOnce(&Rc<Context>) -> GameState {
 	let settings = Settings::from_args();
 	let mut loggers: Vec<Box<SharedLogger>> = Vec::new();

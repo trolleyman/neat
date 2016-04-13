@@ -6,29 +6,47 @@ use std::path::PathBuf;
 use glutin::VirtualKeyCode;
 use simplelog::LogLevelFilter;
 
+/// Game settings
 pub struct Settings {
+	/// Initial width of the window
 	pub w: u32,
+	/// Initial height of the window
 	pub h: u32,
+	/// If vsync is enabled
 	pub vsync    : bool,
+	/// If the game is currently paused
 	pub paused   : bool,
+	/// Where the log file will be located
 	pub log_file : PathBuf,
+	/// The log level for the terminal output
 	pub term_log_level: LogLevelFilter,
+	/// The log level for the file output
 	pub file_log_level: LogLevelFilter,
+	/// Forwards key
 	pub forward  : VirtualKeyCode,
+	/// Backwards key
 	pub backward : VirtualKeyCode,
+	/// Strafe left key
 	pub left     : VirtualKeyCode,
+	/// Strafe right key
 	pub right    : VirtualKeyCode,
+	/// Move up key
 	pub up       : VirtualKeyCode,
+	/// Move down key
 	pub down     : VirtualKeyCode,
+	/// They key to pause/resume the simulation
 	pub physics_pause: Option<VirtualKeyCode>,
+	/// The key to step the simulation
 	pub physics_step : Option<VirtualKeyCode>,
+	/// The key to toggle wireframe mode
 	pub wireframe_toggle: Option<VirtualKeyCode>,
 }
 impl Settings {
 	/// Gets game settings from args passed to executable.
-	/// Flags:
-	///     -v | --verbose : Causes the game to be verbose
-	///     -p | --paused  : The game will start paused.
+	/// 
+	/// # Usage
+	/// - `-v` : Causes the game to be verbose
+	/// - `-p` : The game will start paused.
 	pub fn from_args() -> Settings {
 		const LONG_START: &'static str = "--";
 		const SHORT_START: &'static str = "-";
@@ -39,7 +57,7 @@ impl Settings {
 		// '-a -b' => {'a', 'b'}
 		// '-ab -c' => {'a', 'b', 'c'}
 		let mut short_args = HashSet::<char>::new();
-		// Other args
+		// Other args, in order
 		let mut other_args = Vec::<String>::new();
 		
 		for arg in args().skip(1) {

@@ -1,35 +1,7 @@
 use prelude::*;
 use std::cmp::PartialOrd;
 
-pub fn clamp<T: PartialOrd>(v: T, min: T, max: T) -> T {
-	if v > min {
-		if v < max {
-			v
-		} else {
-			max
-		}
-	} else {
-		min
-	}
-}
-
-pub fn min<T: PartialOrd>(v1: T, v2: T) -> T {
-	if v1 < v2 {
-		v1
-	} else {
-		v2
-	}
-}
-
-pub fn max<T: PartialOrd>(v1: T, v2: T) -> T {
-	if v1 > v2 {
-		v1
-	} else {
-		v2
-	}
-}
-
-/// Lerps some vectors
+/// Linearly interpolate `a` and `b`
 pub fn lerp(a: Vec3<f32>, b: Vec3<f32>, s: f32) -> Vec3<f32> {
 	let ab = b - a;
 	a + ab * s
@@ -49,7 +21,7 @@ pub fn mat4_scale(s: Vec3<f32>) -> Mat4<f32> {
 		0.0,0.0,0.0,1.0,
 		)
 }
-
+/// Creates a 4x4 matrix from a translation
 pub fn mat4_translation(t: Vec3<f32>) -> Mat4<f32> {
 	Mat4::new(
 		1.0,0.0,0.0,t.x,
@@ -59,6 +31,7 @@ pub fn mat4_translation(t: Vec3<f32>) -> Mat4<f32> {
 		)
 }
 
+/// Converts a 4x4 matrix into a human-readable string
 #[allow(dead_code)]
 fn mat4_to_string(m: Mat4<f32>) -> String {
 	let mut s = String::new();
