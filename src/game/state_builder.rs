@@ -11,11 +11,17 @@ use render::{Camera, SimpleMesh, ColoredMesh, Material, LitMesh, Light, Color};
 use vfs;
 
 pub struct GameStateBuilder {}
+/// Util functions for creating a GameState
 impl GameStateBuilder {
+	/// Builds the default GameState. Used in the default main.rs for easy prototyping.
 	pub fn build_default(ctx: &Rc<Context>) -> GameState {
 		GameStateBuilder::build_tables(ctx)
 	}
 	
+	/// Builds the `spceballs` scene.
+	/// 
+	/// This scene consists of 3 balls, red, green, and blue that attract one another.
+	/// They all have different initial velocities.
 	pub fn build_spaceballs(ctx: &Rc<Context>) -> GameState {
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
@@ -44,6 +50,14 @@ impl GameStateBuilder {
 		state
 	}
 	
+	/// Builds the `solar` scene.
+	/// 
+	/// This scene consists of 3 balls:
+	/// - One is yellow which represents the sun. This has a large weight.
+	/// - One is red which represents mercury. This has a tiny weight.
+	/// - One is green which represents earth. This has a medium weight.
+	/// 
+	/// The yellow ball should oscillate around the centre of the scene.
 	#[allow(non_snake_case)]
 	pub fn build_solar(ctx: &Rc<Context>) -> GameState {
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
@@ -111,6 +125,9 @@ impl GameStateBuilder {
 		state
 	}
 	
+	/// Builds the `rot_test` scene.
+	/// 
+	/// This scene consists of a set of cubes that rotate around a different axis at different speeds.
 	pub fn build_rot_test(ctx: &Rc<Context>) -> GameState {
 		let sphere = Rc::new(SimpleMesh::sphere(ctx, 0));
 		
@@ -171,6 +188,11 @@ impl GameStateBuilder {
 		state
 	}
 	
+	/// Builds the `balls` scene.
+	/// 
+	/// This scene consists of 4 planes that are rotated inwards to form a simple cone.
+	/// There are also balls that are generated at the top of the screen that fall down into the cone.
+	/// This shows the physics collision aspect of the system.
 	pub fn build_balls(ctx: &Rc<Context>) -> GameState {
 		// Gen planes
 		let mut state = GameState::new(Camera::new(Vec3::new(0.0, 10.0, 15.0)), Gravity::Constant(Vec3::new(0.0, -9.81, 0.0)));
@@ -212,6 +234,9 @@ impl GameStateBuilder {
 		state
 	}
 	
+	/// Builds the `phong` scene.
+	/// 
+	/// This is basically a lighting test. There are some textured cubes, a textured plane, and a sphere.
 	pub fn build_phong(ctx: &Rc<Context>) -> GameState {
 		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::None);
 		
@@ -274,6 +299,11 @@ impl GameStateBuilder {
 		state
 	}
 	
+	/// Builds the `tables` scene.
+	/// 
+	/// This is basically an entity test scene, testing how entities interact with themselves and other objects.
+	/// 
+	/// Currently the table just goes glitching off somewhere.
 	pub fn build_tables(ctx: &Rc<Context>) -> GameState {
 		fn build_table(ctx: &Rc<Context>, state: &mut GameState, top_tex: Rc<Texture2d>, leg_tex: Rc<Texture2d>, pos: Vec3<f32>, material: Material) {
 			let r = move || { rand::thread_rng().next_f32() };

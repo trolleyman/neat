@@ -23,6 +23,7 @@ pub enum Gravity {
 	None,
 }
 
+/// Holds the state of the game
 pub struct GameState {
 	next_free_id: EntityId,
 	entities: HashMap<EntityId, Entity>,
@@ -33,6 +34,9 @@ pub struct GameState {
 	light: Light,
 }
 impl GameState {
+	/// Constructs a new GameState with the specified initial camera position, and gravity state.
+	/// 
+	/// The light is set to off. Use `set_light` to specify the light.
 	pub fn new(cam: Camera, g: Gravity) -> GameState {
 		GameState {
 			next_free_id: 0,
@@ -88,6 +92,13 @@ impl GameState {
 		}
 	}
 	
+	/// Processes a tick of the game state.
+	/// 
+	/// - `dt` is the number of seconds to process.
+	/// - `settings` are the current game settings.
+	/// - `keys` is the list of keys pressed/released since the last update.
+	/// - `keyboard_state` is the current keyboard state.
+	/// - `mouse_state` is how much the mouse has moved (in screen pixels) since the last update.
 	pub fn tick(&mut self, dt: f32, settings: &Settings, keys: &[(ElementState, VirtualKeyCode)], keyboard_state: &KeyboardState, mouse_state: (i32, i32)) {
 		// m/s
 		let speed = 4.0 * dt;
@@ -148,6 +159,7 @@ impl GameState {
 		}
 	}
 	
+	/// Calculates relative gravity for all the entities in the scene.
 	pub fn calculate_gravity(&mut self, g: f32) {
 		let mut ids = self.entities.keys().cloned();
 		
@@ -197,7 +209,10 @@ impl GameState {
 			}
 		}
 	}
-
+	
+	/// Renders the GameState using the specified render handler.
+	/// 
+	/// `fps` is the current frames per second.
 	pub fn render(&mut self, r: &mut Render, fps: u32) {
 		r.set_camera(self.camera);
 		r.set_light(self.light);

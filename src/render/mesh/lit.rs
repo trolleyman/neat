@@ -27,10 +27,15 @@ impl LitVertex {
 	}
 }
 
+/// A LitMesh is a textured mesh that is affected by lighting.
 pub struct LitMesh {
+	/// The list of vertices.
 	vertex_buffer: VertexBuffer<LitVertex>,
+	/// The list of triangles that make the mesh up. Stored in counter-clockwise order.
 	index_buffer : IndexBuffer<u16>,
+	/// The texture that will be used to texture the object.
 	texture      : Rc<Texture2d>,
+	/// The material that the object has.
 	material     : Material,
 }
 impl RenderableMesh for LitMesh {
@@ -39,6 +44,9 @@ impl RenderableMesh for LitMesh {
 	}
 }
 impl LitMesh {
+	/// Generates a new sphere with a specified detail, texture and material.
+	/// 
+	/// At the moment the uvs of the mesh outputted are all set to 0.0,0.0.
 	pub fn sphere(ctx: &Rc<Context>, detail: u32, texture: Rc<Texture2d>, material: Material) -> LitMesh {
 		let mut vs: Vec<LitVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
@@ -47,6 +55,15 @@ impl LitMesh {
 		LitMesh::from_vecs(ctx, vs, is, texture, material)
 	}
 	
+	/// Generates a cuboid with the specified half extents, texture and material.
+	/// 
+	/// The uvs are layed out like this:
+	///   0           1
+	/// 0 +---+---+---+
+	///   | F | U | B | // Front, Up, Back
+	///   +---+---+---+
+	///   | L | D | R | // Left, Down, Right
+	/// 1 +---+---+---+
 	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, texture: Rc<Texture2d>, material: Material) -> LitMesh {
 		let mut vs: Vec<LitVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();

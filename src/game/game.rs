@@ -8,6 +8,7 @@ use game::{GameState, GameStateBuilder, KeyboardState};
 use render::{Render, Camera};
 use settings::Settings;
 
+/// The structure that keeps track of game-wide state.
 pub struct Game {
 	render: Render,
 	settings: Settings,
@@ -22,10 +23,12 @@ pub struct Game {
 	ignore_next_mouse_movement: bool,
 }
 impl Game {
+	/// Constructs a game with the specified settings, and the default game state.
 	pub fn new(settings: Settings) -> Game {
 		Game::with_state_generator(settings, GameStateBuilder::build_default)
 	}
 	
+	/// Cosnstructs a game with the specified settings, and a custom game state generator.
 	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {
 		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)), &settings);
 		info!("Initialized renderer");
@@ -35,7 +38,8 @@ impl Game {
 		info!("Initialized game state");
 		Game::with_state(settings, render, state)
 	}
-
+	
+	/// Constructs a game with the specified settings, renderer, and initial game state.
 	pub fn with_state(settings: Settings, render: Render, state: GameState) -> Game {
 		Game {
 			render: render,
@@ -52,6 +56,9 @@ impl Game {
 		}
 	}
 	
+	/// Performs the main loop.
+	/// 
+	/// This will only return when the user has exited the game.
 	pub fn main_loop(&mut self) {
 		// How long each physics timestep should be.
 		const PHYSICS_HZ: u32 = 120;
@@ -115,6 +122,7 @@ impl Game {
 		}
 	}
 	
+	/// Processes system events in the queue.
 	pub fn process_events(&mut self) {
 		let (mp_x, mp_y) = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
 		let (mp_x, mp_y) = (mp_x as i32 / 2, mp_y as i32 / 2);

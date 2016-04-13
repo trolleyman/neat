@@ -17,12 +17,14 @@ use render::{Render, RenderableMesh, Material, LitMesh};
 pub type ComponentId = u32;
 pub const ROOT_ID: ComponentId = 0;
 
+/// A component of an Entity
 #[derive(Clone)]
 pub struct Component {
 	body: RigidBody<f32>,
 	mesh: Rc<RenderableMesh>,
 }
 impl Component {
+	/// Constructs  a new component from a rigidbody and a mesh.
 	pub fn new(body: RigidBody<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
 			body: body,
@@ -30,6 +32,7 @@ impl Component {
 		}
 	}
 	
+	/// Helper function to construct a new cuboid from it's half extents.
 	pub fn new_cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, density: f32, restitution: f32, friction: f32, texture: Rc<Texture2d>, material: Material) -> Component {
 		Component::new(
 			RigidBody::new_dynamic(Cuboid::new(half_extents), density, restitution, friction),
@@ -37,6 +40,7 @@ impl Component {
 		)
 	}
 	
+	/// Helper function to construct a static cuboid from it's half extents.
 	pub fn new_static_cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, restitution: f32, friction: f32, texture: Rc<Texture2d>, material: Material) -> Component {
 		Component::new(
 			RigidBody::new_static(Cuboid::new(half_extents), restitution, friction),
@@ -45,6 +49,7 @@ impl Component {
 	}
 }
 
+/// A handle to a component in the simulation
 pub struct ComponentHandle {
 	body: RigidBodyHandle<f32>,
 	mesh: Rc<RenderableMesh>,
@@ -95,6 +100,7 @@ impl BallInSocketIds {
 	}
 }
 
+/// Helper struct to build an entity.
 pub struct EntityBuilder {
 	pos: Vec3<f32>,
 	vel: Vec3<f32>,
@@ -132,11 +138,13 @@ impl EntityBuilder {
 		self
 	}
 	
+	/// Sets the rotation the entity is created with.
 	pub fn rot(mut self, rot: Vec3<f32>) -> EntityBuilder {
 		self.rot = rot;
 		self
 	}
 	
+	/// Sets the angular velocity the entity is created with.
 	pub fn ang_vel(mut self, ang_vel: Vec3<f32>) -> EntityBuilder {
 		self.ang_vel = ang_vel;
 		self
@@ -240,6 +248,7 @@ impl Entity {
 			if let Some(diff) = diff {
 				let j = joints_map.get(&(i as ComponentId)).expect("Component in Entity not attached to root.");
 				c.body.append_translation(&diff);
+				/// FIXME: Doesn't work with a component linked to a component linked to the root component.
 				match j {
 					&Joint::Fixed(ref j) => {
 						// TODO: Sort out what happens when the joint has rotated.
