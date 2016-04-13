@@ -402,8 +402,8 @@ impl GameStateBuilder {
 		
 		// Tables
 		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.0, 1.0, 0.0)  , material);
-		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.3, 2.0, 0.1)  , material);
-		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(-0.5, 4.0, -0.4), material);
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.3, 3.0, 0.1)  , material);
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(-0.5, 6.0, -0.4), material);
 		
 		// Light indicator
 		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
@@ -415,7 +415,7 @@ impl GameStateBuilder {
 		state.set_light(Light::new(
 			light_pos,
 			Vec4::new(0.1, 0.1, 0.1, 1.0),
-			Vec4::new(0.3, 0.3, 0.3, 1.0),
+			Vec4::new(0.1, 0.1, 0.1, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0)));
 		
 		state
