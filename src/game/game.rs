@@ -142,6 +142,7 @@ impl Game {
 			self.settings.paused = true;
 		}
 		
+		let mut reload_shaders = false;
 		let mut resized = false;
 		let mut mouse_pos = mid;
 		for e in self.render.poll_events() {
@@ -225,10 +226,22 @@ impl Game {
 								self.step = true;
 								info!("Game stepped");
 							}
+						} else if Some(code) == self.settings.reload_shaders {
+							reload_shaders = true;
 						}
 					}
 				},
 				_ => {}
+			}
+		}
+		
+		// Reload shaders
+		if reload_shaders {
+			info!("Reloading shaders");
+			let s = Stopwatch::start();
+			match self.render.reload_shaders() {
+				Ok(()) => info!("Reloaded shaders ({}ms)", s.elapsed_ms()),
+				Err(e) => error!("Error reloading shaders: {}", e),
 			}
 		}
 		

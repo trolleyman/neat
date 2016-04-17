@@ -57,6 +57,9 @@ fn focus_window(win: &Window) -> Result<(), ()> {
 	os_focus_window(win)
 }
 
+const SIMPLE_SHADER_NAME: &'static str = "simple";
+const PHONG_SHADER_NAME: &'static str = "phong";
+
 /// Render handler.
 pub struct Render {
 	/// Window handle
@@ -108,13 +111,10 @@ impl Render {
 		let frame = win.draw();
 		let ctx = win.get_context().clone();
 		
-		trace!("Loading simple shader");
-		let simple_shader = vfs::load_shader(&ctx, "simple");
+		let simple_shader = vfs::load_shader(&ctx, SIMPLE_SHADER_NAME);
 		
-		trace!("Loading phong shader");
-		let phong_shader = vfs::load_shader(&ctx, "phong");
+		let phong_shader = vfs::load_shader(&ctx, PHONG_SHADER_NAME);
 		
-		trace!("Loading font renderer");
 		let font_render = FontRender::new(ctx.clone());
 		
 		let mut r = Render {
@@ -161,6 +161,19 @@ impl Render {
 	
 	pub fn set_camera(&mut self, cam: Camera) {
 		self.camera = cam;
+	}
+	
+	/// Tries to reload the shaders currently used.
+	/// 
+	/// If there was an error compiling the shaders, the current shaders are not affected and
+	/// an error message is returned.
+	pub fn reload_shaders(&mut self) -> Result<(), String> {
+		let simple = vfs::try_load_shader(&self.ctx, SIMPLE_SHADER_NAME)?;
+		let phong  = vfs::try_load_shader(&self.ctx, PHONG_SHADER_NAME)?;
+		
+		self.simple_shader = simple;
+		self.phong_shader = phong;
+		Ok(())
 	}
 	
 	/// Draws the `s` on the screen at [`x`, `y`] with pt size `scale`.
