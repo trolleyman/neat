@@ -263,31 +263,39 @@ impl Render {
 	
 	/// Render a lit, textured surface.
 	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, texture: &Texture2d, material: &Material) {
-		let mvp = self.projection * self.camera.view_matrix() * model;
+		let m = model;
+		let v = self.camera.view_matrix();
+		let p = self.projection;
+		let mvp = p * v * m;
 		let v_inv = self.camera.view_matrix().inv().unwrap_or(Mat4::one());
-		let normal_mat = model.inv().unwrap_or(Mat4::one()).transpose();
+		let normal_mat = m.inv().unwrap_or(Mat4::one()).transpose();
 		
 		let uniforms = UniformsStorage::new("mvp", *mvp.as_ref());
-		let uniforms = uniforms.add("model"     , *model.as_ref());
+		let uniforms = uniforms.add("model"     , *m.as_ref());
 		let uniforms = uniforms.add("v_inv"     , *v_inv.as_ref());
-		let uniforms = uniforms.add("normal_mat", *<Mat3<_> as FromHomogeneous<_>>::from(&normal_mat).as_ref());
+		let uniforms = uniforms.add("normal_mat", *util::mat4_upper_left(normal_mat).as_ref());
 		let uniforms = uniforms.add("tex", texture);
 		let uniforms = uniforms.add("ambient", *self.ambient_light.as_ref());
+		/*
+		let light_buf = UniformBuffer::immutable(&self.ctx, [light]);
+		let material_buf = UniformBuffer::immutable(&self.ctx, [material]);
 		
-		let uniforms = uniforms.add("light.pos", *self.light.pos.as_ref());
-		let uniforms = uniforms.add("light.diffuse" , *self.light.diffuse.as_ref());
-		let uniforms = uniforms.add("light.specular", *self.light.specular.as_ref());
-		let uniforms = uniforms.add("light.constant_attenuation" , self.light.constant_attenuation);
-		let uniforms = uniforms.add("light.linear_attenuation"   , self.light.linear_attenuation);
-		let uniforms = uniforms.add("light.quadratic_attenuation", self.light.quadratic_attenuation);
-		let uniforms = uniforms.add("light.spot_cutoff"   , self.light.spot_cutoff);
-		let uniforms = uniforms.add("light.spot_exponent" , self.light.spot_exponent);
-		let uniforms = uniforms.add("light.spot_direction", *self.light.spot_direction.as_ref());
+		let uniforms = uniforms.add("light", light_buf);
+		let uniforms = uniforms.add("material", material_buf);*/
+		let uniforms = uniforms.add("light_pos", *self.light.pos.as_ref());
+		let uniforms = uniforms.add("light_diffuse" , *self.light.diffuse.as_ref());
+		let uniforms = uniforms.add("light_specular", *self.light.specular.as_ref());
+		let uniforms = uniforms.add("light_constant_attenuation" , self.light.constant_attenuation);
+		let uniforms = uniforms.add("light_linear_attenuation"   , self.light.linear_attenuation);
+		let uniforms = uniforms.add("light_quadratic_attenuation", self.light.quadratic_attenuation);
+		let uniforms = uniforms.add("light_spot_cutoff"   , self.light.spot_cutoff);
+		let uniforms = uniforms.add("light_spot_exponent" , self.light.spot_exponent);
+		let uniforms = uniforms.add("light_spot_direction", *self.light.spot_direction.as_ref());
 		
-		let uniforms = uniforms.add("material.ambient"  , *material.ambient.as_ref());
-		let uniforms = uniforms.add("material.diffuse"  , *material.diffuse.as_ref());
-		let uniforms = uniforms.add("material.specular" , *material.specular.as_ref());
-		let uniforms = uniforms.add("material.shininess", material.shininess);
+		let uniforms = uniforms.add("material_ambient"  , *material.ambient.as_ref());
+		let uniforms = uniforms.add("material_diffuse"  , *material.diffuse.as_ref());
+		let uniforms = uniforms.add("material_specular" , *material.specular.as_ref());
+		let uniforms = uniforms.add("material_shininess", material.shininess);
 		
 		self.frame.draw(
 			vs,

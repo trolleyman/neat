@@ -1,5 +1,8 @@
 use prelude::*;
 
+use glium::uniforms::{UniformBlock, LayoutMismatchError, UniformType};
+use glium::program::BlockLayout;
+
 use util;
 
 /// Represents a light.
@@ -75,6 +78,46 @@ impl Light {
 		Light::new_directional(Vec3::zero(), Vec4::zero(), Vec4::zero())
 	}
 }
+/*
+impl UniformBlock for Light {
+	fn matches(layout: &BlockLayout, base_offset: usize) -> Result<(), LayoutMismatchError> {
+		fn match_field(members: &Vec<(String, BlockLayout)>, name: &str, ty: UniformType) -> Result<(), LayoutMismatchError> {
+			for member in members.iter() {
+				if &member.0 == name {
+					if let &BlockLayout::BasicType{ ref member_ty, .. } = member.1 {
+						if member_ty == ty {
+							return Ok(());
+						} else {
+							break;
+						}
+					} else {
+						return Err(LayoutMismatchError::MemberMismatch {
+							member: name.into(),
+							err: box LayoutMismatchError::LayoutMismatch{
+								expected: ,
+								obtained: 
+							}
+						});
+					}
+				}
+			}
+			Err(LayoutMismatchError::MissingField{ name:name.into() })
+		}
+		
+		if let &BlockLayout::Struct{ ref members } = layout {
+			
+		} else {
+			Err(LayoutMismatchError::LayoutMismatch{
+				expected: Struct{ members: vec![] },
+				obtained: layout.clone()
+			})
+		}
+	}
+	
+	fn build_layout(base_offset: usize) -> BlockLayout {
+		
+	}
+}*/
 
 #[derive(Copy, Clone)]
 pub struct Material {

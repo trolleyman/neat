@@ -46,7 +46,7 @@ impl GameState {
 			wireframe_mode: false,
 			gravity: g,
 			world: World::new(),
-			ambient_light: Vec4::zero(),
+			ambient_light: Vec4::new(0.0, 0.0, 0.0, 1.0),
 			light: Light::off(),
 		}
 	}

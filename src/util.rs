@@ -30,6 +30,14 @@ pub fn mat4_translation(t: Vec3<f32>) -> Mat4<f32> {
 		)
 }
 
+pub fn mat4_upper_left(v: Mat4<f32>) -> Mat3<f32> {
+	Mat3::new(
+		v.m11, v.m12, v.m13,
+		v.m21, v.m22, v.m23,
+		v.m31, v.m32, v.m33,
+		)
+}
+
 /// Converts a 4x4 matrix into a human-readable string
 #[allow(dead_code)]
 fn mat4_to_string(m: Mat4<f32>) -> String {
