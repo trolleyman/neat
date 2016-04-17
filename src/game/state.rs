@@ -1,7 +1,7 @@
 use prelude::*;
 use std::collections::HashMap;
 
-use glutin::{ElementState, VirtualKeyCode, Event};
+use glutin::{ElementState, Event};
 use np::world::World;
 
 use game::{KeyboardState, Entity, EntityBuilder};
@@ -108,13 +108,16 @@ impl GameState {
 		
 		for e in events {
 			match e {
-				Event::KeyboardInput(ElementState::Pressed, _, Some(code)) => {
-					if Some(code) == settings.wireframe_toggle {
-						self.wireframe_mode = !self.wireframe_mode;
-						if self.wireframe_mode {
-							info!("Wireframe mode enabled");
-						} else {
-							info!("Wireframe mode disabled");
+				Event::KeyboardInput(key_state, _, Some(code)) => {
+					self.keyboard_state.process_event(key_state, code);
+					if key_state == ElementState::Pressed {
+						if Some(code) == settings.wireframe_toggle {
+							self.wireframe_mode = !self.wireframe_mode;
+							if self.wireframe_mode {
+								info!("Wireframe mode enabled");
+							} else {
+								info!("Wireframe mode disabled");
+							}
 						}
 					}
 				},

@@ -20,6 +20,7 @@ pub struct Game {
 	focused: bool,
 	step: bool,
 	ignore_next_mouse_movement: bool,
+	rerender: bool,
 }
 impl Game {
 	/// Constructs a game with the specified settings, and the default game state.
@@ -50,6 +51,7 @@ impl Game {
 			focused: true,
 			step: false,
 			ignore_next_mouse_movement: false,
+			rerender: false,
 		}
 	}
 	
@@ -107,15 +109,19 @@ impl Game {
 			}
 			
 			// Tick game
-			let mut n = 0;
-			while lag >= physics_dt {
-				n += 1;
-				lag -= physics_dt;
+			if !self.rerender {
+				let mut n = 0;
+				while lag >= physics_dt {
+					n += 1;
+					lag -= physics_dt;
+				}
+				if n > 4 {
+					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
+				}
+				self.tick(physics_dt.as_secs_partial() as f32, n, events.drain(..), mouse_moved);
+			} else {
+				self.rerender = false;
 			}
-			if n > 4 {
-				warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
-			}
-			self.tick(physics_dt.as_secs_partial() as f32, n, events.drain(..), mouse_moved);
 			
 			// Render to screen
 			// TODO: Render using seperate thread (mutexes?).
@@ -143,6 +149,7 @@ impl Game {
 		}
 		
 		let mut reload_shaders = false;
+		let mut rerender = false;
 		let mut resized = false;
 		let mut mouse_pos = mid;
 		for e in self.render.poll_events() {
@@ -208,6 +215,9 @@ impl Game {
 				Event::Resized(_, _) => {
 					resized = true;
 				},
+				Event::Refresh => {
+					rerender = true;
+				},
 				Event::KeyboardInput(key_state, _, Some(code)) => {
 					self.keyboard_state.process_event(key_state, code);
 					if key_state == ElementState::Pressed {
@@ -247,9 +257,12 @@ impl Game {
 		
 		if resized {
 			debug!("Resizing renderer");
+			rerender = true;
 			// Resize
 			self.render.resize();
 		}
+		
+		self.rerender = rerender;
 		
 		if self.focused {
 			self.render.input_grab();
