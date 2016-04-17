@@ -348,10 +348,10 @@ impl GameStateBuilder {
 			let off = table_size2 - leg_w2;
 			EntityBuilder::new(1.0, 0.3, 0.6)
 				// Add legs
-				.component(leg.clone().with_pos(Vec3::new( off, -top_h2,  off)))
-				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2,  off)))
-				.component(leg.clone().with_pos(Vec3::new( off, -top_h2, -off)))
-				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2, -off)))
+				.component(leg.clone().with_pos(Vec3::new( off, -top_h2-leg_h2,  off)))
+				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2-leg_h2,  off)))
+				.component(leg.clone().with_pos(Vec3::new( off, -top_h2-leg_h2, -off)))
+				.component(leg.clone().with_pos(Vec3::new(-off, -top_h2-leg_h2, -off)))
 				// Add table top
 				.component(top)
 				.pos(pos)
@@ -404,6 +404,14 @@ impl GameStateBuilder {
 		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.0, 1.0, 0.0)  , material);
 		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.3, 3.0, 0.1)  , material);
 		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(-0.5, 6.0, -0.4), material);
+		build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(0.5, 9.0, 0.4)  , material);
+		
+		let f = move |n: usize| { n as f32 * 2.0 - 5.0 };
+		for x in 0..10 {
+			for z in 0..10 {
+				build_table(ctx, &mut state, top_tex.clone(), leg_tex.clone(), Vec3::new(f(x), 12.0, f(z)), material);
+			}
+		}
 		
 		// Light indicator
 		let red = Rc::new(ColoredMesh::with_scale(Rc::new(SimpleMesh::sphere(ctx, 4)), Color::RED, 0.1));
@@ -414,7 +422,7 @@ impl GameStateBuilder {
 		
 		state.set_light(Light::new(
 			light_pos,
-			Vec4::new(0.1, 0.1, 0.1, 1.0),
+			Vec4::new(0.0, 0.0, 0.0, 1.0),
 			Vec4::new(0.1, 0.1, 0.1, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0)));
 		
