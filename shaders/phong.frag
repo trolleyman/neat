@@ -6,6 +6,8 @@ uniform sampler2D tex;
 // Ambient lighting
 uniform vec4 ambient;
 
+uniform mat4 v_inv;
+
 struct Light {
 	vec4 pos;
 	vec4 diffuse;

@@ -264,10 +264,12 @@ impl Render {
 	/// Render a lit, textured surface.
 	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, texture: &Texture2d, material: &Material) {
 		let mvp = self.projection * self.camera.view_matrix() * model;
+		let v_inv = self.camera.view_matrix().inv().unwrap_or(Mat4::one());
 		let normal_mat = model.inv().unwrap_or(Mat4::one()).transpose();
 		
 		let uniforms = UniformsStorage::new("mvp", *mvp.as_ref());
 		let uniforms = uniforms.add("model"     , *model.as_ref());
+		let uniforms = uniforms.add("v_inv"     , *v_inv.as_ref());
 		let uniforms = uniforms.add("normal_mat", *normal_mat.as_ref());
 		let uniforms = uniforms.add("tex", texture);
 		let uniforms = uniforms.add("ambient", *self.ambient_light.as_ref());
