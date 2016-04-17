@@ -8,23 +8,21 @@ uniform vec4 ambient;
 
 uniform mat4 v_inv;
 
-struct Light {
+uniform Light {
 	vec4 pos;
 	vec4 diffuse;
 	vec4 specular;
 	float constant_attenuation, linear_attenuation, quadratic_attenuation;
 	float spot_cutoff, spot_exponent;
 	vec3 spot_direction;
-};
-uniform Light light;
+} light;
 
-struct Material {
+uniform Material {
 	vec4 ambient;
 	vec4 diffuse;
 	vec4 specular;
 	float shininess;
-};
-uniform Material material;
+} material;
 
 in vec4 t_pos;
 in vec3 t_normal;
@@ -32,16 +30,16 @@ in vec2 t_uv;
 
 void main() {
 	vec3 normal_dir = normalize(t_normal);
-	vec3 view_dir = normalize(vec3(v_inv * vec4(0.0, 0.0, 0.0, 1.0) - position));
+	vec3 view_dir = normalize(vec3(v_inv * vec4(0.0, 0.0, 0.0, 1.0) - t_pos));
 	vec3 light_dir;
 	float attenuation;
 	
-	if (light.position.w == 0.0) { // Directional light?
+	if (light.pos.w == 0.0) { // Directional light?
 		attenuation = 1.0; // no attenuation
-		light_dir = normalize(vec3(light.position));
+		light_dir = normalize(vec3(light.pos));
 	} else {
 		// point light or spotlight (or other kind of light) 
-		vec3 pos_to_light = light.position.xyz - t_pos;
+		vec3 pos_to_light = vec3(light.pos - t_pos);
 		float distance = length(pos_to_light);
 		light_dir = normalize(pos_to_light);
 		attenuation = 1.0 / (light.constant_attenuation
@@ -60,9 +58,9 @@ void main() {
 		}
 	}
 	
-	vec3 ambientLighting = vec3(scene_ambient) * vec3(material.ambient);
+	vec3 ambient_lighting = vec3(ambient) * vec3(material.ambient);
 	
-	vec3 diffuseReflection = attenuation 
+	vec3 diffuse_reflection = attenuation 
 		* vec3(light.diffuse) * vec3(material.diffuse)
 		* max(0.0, dot(normal_dir, light_dir));
 	
@@ -76,5 +74,5 @@ void main() {
 			* pow(max(0.0, dot(reflect(-light_dir, normal_dir), view_dir)), material.shininess);
 	}
 	
-	gl_FragColor = vec4(ambientLighting + diffuseReflection + specular_reflection, 1.0);
+	gl_FragColor = vec4(ambient_lighting + diffuse_reflection + specular_reflection, 1.0);
 }

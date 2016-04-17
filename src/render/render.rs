@@ -270,7 +270,7 @@ impl Render {
 		let uniforms = UniformsStorage::new("mvp", *mvp.as_ref());
 		let uniforms = uniforms.add("model"     , *model.as_ref());
 		let uniforms = uniforms.add("v_inv"     , *v_inv.as_ref());
-		let uniforms = uniforms.add("normal_mat", *normal_mat.as_ref());
+		let uniforms = uniforms.add("normal_mat", *<Mat3<_> as FromHomogeneous<_>>::from(&normal_mat).as_ref());
 		let uniforms = uniforms.add("tex", texture);
 		let uniforms = uniforms.add("ambient", *self.ambient_light.as_ref());
 		
@@ -304,7 +304,7 @@ impl Render {
 				backface_culling: BackfaceCullingMode::CullClockwise,
 				..Default::default()
 			}
-		).map_err(|e| error!("Draw failed: {:?}", e)).ok();
+		).map_err(|e| error!("Draw failed: {}", e)).ok();
 	}
 }
 
