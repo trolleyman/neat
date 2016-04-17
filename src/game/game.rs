@@ -86,7 +86,7 @@ impl Game {
 			// Process timing stuff
 			let mut current = Instant::now();
 			let mut elapsed = current - previous;
-			if elapsed < min_elapsed && !self.settings.vsync { // elapsed shouldn't be lower than min when vsync is on anyway, but just in case
+			if elapsed < min_elapsed {
 				sleep(min_elapsed - elapsed);
 				current = Instant::now();
 				elapsed = current - previous;
@@ -135,6 +135,7 @@ impl Game {
 			self.settings.paused = true;
 		}
 		
+		let mut reload_shaders = false;
 		let mut resized = false;
 		let mut mouse_pos = (mp_x, mp_y);
 		for e in self.render.poll_events() {
@@ -210,11 +211,23 @@ impl Game {
 							self.step = true;
 							info!("Game stepped");
 						}
+					} else if key_state == ElementState::Pressed && Some(code) == self.settings.reload_shaders {
+						reload_shaders = true;
 					} else {
 						self.keys.push((key_state, code));
 					}
 				},
 				_ => {},
+			}
+		}
+		
+		// Reload shaders
+		if reload_shaders {
+			info!("Reloading shaders");
+			let s = Stopwatch::start();
+			match self.render.reload_shaders() {
+				Ok(()) => info!("Reloaded shaders ({}ms)", s.elapsed_ms()),
+				Err(e) => error!("Error reloading shaders: {}", e),
 			}
 		}
 		

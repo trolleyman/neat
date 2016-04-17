@@ -91,7 +91,7 @@ pub fn load_shader(ctx: &Rc<Context>, name: &str) -> Program {
 	match try_load_shader(ctx, name) {
 		Ok(program) => program,
 		Err(e) => {
-			error!("Cannot load shader '{}': {}", name, e);
+			error!("{}", e);
 			exit(1);
 		}
 	}
@@ -106,22 +106,25 @@ pub fn load_shader(ctx: &Rc<Context>, name: &str) -> Program {
 /// 
 /// Returns an `Err` if the shader cannot be found or is invalid.
 pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
-	let base_dir = try_get_base_dir()?;
-	
-	let name = String::from(name);
-	
-	let shaders_dir = base_dir.join("shaders");
-	assert_is_dir(&shaders_dir)?;
-	
-	let vert = try_read_file_string(shaders_dir.join(name.clone() + ".vert"))?;
-	
-	let frag = try_read_file_string(shaders_dir.join(name.clone() + ".frag"))?;
-	
-	trace!("Compiling shader '{}'...", name);
-	match Program::from_source(ctx, &vert, &frag, None) {
-		Ok(p) => Ok(p),
-		Err(e) => Err(format!("Shader '{}' could not be compiled:\n{}", name, e)),
+	fn try(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
+		let base_dir = try_get_base_dir()?;
+		
+		let name = String::from(name);
+		
+		let shaders_dir = base_dir.join("shaders");
+		assert_is_dir(&shaders_dir)?;
+		
+		let vert = try_read_file_string(shaders_dir.join(name.clone() + ".vert"))?;
+		
+		let frag = try_read_file_string(shaders_dir.join(name.clone() + ".frag"))?;
+		
+		trace!("Compiling shader '{}'...", name);
+		match Program::from_source(ctx, &vert, &frag, None) {
+			Ok(p) => Ok(p),
+			Err(e) => Err(format!("Compilation error:\n{}", e)),
+		}
 	}
+	try(ctx, name).map_err(|e| format!("Cannot load shader '{}': {}", name, e))
 }
 
 /// Loads the font `name` at `index` from a file in the fonts/ folder.
@@ -131,7 +134,7 @@ pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 	match try_load_font(name, index) {
 		Ok(font) => font,
 		Err(e) => {
-			error!("Cannot load font '{}': {}", name, e);
+			error!("{}", e);
 			exit(1);
 		}
 	}
@@ -141,16 +144,19 @@ pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 /// 
 /// Returns an `Err` if the font is not valid.
 pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
-	let base_dir = try_get_base_dir()?;
-	let fonts_dir = base_dir.join("fonts");
-	let font_path = fonts_dir.join(name);
-	let bytes = try_read_file_bytes(&font_path)?;
-	
-	let collection = FontCollection::from_bytes(bytes);
-	match collection.font_at(index) {
-		Some(_) => Ok(collection),
-		None => Err(format!("Invalid font: '{}'", font_path.display()))
+	fn try(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
+		let base_dir = try_get_base_dir()?;
+		let fonts_dir = base_dir.join("fonts");
+		let font_path = fonts_dir.join(name);
+		let bytes = try_read_file_bytes(&font_path)?;
+		
+		let collection = FontCollection::from_bytes(bytes);
+		match collection.font_at(index) {
+			Some(_) => Ok(collection),
+			None => Err(format!("Invalid font at index {}: '{}'", index, font_path.display()))
+		}
 	}
+	try(name, index).map_err(|e| format!("Cannot load font '{}': {}", name, e))
 }
 
 /// Loads the texture `name` from a file in the textures/ folder and uploads it to OpenGL.
@@ -160,7 +166,7 @@ pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
 	match try_load_texture(ctx, name) {
 		Ok(texture) => texture,
 		Err(e) => {
-			error!("Cannot load texture '{}': {}", name, e);
+			error!("{}", e);
 			exit(1);
 		}
 	}
@@ -170,21 +176,24 @@ pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
 /// 
 /// Returns an `Err` if the texture could not be found, the texture was invalid, or it could not be uploaded to OpenGL.
 pub fn try_load_texture(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
-	let base_dir = try_get_base_dir()?;
-	let textures_dir = base_dir.join("textures");
-	let texture_path = textures_dir.join(name);
-	let bytes = try_read_file_bytes(&texture_path)?;
-	
-	let img = image::load_from_memory(&bytes).map_err(|e| format!("{}", e))?;
-	let img_buffer = match img {
-		DynamicImage::ImageLuma8(img)  => img.convert(),
-		DynamicImage::ImageLumaA8(img) => img.convert(),
-		DynamicImage::ImageRgb8(img)   => img.convert(),
-		DynamicImage::ImageRgba8(img)  => img,
-	};
-	
-	// Upload to OpenGL
-	let dimensions = img_buffer.dimensions();
-	let img = RawImage2d::from_raw_rgba(img_buffer.into_raw(), dimensions);
-	Texture2d::new(ctx, img).map_err(|e| format!("{}", e))
+	fn try(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
+		let base_dir = try_get_base_dir()?;
+		let textures_dir = base_dir.join("textures");
+		let texture_path = textures_dir.join(name);
+		let bytes = try_read_file_bytes(&texture_path)?;
+		
+		let img = image::load_from_memory(&bytes).map_err(|e| format!("{}", e))?;
+		let img_buffer = match img {
+			DynamicImage::ImageLuma8(img)  => img.convert(),
+			DynamicImage::ImageLumaA8(img) => img.convert(),
+			DynamicImage::ImageRgb8(img)   => img.convert(),
+			DynamicImage::ImageRgba8(img)  => img,
+		};
+		
+		// Upload to OpenGL
+		let dimensions = img_buffer.dimensions();
+		let img = RawImage2d::from_raw_rgba(img_buffer.into_raw(), dimensions);
+		Texture2d::new(ctx, img).map_err(|e| format!("{}", e))
+	}
+	try(ctx, name).map_err(|e| format!("Cannot load texture '{}': {}", name, e))
 }

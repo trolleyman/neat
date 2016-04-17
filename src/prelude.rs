@@ -26,3 +26,29 @@ impl DurationExt for Duration {
 		self.as_secs() as f64 + (self.subsec_nanos() as f64 / 1_000_000_000.0)
 	}
 }
+
+/// Simple stopwatch.
+#[derive(Copy, Clone)]
+pub struct Stopwatch {
+	start: Instant,
+}
+impl Stopwatch {
+	/// Starts a new stopwatch.
+	pub fn start() -> Stopwatch {
+		Stopwatch {
+			start: Instant::now(),
+		}
+	}
+	/// Returns the duration elapsed since the stopwatch was started.
+	pub fn elapsed(&self) -> Duration {
+		self.start.elapsed()
+	}
+	/// Returns the duration elapsed since the stopwatch was started, in milliseconds.
+	pub fn elapsed_ms(&self) -> u64 {
+		self.start.elapsed().as_millis()
+	}
+	/// Returns the duration elapsed since the stopwatch was started, in seconds.
+	pub fn elapsed_secs(&self) -> f64 {
+		self.start.elapsed().as_secs_partial()
+	}
+}

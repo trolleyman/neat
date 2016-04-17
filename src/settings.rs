@@ -40,6 +40,8 @@ pub struct Settings {
 	pub physics_step : Option<VirtualKeyCode>,
 	/// The key to toggle wireframe mode
 	pub wireframe_toggle: Option<VirtualKeyCode>,
+	/// The key to reload the shaders
+	pub reload_shaders: Option<VirtualKeyCode>,
 }
 impl Settings {
 	/// Gets game settings from args passed to executable.
@@ -112,6 +114,7 @@ impl Default for Settings {
 			physics_pause: Some(VirtualKeyCode::F1),
 			physics_step : Some(VirtualKeyCode::F2),
 			wireframe_toggle: Some(VirtualKeyCode::F3),
+			reload_shaders: Some(VirtualKeyCode::F4),
 		}
 	}
 }
