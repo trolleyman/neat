@@ -13,7 +13,7 @@ struct Light {
 	float constant_attenuation, linear_attenuation, quadratic_attenuation;
 	float spot_cutoff, spot_exponent;
 	vec3 spot_direction;
-}
+};
 uniform Light light;
 
 struct Material {
@@ -21,7 +21,7 @@ struct Material {
 	vec4 diffuse;
 	vec4 specular;
 	float shininess;
-}
+};
 uniform Material material;
 
 in vec4 t_pos;

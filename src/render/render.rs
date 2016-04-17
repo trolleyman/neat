@@ -1,6 +1,5 @@
 use prelude::*;
 use std::rc::Rc;
-use std::mem;
 use std::process::exit;
 
 use glium::*;
@@ -109,10 +108,13 @@ impl Render {
 		let frame = win.draw();
 		let ctx = win.get_context().clone();
 		
+		trace!("Loading simple shader");
 		let simple_shader = vfs::load_shader(&ctx, "simple");
 		
+		trace!("Loading phong shader");
 		let phong_shader = vfs::load_shader(&ctx, "phong");
 		
+		trace!("Loading font renderer");
 		let font_render = FontRender::new(ctx.clone());
 		
 		let mut r = Render {

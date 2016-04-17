@@ -1,8 +1,5 @@
 use prelude::*;
 
-use glium::uniforms::{AsUniformValue, UniformValue};
-use glium::buffer::{Buffer, BufferAny, BufferAnySlice, BufferMode};
-
 use util;
 
 /// Represents a light.

@@ -117,6 +117,7 @@ pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String>
 	
 	let frag = try_read_file_string(shaders_dir.join(name.clone() + ".frag"))?;
 	
+	trace!("Compiling shader '{}'...", name);
 	match Program::from_source(ctx, &vert, &frag, None) {
 		Ok(p) => Ok(p),
 		Err(e) => Err(format!("Shader '{}' could not be compiled:\n{}", name, e)),
