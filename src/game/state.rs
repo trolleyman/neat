@@ -1,7 +1,7 @@
 use prelude::*;
 use std::collections::HashMap;
 
-use glutin::{ElementState, VirtualKeyCode};
+use glutin::{ElementState, VirtualKeyCode, Event};
 use np::world::World;
 
 use game::{KeyboardState, Entity, EntityBuilder};
@@ -25,29 +25,31 @@ pub enum Gravity {
 
 /// Holds the state of the game
 pub struct GameState {
+	world: World<f32>,
+	gravity: Gravity,
 	next_free_id: EntityId,
 	entities: HashMap<EntityId, Entity>,
+	keyboard_state: KeyboardState,
 	camera: Camera,
-	wireframe_mode: bool,
-	gravity: Gravity,
-	world: World<f32>,
-	ambient_light: Vec4<f32>,
 	light: Light,
+	ambient_light: Vec4<f32>,
+	wireframe_mode: bool,
 }
 impl GameState {
 	/// Constructs a new GameState with the specified initial camera position, and gravity state.
 	/// 
-	/// The light is set to off. Use `set_light` to specify the light.
+	/// The main light in the scene is initialized to off. Use `set_light` to specify the light.
 	pub fn new(cam: Camera, g: Gravity) -> GameState {
 		GameState {
+			world: World::new(),
+			gravity: g,
 			next_free_id: 0,
 			entities: HashMap::new(),
+			keyboard_state: KeyboardState::new(),
 			camera: cam,
-			wireframe_mode: false,
-			gravity: g,
-			world: World::new(),
-			ambient_light: Vec4::new(0.0, 0.0, 0.0, 1.0),
 			light: Light::off(),
+			ambient_light: Vec4::new(0.05, 0.05, 0.05, 1.0),
+			wireframe_mode: false,
 		}
 	}
 	
@@ -98,47 +100,50 @@ impl GameState {
 	/// 
 	/// - `dt` is the number of seconds to process.
 	/// - `settings` are the current game settings.
-	/// - `keys` is the list of keys pressed/released since the last update.
-	/// - `keyboard_state` is the current keyboard state.
-	/// - `mouse_state` is how much the mouse has moved (in screen pixels) since the last update.
-	pub fn tick(&mut self, dt: f32, settings: &Settings, keys: &[(ElementState, VirtualKeyCode)], keyboard_state: &KeyboardState, mouse_state: (i32, i32)) {
+	/// - `events` is a list of events that occured since last frame.
+	/// - `mouse_moved` is how much the mouse has moved (in screen pixels) since the last update.
+	pub fn tick<I: Iterator<Item=Event>>(&mut self, dt: f32, settings: &Settings, events: I, mouse_moved: Vec2<i32>) {
 		// m/s
 		let speed = 4.0 * dt;
 		
+		for e in events {
+			match e {
+				Event::KeyboardInput(ElementState::Pressed, _, Some(code)) => {
+					if Some(code) == settings.wireframe_toggle {
+						self.wireframe_mode = !self.wireframe_mode;
+						if self.wireframe_mode {
+							info!("Wireframe mode enabled");
+						} else {
+							info!("Wireframe mode disabled");
+						}
+					}
+				},
+				_ => {}
+			}
+		}
+		
 		// Translate camera based on keyboard state
 		let mut trans = Vec3::new(0.0, 0.0, 0.0);
-		if keyboard_state.is_pressed(&settings.forward) {
+		if self.keyboard_state.is_pressed(&settings.forward) {
 			trans = trans + Vec3::new(0.0, 0.0, -speed);
 		}
-		if keyboard_state.is_pressed(&settings.backward) {
+		if self.keyboard_state.is_pressed(&settings.backward) {
 			trans = trans + Vec3::new(0.0, 0.0,  speed);
 		}
-		if keyboard_state.is_pressed(&settings.left) {
+		if self.keyboard_state.is_pressed(&settings.left) {
 			trans = trans + Vec3::new(-speed, 0.0, 0.0);
 		}
-		if keyboard_state.is_pressed(&settings.right) {
+		if self.keyboard_state.is_pressed(&settings.right) {
 			trans = trans + Vec3::new( speed, 0.0, 0.0);
 		}
-		if keyboard_state.is_pressed(&settings.up) {
+		if self.keyboard_state.is_pressed(&settings.up) {
 			trans = trans + Vec3::new(0.0,  speed, 0.0);
 		}
-		if keyboard_state.is_pressed(&settings.down) {
+		if self.keyboard_state.is_pressed(&settings.down) {
 			trans = trans + Vec3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
-		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
-		for &(s, ref key) in keys.iter() {
-			if s == ElementState::Pressed {
-				if Some(*key) == settings.wireframe_toggle {
-					self.wireframe_mode = !self.wireframe_mode;
-					if self.wireframe_mode {
-						info!("Wireframe mode enabled");
-					} else {
-						info!("Wireframe mode disabled");
-					}
-				}
-			}
-		}
+		self.camera.mouse_moved(mouse_moved);
 		
 		if !settings.paused {
 			/*info!("=== Entities ===");

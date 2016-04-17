@@ -25,6 +25,13 @@ impl KeyboardState {
 	
 	/// Processes a keyboard event and updated the internal state.
 	pub fn process_event(&mut self, key_state: ElementState, code: VirtualKeyCode) {
-		self.state.insert(code, key_state);
+		match key_state {
+			ElementState::Pressed => {
+				self.state.insert(code, key_state);
+			},
+			ElementState::Released => {
+				self.state.remove(&code);
+			}
+		}
 	}
 }

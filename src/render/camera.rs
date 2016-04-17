@@ -1,5 +1,4 @@
 use prelude::*;
-use std::f32;
 
 use na;
 
@@ -50,26 +49,26 @@ impl Camera {
 	}
 	
 	/// Handle a mouse move on the screen by rotating the camera.
-	pub fn mouse_moved(&mut self, screen_x: i32, screen_y: i32) {
-		let x = screen_x as f32 * -0.008;
-		let y = screen_y as f32 * -0.008;
-		if screen_x != 0 && screen_y != 0 {
-			trace!("mouse moved: {:3},{:3} look change: {},{}", x, y, -screen_x, -screen_y);
+	pub fn mouse_moved(&mut self, moved: Vec2<i32>) {
+		let rot = Vec2::new(moved.x as f32, moved.y as f32) * -0.008;
+		if moved.x != 0 && moved.y != 0 {
+			trace!("mouse moved: {:3},{:3} look change: {},{}", rot.x, rot.y, -moved.x, -moved.y);
 		}
-		self.look(x, y);
+		self.look(rot);
 	}
 	
 	/// Apply a rotation in the x and y direction (in radians)
-	pub fn look(&mut self, x: f32, y: f32) {
-		self.xrot += x;
-		self.yrot += y;
+	pub fn look(&mut self, rot: Vec2<f32>) {
+		const PI: f32 = ::std::f32::consts::PI;
+		self.xrot += rot.x;
+		self.yrot += rot.y;
 		
-		self.xrot %= f32::consts::PI * 2.;
+		self.xrot %= PI * 2.;
 		if self.xrot < 0.0 {
-			self.xrot += f32::consts::PI * 2.;
+			self.xrot += PI * 2.;
 		}
 		
-		self.yrot = na::clamp(self.yrot, f32::consts::PI / -2., f32::consts::PI / 2.);
+		self.yrot = na::clamp(self.yrot, PI / -2., PI / 2.);
 		
 		self.view_mat = None;
 	}
