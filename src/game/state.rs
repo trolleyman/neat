@@ -31,6 +31,7 @@ pub struct GameState {
 	wireframe_mode: bool,
 	gravity: Gravity,
 	world: World<f32>,
+	ambient_light: Vec4<f32>,
 	light: Light,
 }
 impl GameState {
@@ -45,8 +46,13 @@ impl GameState {
 			wireframe_mode: false,
 			gravity: g,
 			world: World::new(),
+			ambient_light: Vec4::zero(),
 			light: Light::off(),
 		}
+	}
+	
+	pub fn set_ambient_light(&mut self, ambient_light: Vec4<f32>) {
+		self.ambient_light = ambient_light;
 	}
 	
 	pub fn set_light(&mut self, l: Light) {
@@ -199,6 +205,7 @@ impl GameState {
 	/// `fps` is the current frames per second.
 	pub fn render(&mut self, r: &mut Render, fps: u32) {
 		r.set_camera(self.camera);
+		r.set_ambient_light(self.ambient_light);
 		r.set_light(self.light);
 		r.set_wireframe_mode(self.wireframe_mode);
 		

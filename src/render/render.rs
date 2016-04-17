@@ -3,9 +3,10 @@ use std::rc::Rc;
 use std::mem;
 use std::process::exit;
 
+use glium::*;
 use glium::backend::Facade;
 use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
-use glium::*;
+use glium::uniforms::UniformsStorage;
 use glutin::{CursorState, WindowBuilder, Window};
 
 use util;
@@ -70,6 +71,7 @@ pub struct Render {
 	projection: Mat4<f32>,
 	camera: Camera,
 	
+	ambient_light: Vec4<f32>,
 	light: Light,
 	wireframe_mode: bool,
 	simple_shader: Program,
@@ -121,6 +123,7 @@ impl Render {
 			projection: Mat4::one(),
 			camera: camera,
 			
+			ambient_light: Vec4::zero(),
 			light: Light::off(),
 			wireframe_mode: false,
 			simple_shader: simple_shader,
@@ -136,6 +139,10 @@ impl Render {
 	fn clear_frame(frame: &mut Frame) {
 		frame.clear_color(0.0, 0.0, 0.0, 0.0);
 		frame.clear_depth(1.0);
+	}
+	
+	pub fn set_ambient_light(&mut self, ambient_light: Vec4<f32>) {
+		self.ambient_light = ambient_light;
 	}
 	
 	pub fn set_light(&mut self, light: Light) {
@@ -236,7 +243,7 @@ impl Render {
 			is,
 			&self.simple_shader,
 			&uniform! {
-				mvp  : unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(mvp) },
+				mvp  : *mvp.as_ref(),
 				color: col.into_array(),
 			},
 			&DrawParameters {
@@ -254,29 +261,35 @@ impl Render {
 	
 	/// Render a lit, textured surface.
 	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, texture: &Texture2d, material: &Material) {
-		let mv = self.camera.view_matrix() * model;
-		let mvp = self.projection * mv;
-		let normal_mat = mv.inv().unwrap_or(Mat4::one()).transpose();
+		let mvp = self.projection * self.camera.view_matrix() * model;
+		let normal_mat = model.inv().unwrap_or(Mat4::one()).transpose();
+		
+		let uniforms = UniformsStorage::new("mvp", *mvp.as_ref());
+		let uniforms = uniforms.add("model"     , *model.as_ref());
+		let uniforms = uniforms.add("normal_mat", *normal_mat.as_ref());
+		let uniforms = uniforms.add("tex", texture);
+		let uniforms = uniforms.add("ambient", *self.ambient_light.as_ref());
+		
+		let uniforms = uniforms.add("light.pos", *self.light.pos.as_ref());
+		let uniforms = uniforms.add("light.diffuse" , *self.light.diffuse.as_ref());
+		let uniforms = uniforms.add("light.specular", *self.light.specular.as_ref());
+		let uniforms = uniforms.add("light.constant_attenuation" , self.light.constant_attenuation);
+		let uniforms = uniforms.add("light.linear_attenuation"   , self.light.linear_attenuation);
+		let uniforms = uniforms.add("light.quadratic_attenuation", self.light.quadratic_attenuation);
+		let uniforms = uniforms.add("light.spot_cutoff"   , self.light.spot_cutoff);
+		let uniforms = uniforms.add("light.spot_exponent" , self.light.spot_exponent);
+		let uniforms = uniforms.add("light.spot_direction", *self.light.spot_direction.as_ref());
+		
+		let uniforms = uniforms.add("material.ambient"  , *material.ambient.as_ref());
+		let uniforms = uniforms.add("material.diffuse"  , *material.diffuse.as_ref());
+		let uniforms = uniforms.add("material.specular" , *material.specular.as_ref());
+		let uniforms = uniforms.add("material.shininess", material.shininess);
 		
 		self.frame.draw(
 			vs,
 			is,
 			&self.phong_shader,
-			&uniform! {
-				mvp       : unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(mvp) },
-				model     : unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(model) },
-				normal_mat: unsafe { mem::transmute::<Mat4<f32>, [[f32; 4]; 4]>(normal_mat) },
-				tex       : texture,
-				iA: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(self.light.intensity_ambient) },
-				iS: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(self.light.intensity_specular) },
-				iD: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(self.light.intensity_diffuse) },
-				kA: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_ambient) },
-				kS: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_specular) },
-				kD: unsafe { mem::transmute::<Vec4<f32>, [f32; 4]>(material.reflection_diffuse) },
-				shininess : material.shininess,
-				light_pos : unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.light.pos) },
-				camera_pos: unsafe { mem::transmute::<Vec3<f32>, [f32; 3]>(self.camera.pos()) },
-			},
+			&uniforms,
 			&DrawParameters {
 				depth: Depth {
 					test: DepthTest::IfLess,
