@@ -127,7 +127,7 @@ pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String>
 	try(ctx, name).map_err(|e| format!("Cannot load shader '{}': {}", name, e))
 }
 
-/// Loads the font `name` at `index` from a file in the fonts/ folder.
+/// Loads the font `name` at `index` from a file in the `fonts/` folder.
 /// 
 /// Exits if the font is not valid.
 pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
@@ -140,7 +140,7 @@ pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 	}
 }
 
-/// Loads the font `name` at `index` from a file in the fonts/ folder.
+/// Loads the font `name` at `index` from a file in the `fonts/` folder.
 /// 
 /// Returns an `Err` if the font is not valid.
 pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
@@ -159,7 +159,7 @@ pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>
 	try(name, index).map_err(|e| format!("Cannot load font '{}': {}", name, e))
 }
 
-/// Loads the texture `name` from a file in the textures/ folder and uploads it to OpenGL.
+/// Loads the texture `name` from a file in the `textures/` folder and uploads it to OpenGL.
 /// 
 /// Exits if the texture could not be found, the texture was invalid, or it could not be uploaded to OpenGL.
 pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
@@ -172,7 +172,7 @@ pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
 	}
 }
 
-/// Loads the texture `name` from a file in the textures/ folder and uploads it to OpenGL.
+/// Loads the texture `name` from a file in the `textures/` folder and uploads it to OpenGL.
 /// 
 /// Returns an `Err` if the texture could not be found, the texture was invalid, or it could not be uploaded to OpenGL.
 pub fn try_load_texture(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
