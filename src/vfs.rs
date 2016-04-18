@@ -25,7 +25,7 @@ fn try_get_base_dir() -> Result<PathBuf, String> {
 fn assert_is_dir<P: AsRef<Path>>(path: P) -> Result<(), String> {
 	let path = path.as_ref();
 	if !path.exists() {
-		Err(format!("Directory '{}' does not exist.", path.display()))
+		Err(format!("'{}' does not exist.", path.display()))
 	} else if !path.is_dir() {
 		Err(format!("'{}' is not a directory.", path.display()))
 	} else {

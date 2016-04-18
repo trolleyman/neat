@@ -1,3 +1,4 @@
+//! Utility functions
 use prelude::*;
 
 /// Linearly interpolate `a` and `b`.

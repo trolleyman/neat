@@ -1,3 +1,4 @@
+//! Game handling
 use prelude::*;
 use std::rc::Rc;
 use std::thread::sleep;

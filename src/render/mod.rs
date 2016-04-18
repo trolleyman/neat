@@ -1,3 +1,4 @@
+//! Rendering code (i.e. meshes, lights, materials, vertices, etc.)
 mod render;
 mod camera;
 mod mesh;

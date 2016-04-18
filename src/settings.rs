@@ -1,4 +1,4 @@
-use std::default::Default;
+//! Handles the game settings
 use std::env::args;
 use std::collections::HashSet;
 use std::path::PathBuf;

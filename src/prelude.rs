@@ -1,3 +1,4 @@
+//! A prelude imported into all files because I'm lazy.
 pub use std::time::{Instant, Duration};
 
 pub use na::{Pnt2, Pnt3, Pnt4, Vec2, Vec3, Vec4, Mat3, Mat4, UnitQuat, Rot3, Iso3, Sim3, Persp3};
