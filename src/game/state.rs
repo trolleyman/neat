@@ -162,7 +162,7 @@ impl GameState {
 	}
 	
 	/// Calculates relative gravity for all the entities in the scene.
-	pub fn calculate_gravity(&mut self, g: f32) {
+	fn calculate_gravity(&mut self, g: f32) {
 		let id_vec: Vec<_> = self.entities.keys().cloned().collect();
 		let mut ids = id_vec.iter();
 		loop {
