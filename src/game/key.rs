@@ -14,7 +14,7 @@ impl KeyboardState {
 		}
 	}
 	
-	/// Returns true if `key` is down.
+	/// Returns true if `key` is pressed.
 	pub fn is_pressed(&self, key: &VirtualKeyCode) -> bool {
 		self.state.get(key).map(|&s| s == ElementState::Pressed).unwrap_or(false)
 	}

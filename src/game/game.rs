@@ -118,7 +118,7 @@ impl Game {
 				if n > 4 {
 					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
 				}
-				self.tick(physics_dt.as_secs_partial() as f32, n, events.drain(..), mouse_moved);
+				self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
 			} else {
 				self.rerender = false;
 			}
@@ -280,7 +280,7 @@ impl Game {
 	/// Ticks the game.
 	/// `dt` is the number of seconds since last frame.
 	/// `n` is the number of iterations to do.
-	pub fn tick<I: Iterator<Item=Event>>(&mut self, dt: f32, n: u32, events: I, mouse_moved: Vec2<i32>) {
+	pub fn tick(&mut self, dt: f32, n: u32, events: &mut Vec<Event>, mouse_moved: Vec2<i32>) {
 		if n == 0 {
 			return;
 		}
@@ -289,10 +289,12 @@ impl Game {
 		} else {
 			trace!("Game tick: {}s ({} iterations)", dt, n);
 		}
+		// TODO: Interpolate mouse_moved.
+		// TODO: Extension: Interpolate events.
 		// Tick next state
 		self.current_state.tick(dt, &self.settings, events, mouse_moved);
 		for _ in 1..n {
-			self.current_state.tick(dt, &self.settings, iter::empty(), Vec2::zero());
+			self.current_state.tick(dt, &self.settings, &mut Vec::with_capacity(0), Vec2::zero());
 		}
 	}
 }

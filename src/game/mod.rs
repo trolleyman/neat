@@ -4,7 +4,7 @@ mod game;
 mod entity;
 mod key;
 
-pub use self::state::GameState;
+pub use self::state::{GameState, Tick};
 pub use self::state_builder::GameStateBuilder;
 pub use self::state::{EntityId, Gravity};
 pub use self::game::Game;

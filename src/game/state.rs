@@ -1,5 +1,7 @@
 use prelude::*;
 use std::collections::HashMap;
+use std::rc::Rc;
+use std::cell::RefCell;
 
 use glutin::{ElementState, Event};
 use np::world::World;
@@ -23,6 +25,15 @@ pub enum Gravity {
 	None,
 }
 
+pub trait Tick {
+	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vec2<i32>);
+}
+impl Tick for FnMut(&mut GameState, f32, &Settings, &[Event], Vec2<i32>) {
+	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vec2<i32>) {
+		self(state, dt, settings, events, mouse_moved);
+	}
+}
+
 /// Holds the state of the game
 pub struct GameState {
 	world: World<f32>,
@@ -34,6 +45,7 @@ pub struct GameState {
 	light: Light,
 	ambient_light: Vec4<f32>,
 	wireframe_mode: bool,
+	tick_callback: RefCell<Option<Rc<Tick>>>,
 }
 impl GameState {
 	/// Constructs a new GameState with the specified initial camera position, and gravity state.
@@ -50,11 +62,16 @@ impl GameState {
 			light: Light::off(),
 			ambient_light: Vec4::new(0.05, 0.05, 0.05, 1.0),
 			wireframe_mode: false,
+			tick_callback: RefCell::new(None),
 		}
 	}
 	
 	pub fn set_ambient_light(&mut self, ambient_light: Vec4<f32>) {
 		self.ambient_light = ambient_light;
+	}
+	
+	pub fn light(&self) -> &Light {
+		&self.light
 	}
 	
 	pub fn set_light(&mut self, l: Light) {
@@ -63,6 +80,14 @@ impl GameState {
 	
 	pub fn camera(&self) -> &Camera {
 		&self.camera
+	}
+	
+	pub fn set_tick_callback(&mut self, callback: Option<Rc<Tick>>) {
+		if let Some(callback) = callback {
+			*self.tick_callback.borrow_mut() = Some(callback);
+		} else {
+			*self.tick_callback.borrow_mut() = None;
+		}
 	}
 	
 	/// Adds an entity to the world
@@ -102,11 +127,18 @@ impl GameState {
 	/// - `settings` are the current game settings.
 	/// - `events` is a list of events that occured since last frame.
 	/// - `mouse_moved` is how much the mouse has moved (in screen pixels) since the last update.
-	pub fn tick<I: Iterator<Item=Event>>(&mut self, dt: f32, settings: &Settings, events: I, mouse_moved: Vec2<i32>) {
+	pub fn tick(&mut self, dt: f32, settings: &Settings, events: &mut Vec<Event>, mouse_moved: Vec2<i32>) {
+		// Call callback
+		{
+			if self.tick_callback.borrow().is_some() {
+				self.tick_callback.borrow_mut().unwrap().tick(self, dt, settings, &*events, mouse_moved);
+			}
+		}
+		
 		// m/s
 		let speed = 4.0 * dt;
 		
-		for e in events {
+		for e in events.drain(..) {
 			match e {
 				Event::KeyboardInput(key_state, _, Some(code)) => {
 					self.keyboard_state.process_event(key_state, code);
