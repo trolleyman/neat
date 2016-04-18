@@ -170,13 +170,15 @@ impl Entity {
 		}
 		
 		let comp = Compound::new(bodies);
-		let body = if let Some(density) = density {
+		let mut body = if let Some(density) = density {
 			// Dynamic
 			RigidBody::new_dynamic(comp, density, restitution, friction)
 		} else {
 			// Static
 			RigidBody::new_static(comp, restitution, friction)
 		};
+		body.set_translation(pos);
+		body.set_rotation(rot);
 		let body = world.add_body(body);
 		
 		let mut e = Entity {

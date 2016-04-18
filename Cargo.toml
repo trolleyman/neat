@@ -38,14 +38,14 @@ doc = false
 # is also their order of complexity.
 
 [[example]]
-name = "spaceballs"
-path = "examples/spaceballs.rs"
+name = "solar"
+path = "examples/solar.rs"
 [[example]]
 name = "rot_test"
 path = "examples/rot_test.rs"
 [[example]]
-name = "solar"
-path = "examples/solar.rs"
+name = "spaceballs"
+path = "examples/spaceballs.rs"
 [[example]]
 name = "balls"
 path = "examples/balls.rs"

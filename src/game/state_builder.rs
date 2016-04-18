@@ -19,39 +19,6 @@ impl GameStateBuilder {
 		GameStateBuilder::build_tables(ctx)
 	}
 	
-	/// Builds the `spceballs` scene.
-	/// 
-	/// This scene consists of 3 balls, red, green, and blue that attract one another.
-	/// They all have different initial velocities.
-	pub fn build_spaceballs(ctx: &Rc<Context>) -> GameState {
-		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
-		
-		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
-		let green = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
-		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
-		
-		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Relative(1.0));
-		EntityBuilder::new(1.0, 0.9, 0.1)
-			.component(Component::new(Ball::new(1.0), red))
-			.pos(Vec3::new(5.0, 0.0,  0.0))
-			.vel(Vec3::new(0.0, 1.0, -1.0))
-			.build(&mut state);
-		
-		EntityBuilder::new(1.0, 0.9, 0.1)
-			.component(Component::new(Ball::new(1.0), green))
-			.pos(Vec3::new(0.0, 0.0, -5.0))
-			.vel(Vec3::new(1.0, -1.0, 1.0))
-			.build(&mut state);
-		
-		EntityBuilder::new(1.0, 0.9, 0.1)
-			.component(Component::new(Ball::new(1.0), blue))
-			.pos(Vec3::new(0.0, 5.0,  0.0))
-			.vel(Vec3::new(-1.0, 1.0, 1.0))
-			.build(&mut state);
-		
-		state
-	}
-	
 	/// Builds the `solar` scene.
 	/// 
 	/// This scene consists of 3 balls:
@@ -190,6 +157,39 @@ impl GameStateBuilder {
 		state
 	}
 	
+	/// Builds the `spceballs` scene.
+	/// 
+	/// This scene consists of 3 balls, red, green, and blue that attract one another.
+	/// They all have different initial velocities.
+	pub fn build_spaceballs(ctx: &Rc<Context>) -> GameState {
+		let sphere = Rc::new(SimpleMesh::sphere(ctx, 4));
+		
+		let red   = Rc::new(ColoredMesh::new(sphere.clone(), Color::RED));
+		let green = Rc::new(ColoredMesh::new(sphere.clone(), Color::GREEN));
+		let blue  = Rc::new(ColoredMesh::new(sphere.clone(), Color::BLUE));
+		
+		let mut state = GameState::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)), Gravity::Relative(1.0));
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), red))
+			.pos(Vec3::new(5.0, 0.0,  0.0))
+			.vel(Vec3::new(0.0, 1.0, -1.0))
+			.build(&mut state);
+		
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), green))
+			.pos(Vec3::new(0.0, 0.0, -5.0))
+			.vel(Vec3::new(1.0, -1.0, 1.0))
+			.build(&mut state);
+		
+		EntityBuilder::new(1.0, 0.9, 0.1)
+			.component(Component::new(Ball::new(1.0), blue))
+			.pos(Vec3::new(0.0, 5.0,  0.0))
+			.vel(Vec3::new(-1.0, 1.0, 1.0))
+			.build(&mut state);
+		
+		state
+	}
+	
 	/// Builds the `balls` scene.
 	/// 
 	/// This scene consists of 4 planes that are rotated inwards to form a simple cone.
@@ -311,9 +311,9 @@ impl GameStateBuilder {
 		
 		state.set_light(Light::new_point_light(
 			Vec3::new(0.0, 0.0, 0.0),
-			Vec4::new(0.7, 0.7, 0.7, 1.0),
-			Vec4::new(0.7, 0.7, 0.7, 1.0),
-			1.0, 0.22, 0.22));
+			Vec4::new(0.9, 0.9, 0.9, 1.0),
+			Vec4::new(0.9, 0.9, 0.9, 1.0),
+			1.0, 0.5, 0.22));
 		
 		state
 	}

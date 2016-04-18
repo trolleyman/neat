@@ -138,6 +138,7 @@ impl Game {
 		let mut reload_shaders = false;
 		let mut resized = false;
 		let mut mouse_pos = (mp_x, mp_y);
+		let ctx = self.render.context().clone();
 		for e in self.render.poll_events() {
 			
 			// Filter out 'noisy' events
@@ -216,6 +217,19 @@ impl Game {
 					} else {
 						self.keys.push((key_state, code));
 					}
+				},
+				Event::ReceivedCharacter(c) => if self.settings.dev {
+					let gen = match c {
+						'1' => GameStateBuilder::build_default,
+						'2' => GameStateBuilder::build_solar,
+						'3' => GameStateBuilder::build_rot_test,
+						'4' => GameStateBuilder::build_spaceballs,
+						'5' => GameStateBuilder::build_balls,
+						'6' => GameStateBuilder::build_phong,
+						'7' => GameStateBuilder::build_tables,
+						_ => continue,
+					};
+					self.current_state = gen(&ctx);
 				},
 				_ => {},
 			}

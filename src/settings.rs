@@ -16,6 +16,8 @@ pub struct Settings {
 	pub vsync    : bool,
 	/// If the game is currently paused
 	pub paused   : bool,
+	/// If dev mode is on
+	pub dev      : bool,
 	/// Where the log file will be located
 	pub log_file : PathBuf,
 	/// The log level for the terminal output
@@ -102,6 +104,7 @@ impl Default for Settings {
 			h: 600,
 			vsync    : true,
 			paused   : false,
+			dev      : true,
 			log_file : PathBuf::from("log.txt"),
 			term_log_level: LogLevelFilter::Info,
 			file_log_level: LogLevelFilter::Debug,
