@@ -1,7 +1,6 @@
 use prelude::*;
 use std::rc::Rc;
 use std::thread::sleep;
-use std::iter;
 
 use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
 
@@ -177,6 +176,7 @@ impl Game {
 				&Event::MouseMoved(_) => true,
 				&Event::MouseInput(_, _) => true,
 				&Event::KeyboardInput(_, _, _) => true,
+				&Event::MouseWheel(_) => true,
 				_ => false,
 			};
 			if push {

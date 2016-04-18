@@ -2,6 +2,7 @@ use prelude::*;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use std::cell::RefCell;
 use glium::Texture2d;
 use glutin::{Event, MouseScrollDelta};
 use nc::inspection::Repr;
@@ -432,7 +433,7 @@ impl GameStateBuilder {
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
 			1.0, 0.40, 0.22));
 		
-		state.set_tick_callback(Some(Rc::new(LightTick{})));
+		state.set_tick_callback(Some(Rc::new(RefCell::new(LightTick{}))));
 		
 		state
 	}
@@ -440,16 +441,17 @@ impl GameStateBuilder {
 
 struct LightTick {}
 impl Tick for LightTick {
-	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vec2<i32>) {
+	fn tick(&mut self, state: &mut GameState, _dt: f32, _settings: &Settings, events: &[Event], _mouse_moved: Vec2<i32>) {
 		let mut scroll = Vec2::zero();
 		for e in events.iter() {
 			match e {
 				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y)) => {
-					scroll.x += x * 0.01;
-					scroll.y += y * 0.01;
+					scroll.x += x * 0.5;
+					scroll.y += y * 0.5;
 				},
 				&Event::MouseWheel(MouseScrollDelta::PixelDelta(x, y)) => {
-					 // Ignore
+					scroll.x += x * 0.01;
+					scroll.y += y * 0.01;
 				},
 				_ => {}
 			}
@@ -457,5 +459,8 @@ impl Tick for LightTick {
 		let mut light = *state.light();
 		light.linear_attenuation += scroll.y;
 		state.set_light(light);
+		if scroll.y != 0.0 {
+			debug!("Light changed: {}", scroll.y);
+		}
 	}
 }

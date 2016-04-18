@@ -45,7 +45,7 @@ pub struct GameState {
 	light: Light,
 	ambient_light: Vec4<f32>,
 	wireframe_mode: bool,
-	tick_callback: RefCell<Option<Rc<Tick>>>,
+	tick_callback: Option<Rc<RefCell<Tick>>>,
 }
 impl GameState {
 	/// Constructs a new GameState with the specified initial camera position, and gravity state.
@@ -62,7 +62,7 @@ impl GameState {
 			light: Light::off(),
 			ambient_light: Vec4::new(0.05, 0.05, 0.05, 1.0),
 			wireframe_mode: false,
-			tick_callback: RefCell::new(None),
+			tick_callback: None,
 		}
 	}
 	
@@ -82,12 +82,8 @@ impl GameState {
 		&self.camera
 	}
 	
-	pub fn set_tick_callback(&mut self, callback: Option<Rc<Tick>>) {
-		if let Some(callback) = callback {
-			*self.tick_callback.borrow_mut() = Some(callback);
-		} else {
-			*self.tick_callback.borrow_mut() = None;
-		}
+	pub fn set_tick_callback(&mut self, callback: Option<Rc<RefCell<Tick>>>) {
+		self.tick_callback = callback;
 	}
 	
 	/// Adds an entity to the world
@@ -130,8 +126,11 @@ impl GameState {
 	pub fn tick(&mut self, dt: f32, settings: &Settings, events: &mut Vec<Event>, mouse_moved: Vec2<i32>) {
 		// Call callback
 		{
-			if self.tick_callback.borrow().is_some() {
-				self.tick_callback.borrow_mut().unwrap().tick(self, dt, settings, &*events, mouse_moved);
+			let call = self.tick_callback.clone();
+			if call.is_some() {
+				let call = call.unwrap();
+				let mut call = call.borrow_mut();
+				call.tick(self, dt, settings, &*events, mouse_moved);
 			}
 		}
 		
