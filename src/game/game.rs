@@ -14,13 +14,12 @@ pub struct Game {
 	settings: Settings,
 	
 	current_state: GameState,
-	running: bool,
-	keys: Vec<(ElementState, VirtualKeyCode)>,
 	keyboard_state: KeyboardState,
-	mouse_state: (i32, i32),
+	running: bool,
 	focused: bool,
 	step: bool,
 	ignore_next_mouse_movement: bool,
+	rerender: bool,
 }
 impl Game {
 	/// Constructs a game with the specified settings, and the default game state.
@@ -46,13 +45,12 @@ impl Game {
 			settings: settings,
 			
 			current_state: state,
-			running: true,
-			keys: Vec::new(),
 			keyboard_state: KeyboardState::new(),
-			mouse_state: (0, 0),
+			running: true,
 			focused: true,
 			step: false,
 			ignore_next_mouse_movement: false,
+			rerender: false,
 		}
 	}
 	
@@ -81,6 +79,7 @@ impl Game {
 		let mut frames = 0;
 		let mut fps = 0;
 		
+		let mut events = Vec::new();
 		info!("Starting game main loop");
 		while self.running {
 			// Process timing stuff
@@ -102,18 +101,26 @@ impl Game {
 			}
 			
 			// Process events
-			self.process_events();
+			events.clear();
+			let mouse_moved = self.process_events(&mut events);
+			if !self.running {
+				break;
+			}
 			
 			// Tick game
-			let mut n = 0;
-			while lag >= physics_dt {
-				n += 1;
-				lag -= physics_dt;
+			if !self.rerender {
+				let mut n = 0;
+				while lag >= physics_dt {
+					n += 1;
+					lag -= physics_dt;
+				}
+				if n > 4 {
+					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
+				}
+				self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
+			} else {
+				self.rerender = false;
 			}
-			if n > 4 {
-				warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
-			}
-			self.tick(physics_dt.as_secs_partial() as f32, n);
 			
 			// Render to screen
 			// TODO: Render using seperate thread (mutexes?).
@@ -123,11 +130,16 @@ impl Game {
 	}
 	
 	/// Processes system events in the queue.
-	pub fn process_events(&mut self) {
-		let (mp_x, mp_y) = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
-		let (mp_x, mp_y) = (mp_x as i32 / 2, mp_y as i32 / 2);
+	/// 
+	/// Appends events to pass onto the GameState to `events`
+	/// 
+	/// Returns how much the mouse has moved since the last frame.
+	pub fn process_events(&mut self, events: &mut Vec<Event>) -> Vec2<i32> {
+		// Find centre of screen.
+		let mid = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
+		let mid = Vec2::new(mid.0 as i32 / 2, mid.1 as i32 / 2);
 		if self.focused {
-			self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
+			self.render.get_window().map(|w| w.set_cursor_position(mid.x, mid.y));
 		}
 		
 		if self.step {
@@ -136,12 +148,12 @@ impl Game {
 		}
 		
 		let mut reload_shaders = false;
+		let mut rerender = false;
 		let mut resized = false;
-		let mut mouse_pos = (mp_x, mp_y);
+		let mut mouse_pos = mid;
 		let ctx = self.render.context().clone();
 		for e in self.render.poll_events() {
-			
-			// Filter out 'noisy' events
+			// Filter out 'noisy' events from the log.
 			let uninportant = match &e {
 				&Event::MouseMoved(_) |
 				&Event::Moved(_, _) => {
@@ -161,16 +173,26 @@ impl Game {
 				debug!("Event recieved: {:?}", e);
 			}
 			
+			let push = match &e {
+				&Event::MouseMoved(_) => true,
+				&Event::MouseInput(_, _) => true,
+				&Event::KeyboardInput(_, _, _) => true,
+				&Event::MouseWheel(_) => true,
+				_ => false,
+			};
+			if push {
+				events.push(e.clone());
+			}
+			
 			match e {
 				Event::Closed => {
 					self.running = false;
-					return; // Ignore all other events.
 				},
 				Event::MouseMoved(pos) => {
 					if self.ignore_next_mouse_movement {
 						self.ignore_next_mouse_movement = false;
 					} else {
-						mouse_pos = pos;
+						mouse_pos = Vec2::new(pos.0, pos.1);
 					}
 				},
 				Event::Focused(b) => {
@@ -184,8 +206,8 @@ impl Game {
 				Event::MouseInput(mouse_state, button) => {
 					if mouse_state == ElementState::Pressed && button == MouseButton::Left {
 						if !self.focused {
-							self.render.get_window().map(|w| w.set_cursor_position(mp_x, mp_y));
-							mouse_pos = (mp_x, mp_y);
+							self.render.get_window().map(|w| w.set_cursor_position(mid.x, mid.y));
+							mouse_pos = mid;
 							self.ignore_next_mouse_movement = true;
 							self.focused = true;
 						}
@@ -194,28 +216,30 @@ impl Game {
 				Event::Resized(_, _) => {
 					resized = true;
 				},
+				Event::Refresh => {
+					rerender = true;
+				},
 				Event::KeyboardInput(key_state, _, Some(code)) => {
 					self.keyboard_state.process_event(key_state, code);
-					if code == VirtualKeyCode::Escape {
-						self.focused = false;
-					}
-					if key_state == ElementState::Pressed && Some(code) == self.settings.physics_pause {
-						self.settings.paused = !self.settings.paused;
-						if self.settings.paused {
-							info!("Game paused");
-						} else {
-							info!("Game resumed");
+					if key_state == ElementState::Pressed {
+						if code == VirtualKeyCode::Escape {
+							self.focused = false;
+						} else if Some(code) == self.settings.physics_pause {
+							self.settings.paused = !self.settings.paused;
+							if self.settings.paused {
+								info!("Game paused");
+							} else {
+								info!("Game resumed");
+							}
+						} else if Some(code) == self.settings.physics_step {
+							if self.settings.paused {
+								self.settings.paused = false;
+								self.step = true;
+								info!("Game stepped");
+							}
+						} else if Some(code) == self.settings.reload_shaders {
+							reload_shaders = true;
 						}
-					} else if key_state == ElementState::Pressed && Some(code) == self.settings.physics_step {
-						if self.settings.paused {
-							self.settings.paused = false;
-							self.step = true;
-							info!("Game stepped");
-						}
-					} else if key_state == ElementState::Pressed && Some(code) == self.settings.reload_shaders {
-						reload_shaders = true;
-					} else {
-						self.keys.push((key_state, code));
 					}
 				},
 				Event::ReceivedCharacter(c) => if self.settings.dev {
@@ -247,9 +271,12 @@ impl Game {
 		
 		if resized {
 			debug!("Resizing renderer");
+			rerender = true;
 			// Resize
 			self.render.resize();
 		}
+		
+		self.rerender = rerender;
 		
 		if self.focused {
 			self.render.input_grab();
@@ -257,20 +284,17 @@ impl Game {
 			self.render.input_normal();
 		}
 		
-		if self.focused /*&& !ignore_movement_frame*/ {
-			let xdiff = mouse_pos.0 - mp_x;
-			let ydiff = mouse_pos.1 - mp_y;
-			//println!("mouse_pos: {:?}, mp_x: {}, mp_y: {}, xdiff: {}, ydiff: {}", mouse_pos, mp_x, mp_y, xdiff, ydiff);
-			self.mouse_state = (xdiff, ydiff);
+		if self.focused {
+			mouse_pos - mid
 		} else {
-			self.mouse_state = (0, 0);
+			Vec2::new(0, 0)
 		}
 	}
 	
 	/// Ticks the game.
 	/// `dt` is the number of seconds since last frame.
 	/// `n` is the number of iterations to do.
-	pub fn tick(&mut self, dt: f32, n: u32) {
+	pub fn tick(&mut self, dt: f32, n: u32, events: &mut Vec<Event>, mouse_moved: Vec2<i32>) {
 		if n == 0 {
 			return;
 		}
@@ -279,11 +303,12 @@ impl Game {
 		} else {
 			trace!("Game tick: {}s ({} iterations)", dt, n);
 		}
+		// TODO: Interpolate mouse_moved.
+		// TODO: Extension: Interpolate events.
 		// Tick next state
-		for _ in 0..n {
-			self.current_state.tick(dt, &self.settings, &self.keys, &self.keyboard_state, self.mouse_state);
-			self.keys.clear();
-			self.mouse_state = (0, 0);
+		self.current_state.tick(dt, &self.settings, events, mouse_moved);
+		for _ in 1..n {
+			self.current_state.tick(dt, &self.settings, &mut Vec::with_capacity(0), Vec2::zero());
 		}
 	}
 }

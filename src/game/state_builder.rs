@@ -2,13 +2,16 @@ use prelude::*;
 use std::rc::Rc;
 use std::sync::Arc;
 
+use std::cell::RefCell;
 use glium::Texture2d;
+use glutin::{Event, MouseScrollDelta};
 use nc::inspection::Repr;
 use nc::shape::{Ball, Cuboid};
 use rand;
 
-use game::{EntityBuilder, GameState, Gravity, Component};
+use game::{EntityBuilder, GameState, Gravity, Component, Tick};
 use render::{Camera, SimpleMesh, ColoredMesh, Material, LitMesh, Light, Color};
+use settings::Settings;
 use vfs;
 
 pub struct GameStateBuilder {}
@@ -311,9 +314,9 @@ impl GameStateBuilder {
 		
 		state.set_light(Light::new_point_light(
 			Vec3::new(0.0, 0.0, 0.0),
-			Vec4::new(0.9, 0.9, 0.9, 1.0),
-			Vec4::new(0.9, 0.9, 0.9, 1.0),
-			1.0, 0.5, 0.22));
+			Vec4::new(0.7, 0.7, 0.7, 1.0),
+			Vec4::new(0.7, 0.7, 0.7, 1.0),
+			1.0, 0.40, 0.22));
 		
 		state
 	}
@@ -428,8 +431,36 @@ impl GameStateBuilder {
 			light_pos,
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
-			1.0, 0.22, 0.22));
+			1.0, 0.40, 0.22));
+		
+		state.set_tick_callback(Some(Rc::new(RefCell::new(LightTick{}))));
 		
 		state
+	}
+}
+
+struct LightTick {}
+impl Tick for LightTick {
+	fn tick(&mut self, state: &mut GameState, _dt: f32, _settings: &Settings, events: &[Event], _mouse_moved: Vec2<i32>) {
+		let mut scroll = Vec2::zero();
+		for e in events.iter() {
+			match e {
+				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y)) => {
+					scroll.x += x * 0.5;
+					scroll.y += y * 0.5;
+				},
+				&Event::MouseWheel(MouseScrollDelta::PixelDelta(x, y)) => {
+					scroll.x += x * 0.01;
+					scroll.y += y * 0.01;
+				},
+				_ => {}
+			}
+		}
+		let mut light = *state.light();
+		light.linear_attenuation += scroll.y;
+		state.set_light(light);
+		if scroll.y != 0.0 {
+			debug!("Light changed: {}", scroll.y);
+		}
 	}
 }

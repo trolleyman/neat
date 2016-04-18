@@ -14,7 +14,7 @@ impl KeyboardState {
 		}
 	}
 	
-	/// Returns true if `key` is down.
+	/// Returns true if `key` is pressed.
 	pub fn is_pressed(&self, key: &VirtualKeyCode) -> bool {
 		self.state.get(key).map(|&s| s == ElementState::Pressed).unwrap_or(false)
 	}
@@ -25,6 +25,13 @@ impl KeyboardState {
 	
 	/// Processes a keyboard event and updated the internal state.
 	pub fn process_event(&mut self, key_state: ElementState, code: VirtualKeyCode) {
-		self.state.insert(code, key_state);
+		match key_state {
+			ElementState::Pressed => {
+				self.state.insert(code, key_state);
+			},
+			ElementState::Released => {
+				self.state.remove(&code);
+			}
+		}
 	}
 }
