@@ -176,7 +176,7 @@ impl Render {
 		Ok(())
 	}
 	
-	/// Draws the `s` on the screen at [`x`, `y`] with pt size `scale`.
+	/// Draws the `s` on the screen at [`x`, `y`] with pt size `scale` in white.
 	pub fn draw_str(&mut self, s: &str, x: f32, y: f32, scale: f32) {
 		self.draw_str_color(s, x, y, scale, Color::WHITE);
 	}

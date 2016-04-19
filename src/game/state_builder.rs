@@ -9,8 +9,9 @@ use nc::inspection::Repr;
 use nc::shape::{Ball, Cuboid};
 use rand;
 
-use game::{EntityBuilder, GameState, Gravity, Component, Tick};
-use render::{Camera, SimpleMesh, ColoredMesh, Material, LitMesh, Light, Color};
+use super::state::FONT_SIZE;
+use game::{EntityBuilder, GameState, Gravity, Component, TickCallback, RenderCallback};
+use render::{Render, Camera, SimpleMesh, ColoredMesh, Material, LitMesh, Light, Color};
 use settings::Settings;
 use vfs;
 
@@ -318,6 +319,10 @@ impl GameStateBuilder {
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
 			1.0, 0.40, 0.22));
 		
+		let handler = Rc::new(RefCell::new(LightHandler::new()));
+		state.set_tick_callback(Some(handler.clone()));
+		state.set_render_callback(Some(handler.clone()));
+		
 		state
 	}
 	
@@ -433,34 +438,76 @@ impl GameStateBuilder {
 			Vec4::new(0.7, 0.7, 0.7, 1.0),
 			1.0, 0.40, 0.22));
 		
-		state.set_tick_callback(Some(Rc::new(RefCell::new(LightTick{}))));
-		
 		state
 	}
 }
 
-struct LightTick {}
-impl Tick for LightTick {
+#[derive(Debug)]
+enum Mode {
+	LightConstant,
+	LightLinear,
+	LightQuadratic,
+}
+struct LightHandler {
+	mode: Mode
+}
+impl LightHandler {
+	pub fn new() -> LightHandler {
+		LightHandler {
+			mode: Mode::LightConstant
+		}
+	}
+}
+impl TickCallback for LightHandler {
 	fn tick(&mut self, state: &mut GameState, _dt: f32, _settings: &Settings, events: &[Event], _mouse_moved: Vec2<i32>) {
+		const PIXELS_PER_LINE: f32 = 16.0;
+		
 		let mut scroll = Vec2::zero();
 		for e in events.iter() {
 			match e {
 				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y)) => {
-					scroll.x += x * 0.5;
-					scroll.y += y * 0.5;
+					scroll.x += x * PIXELS_PER_LINE;
+					scroll.y += y * PIXELS_PER_LINE;
 				},
 				&Event::MouseWheel(MouseScrollDelta::PixelDelta(x, y)) => {
-					scroll.x += x * 0.01;
-					scroll.y += y * 0.01;
+					scroll.x += x;
+					scroll.y += y;
 				},
+				&Event::ReceivedCharacter(c) => {
+					match match c {
+						'1' => Some(Mode::LightConstant),
+						'2' => Some(Mode::LightLinear),
+						'3' => Some(Mode::LightQuadratic),
+						_ => None,
+					} {
+						Some(m) => {
+							info!("Changing mode to {:?}", m);
+							self.mode = m;
+						},
+						None => {}
+					}
+				}
 				_ => {}
 			}
 		}
+		scroll.y *= 0.07;
+		
 		let mut light = *state.light();
-		light.linear_attenuation += scroll.y;
-		state.set_light(light);
-		if scroll.y != 0.0 {
-			debug!("Light changed: {}", scroll.y);
+		match self.mode {
+			Mode::LightConstant  => light.constant_attenuation  += scroll.y,
+			Mode::LightLinear    => light.linear_attenuation    += scroll.y,
+			Mode::LightQuadratic => light.quadratic_attenuation += scroll.y,
 		}
+		state.set_light(light);
+	}
+}
+impl RenderCallback for LightHandler {
+	fn render(&mut self, r: &mut Render, _fps: u32) {
+		let s = match self.mode {
+			Mode::LightConstant  => "constant attenuation",
+			Mode::LightLinear    => "linear attenuation",
+			Mode::LightQuadratic => "quadratic attenuation",
+		};
+		r.draw_str(s, 10.0, 20.0 + FONT_SIZE, FONT_SIZE);
 	}
 }

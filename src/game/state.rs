@@ -10,7 +10,7 @@ use game::{KeyboardState, Entity, EntityBuilder};
 use render::{Camera, Render, Light};
 use settings::Settings;
 
-const FONT_SIZE: f32 = 24.0;
+pub const FONT_SIZE: f32 = 20.0;
 
 pub type EntityId = u32;
 
@@ -25,13 +25,11 @@ pub enum Gravity {
 	None,
 }
 
-pub trait Tick {
+pub trait TickCallback {
 	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vec2<i32>);
 }
-impl Tick for FnMut(&mut GameState, f32, &Settings, &[Event], Vec2<i32>) {
-	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vec2<i32>) {
-		self(state, dt, settings, events, mouse_moved);
-	}
+pub trait RenderCallback {
+	fn render(&mut self, r: &mut Render, fps: u32);
 }
 
 /// Holds the state of the game
@@ -45,7 +43,8 @@ pub struct GameState {
 	light: Light,
 	ambient_light: Vec4<f32>,
 	wireframe_mode: bool,
-	tick_callback: Option<Rc<RefCell<Tick>>>,
+	tick_callback  : Option<Rc<RefCell<TickCallback>>>,
+	render_callback: Option<Rc<RefCell<RenderCallback>>>,
 }
 impl GameState {
 	/// Constructs a new GameState with the specified initial camera position, and gravity state.
@@ -62,7 +61,8 @@ impl GameState {
 			light: Light::off(),
 			ambient_light: Vec4::new(0.05, 0.05, 0.05, 1.0),
 			wireframe_mode: false,
-			tick_callback: None,
+			tick_callback  : None,
+			render_callback: None,
 		}
 	}
 	
@@ -82,8 +82,14 @@ impl GameState {
 		&self.camera
 	}
 	
-	pub fn set_tick_callback(&mut self, callback: Option<Rc<RefCell<Tick>>>) {
+	/// Sets the tick callback. This will be called every physics tick.
+	pub fn set_tick_callback(&mut self, callback: Option<Rc<RefCell<TickCallback>>>) {
 		self.tick_callback = callback;
+	}
+	
+	/// Sets the tick callback. This will be called every frame render.
+	pub fn set_render_callback(&mut self, callback: Option<Rc<RefCell<RenderCallback>>>) {
+		self.render_callback = callback;
 	}
 	
 	/// Adds an entity to the world
@@ -253,6 +259,16 @@ impl GameState {
 		}
 		
 		r.draw_str(&format!("{} FPS", fps), 10.0, 10.0, FONT_SIZE);
+		
+		// Call callback
+		{
+			let call = self.render_callback.clone();
+			if call.is_some() {
+				let call = call.unwrap();
+				let mut call = call.borrow_mut();
+				call.render(r, fps);
+			}
+		}
 		
 		r.swap();
 	}
