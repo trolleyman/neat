@@ -16,11 +16,8 @@ impl Game {
 		
 		let state = GameState::gen_balls(render.context(), cam);
 		info!("Initialized game state");
-		Game::with_state(settings, render, state)
-	}
-
-	pub fn with_state(settings: Settings, render: Render, state: GameState) -> Game {
 		Game {
+			
 		}
 	}
 	
