@@ -54,11 +54,9 @@ impl State {
 	}
 	
 	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
-		if !settings.paused {
-			
+
 			// Tick world
 			self.world.step(dt);
-		}
 	}
 
 	pub fn render(&mut self, r: &mut Render, fps: u32) {
