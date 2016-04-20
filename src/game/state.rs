@@ -54,32 +54,6 @@ impl State {
 	}
 	
 	pub fn tick(&mut self, dt: f32, settings: &Settings, keyboard: &KeyboardState, mouse_state: (i32, i32)) {
-		// m/s
-		let speed = 4.0 * dt;
-		
-		// Translate camera based on keyboard state
-		let mut trans = Vec3::new(0.0, 0.0, 0.0);
-		if keyboard.is_pressed(&settings.forward) {
-			trans = trans + Vec3::new(0.0, 0.0, -speed);
-		}
-		if keyboard.is_pressed(&settings.backward) {
-			trans = trans + Vec3::new(0.0, 0.0,  speed);
-		}
-		if keyboard.is_pressed(&settings.left) {
-			trans = trans + Vec3::new(-speed, 0.0, 0.0);
-		}
-		if keyboard.is_pressed(&settings.right) {
-			trans = trans + Vec3::new( speed, 0.0, 0.0);
-		}
-		if keyboard.is_pressed(&settings.up) {
-			trans = trans + Vec3::new(0.0,  speed, 0.0);
-		}
-		if keyboard.is_pressed(&settings.down) {
-			trans = trans + Vec3::new(0.0, -speed, 0.0);
-		}
-		self.camera.translate(trans);
-		self.camera.mouse_moved(mouse_state.0, mouse_state.1);
-		
 		if !settings.paused {
 			
 			// Tick world
