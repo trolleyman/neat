@@ -1,7 +1,5 @@
-extern crate nphysics3d as np;
-
-use np::world::World;
+extern crate nphysics3d;
 
 pub fn main() {
-	World::new().step(1.0);
+	nphysics3d::world::World::new().step(1.0);
 }
