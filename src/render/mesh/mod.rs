@@ -1,8 +1,9 @@
 use std::rc::Rc;
 
-use na::Mat4;
+use na::{Vec3, Mat4};
 
 use super::{Color, Render};
+use util;
 
 pub use self::simple::Mesh as SimpleMesh;
 pub use self::simple::Vertex as SimpleVertex;
@@ -16,17 +17,24 @@ pub trait RenderableMesh {
 pub struct ColoredMesh {
 	mesh: Rc<SimpleMesh>,
 	color: Color,
+	scale: f32,
 }
 impl ColoredMesh {
 	pub fn new(mesh: Rc<SimpleMesh>, color: Color) -> ColoredMesh {
+		ColoredMesh::with_scale(mesh, color, 1.0)
+	}
+	
+	pub fn with_scale(mesh: Rc<SimpleMesh>, color: Color, scale: f32) -> ColoredMesh {
 		ColoredMesh {
 			mesh : mesh,
 			color: color,
+			scale: scale,
 		}
 	}
 }
 impl RenderableMesh for ColoredMesh {
 	fn render(&self, r: &mut Render, model: Mat4<f32>) {
-		self.mesh.render(r, model, self.color);
+		// TODO: Test
+		self.mesh.render(r, util::mat4_scale(Vec3::new(self.scale, self.scale, self.scale)) * model, self.color);
 	}
 }
