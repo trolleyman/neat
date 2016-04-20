@@ -33,16 +33,6 @@ use game::Game;
 use settings::Settings;
 
 pub fn main() {
-	let settings = Settings::from_args();
-	let log_level = if settings.verbose { LogLevelFilter::Debug } else { LogLevelFilter::Info };
-	TermLogger::init(log_level)
-		.map_err(|e| writeln!(io::stderr(), "Error: Could not initialize logger: {}", e)).ok();
-	info!("Initialized logger");
 	
-	let mut g = Game::new(settings, Camera::new(Vec3::new(2.0, 2.0, 10.0)));
-	info!("Initialized game");
-	
-	g.main_loop();
-
-	info!("Program exited");
+	let mut g = Game::new(Camera::new(Vec3::new(2.0, 2.0, 10.0)));
 }
