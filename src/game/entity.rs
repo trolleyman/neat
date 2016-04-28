@@ -18,7 +18,7 @@ pub enum Collision {
 	Compound,
 }
 
-/// A component of an Entity
+/// A component of an entity
 #[derive(Clone)]
 pub struct Component {
 	iso: Isometry3<f32>,
@@ -37,7 +37,7 @@ impl Component {
 	}
 	
 	/// Constructs a new component with the default translation.
-	pub fn with_arc(shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
+	pub fn with_handle(shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
 			iso : Isometry3::one(),
 			shape: shape,
@@ -55,7 +55,7 @@ impl Component {
 		}
 	}
 	
-	pub fn with_iso_arc(iso: Isometry3<f32>, shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
+	pub fn with_iso_handle(iso: Isometry3<f32>, shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
 			iso : iso,
 			shape: shape,
@@ -63,9 +63,15 @@ impl Component {
 		}
 	}
 	
-	/// Returns a component with the specified translation
-	pub fn with_pos(mut self, pos: Vector3<f32>) -> Component {
+	/// Returns the component with the specified translation
+	pub fn pos(mut self, pos: Vector3<f32>) -> Component {
 		self.iso.translation = pos;
+		self
+	}
+	
+	/// Returns the component with the specified rotation
+	pub fn rot(mut self, rot: Rotation3<f32>) -> Component {
+		self.iso.rotation = rot;
 		self
 	}
 }

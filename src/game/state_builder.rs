@@ -246,7 +246,7 @@ impl GameStateBuilder {
 				let ball_mesh = Rc::new(ColoredMesh::with_scale(ball_mesh.clone(), col, SCALE));
 				
 				EntityBuilder::new(1.0, 0.3, 0.5)
-					.component(Component::with_arc(ball.clone(), ball_mesh))
+					.component(Component::with_handle(ball.clone(), ball_mesh))
 					.pos(Vector3::new(x, 20.0, z))
 					.build(&mut state);
 			}
@@ -358,10 +358,10 @@ impl GameStateBuilder {
 			let off = table_size2 - leg_w2;
 			EntityBuilder::new(1.0, 0.3, 0.6)
 				// Add legs
-				.component(leg.clone().with_pos(Vector3::new( off, -top_h2-leg_h2,  off)))
-				.component(leg.clone().with_pos(Vector3::new(-off, -top_h2-leg_h2,  off)))
-				.component(leg.clone().with_pos(Vector3::new( off, -top_h2-leg_h2, -off)))
-				.component(leg.clone().with_pos(Vector3::new(-off, -top_h2-leg_h2, -off)))
+				.component(leg.clone().pos(Vector3::new( off, -top_h2-leg_h2,  off)))
+				.component(leg.clone().pos(Vector3::new(-off, -top_h2-leg_h2,  off)))
+				.component(leg.clone().pos(Vector3::new( off, -top_h2-leg_h2, -off)))
+				.component(leg.clone().pos(Vector3::new(-off, -top_h2-leg_h2, -off)))
 				// Add table top
 				.component(top)
 				.pos(pos)
@@ -388,8 +388,8 @@ impl GameStateBuilder {
 		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
 		let plane = Component::new(Cuboid::new(he), mesh);
 		EntityBuilder::new_static(0.3, 0.7)
-			.component(plane.clone().with_pos(Vector3::new(-20.0, -3.0 + 20.0, 0.0))) // X-
-			.component(plane.clone().with_pos(Vector3::new(20.0, -3.0 + 20.0, 0.0)))  // X+
+			.component(plane.clone().pos(Vector3::new(-20.0, -3.0 + 20.0, 0.0))) // X-
+			.component(plane.clone().pos(Vector3::new(20.0, -3.0 + 20.0, 0.0)))  // X+
 			.build(&mut state);
 		
 		// Z- Plane
@@ -397,8 +397,8 @@ impl GameStateBuilder {
 		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
 		let plane = Component::new(Cuboid::new(he), mesh);
 		EntityBuilder::new_static(0.3, 0.7)
-			.component(plane.clone().with_pos(Vector3::new(0.0, -3.0 + 20.0, -20.0))) // Z-
-			.component(plane.clone().with_pos(Vector3::new(0.0, -3.0 + 20.0, 20.0)))  // Z+
+			.component(plane.clone().pos(Vector3::new(0.0, -3.0 + 20.0, -20.0))) // Z-
+			.component(plane.clone().pos(Vector3::new(0.0, -3.0 + 20.0, 20.0)))  // Z+
 			.build(&mut state);
 		
 		// Y- Plane
@@ -406,8 +406,8 @@ impl GameStateBuilder {
 		let mesh = Rc::new(LitMesh::cuboid(ctx, he, top_tex.clone(), material));
 		let plane = Component::new(Cuboid::new(he), mesh);
 		EntityBuilder::new_static(0.3, 0.7)
-			.component(plane.clone().with_pos(Vector3::new(0.0, -3.0, 0.0)))        // Y-
-			.component(plane.clone().with_pos(Vector3::new(0.0, -3.0 + 40.0, 0.0))) // Y+
+			.component(plane.clone().pos(Vector3::new(0.0, -3.0, 0.0)))        // Y-
+			.component(plane.clone().pos(Vector3::new(0.0, -3.0 + 40.0, 0.0))) // Y+
 			.build(&mut state);
 		
 		// Tables
