@@ -18,7 +18,7 @@ pub struct LitVertex {
 implement_vertex!(LitVertex, pos, normal, uv);
 
 impl LitVertex {
-	pub fn new(pos: Vec3<f32>, normal: Vec3<f32>, uv: Vec2<f32>) -> LitVertex {
+	pub fn new(pos: Vector3<f32>, normal: Vector3<f32>, uv: Vector2<f32>) -> LitVertex {
 		LitVertex {
 			pos   : unsafe { mem::transmute(pos) },
 			normal: unsafe { mem::transmute(normal) },
@@ -39,7 +39,7 @@ pub struct LitMesh {
 	material     : Material,
 }
 impl RenderableMesh for LitMesh {
-	fn render(&self, r: &mut Render, model: Mat4<f32>) {
+	fn render(&self, r: &mut Render, model: Matrix4<f32>) {
 		r.render_lit(&self.vertex_buffer, &self.index_buffer, model, &*self.texture, &self.material);
 	}
 }
@@ -66,7 +66,7 @@ impl LitMesh {
 	///   | L | D | R | // Left, Down, Right
 	/// 1 +---+---+---+
 	/// ```
-	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>, texture: Rc<Texture2d>, material: Material) -> LitMesh {
+	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vector3<f32>, texture: Rc<Texture2d>, material: Material) -> LitMesh {
 		let mut vs: Vec<LitVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
 		
@@ -102,7 +102,7 @@ impl LitMesh {
 		let start = vs.len();
 		LitMesh::gen_dodec(vs, is, detail);
 		for i in start..vs.len() {
-			{(&mut vs[i].pos).into(): &mut Vec3<f32>}.normalize_mut();
+			{(&mut vs[i].pos).into(): &mut Vector3<f32>}.normalize_mut();
 			vs[i].normal = vs[i].pos;
 		}
 	}
@@ -111,12 +111,12 @@ impl LitMesh {
 		// v0 is top
 		// v1 through v4 are vertices going anti-clockwise (looking down) around the dodecahedron
 		// v5 is bottom
-		let v0 = Vec3::new( 0.0,  0.5,  0.0);
-		let v1 = Vec3::new( 0.0,  0.0,  0.5);
-		let v2 = Vec3::new( 0.5,  0.0,  0.0);
-		let v3 = Vec3::new( 0.0,  0.0, -0.5);
-		let v4 = Vec3::new(-0.5,  0.0,  0.0);
-		let v5 = Vec3::new( 0.0, -0.5,  0.0);
+		let v0 = Vector3::new( 0.0,  0.5,  0.0);
+		let v1 = Vector3::new( 0.0,  0.0,  0.5);
+		let v2 = Vector3::new( 0.5,  0.0,  0.0);
+		let v3 = Vector3::new( 0.0,  0.0, -0.5);
+		let v4 = Vector3::new(-0.5,  0.0,  0.0);
+		let v5 = Vector3::new( 0.0, -0.5,  0.0);
 		
 		let start_len = vs.len() as u16;
 		
@@ -139,7 +139,7 @@ impl LitMesh {
 		}
 	}
 	
-	fn gen_dodec_face_tris(vs: &mut Vec<LitVertex>, detail: u32, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>) {
+	fn gen_dodec_face_tris(vs: &mut Vec<LitVertex>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
 		let normal = (v1 - v0).cross(&(v2 - v0));
 		let rows = 2u32.pow(detail) + 1;
 		for row in 0..rows {
@@ -152,7 +152,7 @@ impl LitMesh {
 			for col in 0..cols {
 				let k_col = if cols != 1 { col as f32 / (cols - 1) as f32 } else { 0.5 };
 				let v = util::lerp(start, end, k_col);
-				vs.push(LitVertex::new(v, normal, Vec2::new(0.0, 0.0)));
+				vs.push(LitVertex::new(v, normal, Vector2::new(0.0, 0.0)));
 			}
 		}
 	}
@@ -182,11 +182,11 @@ impl LitMesh {
 		}
 	}
 	
-	fn gen_cuboid(vs: &mut Vec<LitVertex>, is: &mut Vec<u16>, half_extents: Vec3<f32>) {
+	fn gen_cuboid(vs: &mut Vec<LitVertex>, is: &mut Vec<u16>, half_extents: Vector3<f32>) {
 		// v0 --- v1 
 		// |          <- Looking forward, normal out of the screen.
 		// v2     v3  
-		fn gen_quad(vs: &mut Vec<LitVertex>, is: &mut Vec<u16>, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>, uv_min: Vec2<f32>, uv_max: Vec2<f32>) {
+		fn gen_quad(vs: &mut Vec<LitVertex>, is: &mut Vec<u16>, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>, uv_min: Vector2<f32>, uv_max: Vector2<f32>) {
 			let i = vs.len() as u16;
 			let v02 = v2-v0;
 			let v01 = v1-v0;
@@ -194,8 +194,8 @@ impl LitMesh {
 			let v3 = v0 + v01 + v02;
 			
 			vs.push(LitVertex::new(v0, normal, uv_min));
-			vs.push(LitVertex::new(v1, normal, Vec2::new(uv_max.x, uv_min.y)));
-			vs.push(LitVertex::new(v2, normal, Vec2::new(uv_min.x, uv_max.y)));
+			vs.push(LitVertex::new(v1, normal, Vector2::new(uv_max.x, uv_min.y)));
+			vs.push(LitVertex::new(v2, normal, Vector2::new(uv_min.x, uv_max.y)));
 			vs.push(LitVertex::new(v3, normal, uv_max));
 			
 			is.extend(&[i+0, i+2, i+1]);
@@ -209,40 +209,40 @@ impl LitMesh {
 		let uy = 1.0 / 2.0;
 		let he = half_extents;
 		gen_quad(vs, is, // F
-			Vec3::new(-he.x,  he.y,  he.z),
-			Vec3::new( he.x,  he.y,  he.z),
-			Vec3::new(-he.x, -he.y,  he.z),
-			Vec2::new(0.0, 0.0),
-			Vec2::new(ux, uy));
+			Vector3::new(-he.x,  he.y,  he.z),
+			Vector3::new( he.x,  he.y,  he.z),
+			Vector3::new(-he.x, -he.y,  he.z),
+			Vector2::new(0.0, 0.0),
+			Vector2::new(ux, uy));
 		gen_quad(vs, is, // B
-			Vec3::new( he.x,  he.y, -he.z),
-			Vec3::new(-he.x,  he.y, -he.z),
-			Vec3::new( he.x, -he.y, -he.z),
-			Vec2::new(ux*2.0, 0.0),
-			Vec2::new(1.0, uy));
+			Vector3::new( he.x,  he.y, -he.z),
+			Vector3::new(-he.x,  he.y, -he.z),
+			Vector3::new( he.x, -he.y, -he.z),
+			Vector2::new(ux*2.0, 0.0),
+			Vector2::new(1.0, uy));
 		gen_quad(vs, is, // L
-			Vec3::new(-he.x,  he.y, -he.z),
-			Vec3::new(-he.x,  he.y,  he.z),
-			Vec3::new(-he.x, -he.y, -he.z),
-			Vec2::new(0.0, uy),
-			Vec2::new(ux, 1.0));
+			Vector3::new(-he.x,  he.y, -he.z),
+			Vector3::new(-he.x,  he.y,  he.z),
+			Vector3::new(-he.x, -he.y, -he.z),
+			Vector2::new(0.0, uy),
+			Vector2::new(ux, 1.0));
 		gen_quad(vs, is, // R
-			Vec3::new( he.x,  he.y,  he.z),
-			Vec3::new( he.x,  he.y, -he.z),
-			Vec3::new( he.x, -he.y,  he.z),
-			Vec2::new(ux*2.0, uy),
-			Vec2::new(1.0, 1.0));
+			Vector3::new( he.x,  he.y,  he.z),
+			Vector3::new( he.x,  he.y, -he.z),
+			Vector3::new( he.x, -he.y,  he.z),
+			Vector2::new(ux*2.0, uy),
+			Vector2::new(1.0, 1.0));
 		gen_quad(vs, is, // U
-			Vec3::new(-he.x,  he.y, -he.z),
-			Vec3::new( he.x,  he.y, -he.z),
-			Vec3::new(-he.x,  he.y,  he.z),
-			Vec2::new(ux, 0.0),
-			Vec2::new(ux*2.0, uy));
+			Vector3::new(-he.x,  he.y, -he.z),
+			Vector3::new( he.x,  he.y, -he.z),
+			Vector3::new(-he.x,  he.y,  he.z),
+			Vector2::new(ux, 0.0),
+			Vector2::new(ux*2.0, uy));
 		gen_quad(vs, is, // D
-			Vec3::new(-he.x, -he.y,  he.z),
-			Vec3::new( he.x, -he.y,  he.z),
-			Vec3::new(-he.x, -he.y, -he.z),
-			Vec2::new(ux, uy),
-			Vec2::new(ux*2.0, 1.0));
+			Vector3::new(-he.x, -he.y,  he.z),
+			Vector3::new( he.x, -he.y,  he.z),
+			Vector3::new(-he.x, -he.y, -he.z),
+			Vector2::new(ux, uy),
+			Vector2::new(ux*2.0, 1.0));
 	}
 }

@@ -29,7 +29,7 @@ impl Game {
 	
 	/// Cosnstructs a game with the specified settings, and a custom game state generator.
 	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {
-		let mut render = Render::new(Camera::new(Vec3::new(0.0, 0.0, 0.0)), &settings);
+		let mut render = Render::new(Camera::new(Vector3::new(0.0, 0.0, 0.0)), &settings);
 		info!("Initialized renderer");
 		
 		let state = generator(render.context());
@@ -134,10 +134,10 @@ impl Game {
 	/// Appends events to pass onto the GameState to `events`
 	/// 
 	/// Returns how much the mouse has moved since the last frame.
-	pub fn process_events(&mut self, events: &mut Vec<Event>) -> Vec2<i32> {
+	pub fn process_events(&mut self, events: &mut Vec<Event>) -> Vector2<i32> {
 		// Find centre of screen.
 		let mid = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
-		let mid = Vec2::new(mid.0 as i32 / 2, mid.1 as i32 / 2);
+		let mid = Vector2::new(mid.0 as i32 / 2, mid.1 as i32 / 2);
 		if self.focused {
 			self.render.get_window().map(|w| w.set_cursor_position(mid.x, mid.y));
 		}
@@ -193,7 +193,7 @@ impl Game {
 					if self.ignore_next_mouse_movement {
 						self.ignore_next_mouse_movement = false;
 					} else {
-						mouse_pos = Vec2::new(pos.0, pos.1);
+						mouse_pos = Vector2::new(pos.0, pos.1);
 					}
 				},
 				Event::Focused(b) => {
@@ -290,14 +290,14 @@ impl Game {
 		if self.focused {
 			mouse_pos - mid
 		} else {
-			Vec2::new(0, 0)
+			Vector2::new(0, 0)
 		}
 	}
 	
 	/// Ticks the game.
 	/// `dt` is the number of seconds since last frame.
 	/// `n` is the number of iterations to do.
-	pub fn tick(&mut self, dt: f32, n: u32, events: &mut Vec<Event>, mouse_moved: Vec2<i32>) {
+	pub fn tick(&mut self, dt: f32, n: u32, events: &mut Vec<Event>, mouse_moved: Vector2<i32>) {
 		if n == 0 {
 			return;
 		}
@@ -311,7 +311,7 @@ impl Game {
 		// Tick next state
 		self.current_state.tick(dt, &self.settings, events, mouse_moved);
 		for _ in 1..n {
-			self.current_state.tick(dt, &self.settings, &mut Vec::with_capacity(0), Vec2::zero());
+			self.current_state.tick(dt, &self.settings, &mut Vec::with_capacity(0), Vector2::zero());
 		}
 	}
 }

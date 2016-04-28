@@ -70,10 +70,10 @@ pub struct Render {
 	frame: Frame,
 	
 	/// Projection matrix
-	projection: Mat4<f32>,
+	projection: Matrix4<f32>,
 	camera: Camera,
 	
-	ambient_light: Vec4<f32>,
+	ambient_light: Vector4<f32>,
 	light: Light,
 	wireframe_mode: bool,
 	simple_shader: Program,
@@ -122,10 +122,10 @@ impl Render {
 			ctx: ctx,
 			frame: frame,
 			
-			projection: Mat4::one(),
+			projection: Matrix4::one(),
 			camera: camera,
 			
-			ambient_light: Vec4::zero(),
+			ambient_light: Vector4::zero(),
 			light: Light::off(),
 			wireframe_mode: false,
 			simple_shader: simple_shader,
@@ -143,7 +143,7 @@ impl Render {
 		frame.clear_depth(1.0);
 	}
 	
-	pub fn set_ambient_light(&mut self, ambient_light: Vec4<f32>) {
+	pub fn set_ambient_light(&mut self, ambient_light: Vector4<f32>) {
 		self.ambient_light = ambient_light;
 	}
 	
@@ -189,7 +189,7 @@ impl Render {
 	/// Resizes the renderer to the current framebuffer's dimensions.
 	pub fn resize(&mut self) {
 		let (w, h) = self.frame.get_dimensions();
-		self.projection = Persp3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_mat();
+		self.projection = Perspective3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_matrix();
 	}
 	
 	pub fn get_window(&self) -> Option<WinRef> {
@@ -250,7 +250,7 @@ impl Render {
 	}
 	
 	/// Render a simple list of vertices in a specified color.
-	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, col: Color) {
+	pub fn render_simple(&mut self, vs: &VertexBuffer<SimpleVertex>, is: &IndexBuffer<u16>, model: Matrix4<f32>, col: Color) {
 		let mvp = self.projection * self.camera.view_matrix() * model;
 		
 		self.frame.draw(
@@ -275,13 +275,13 @@ impl Render {
 	}
 	
 	/// Render a lit, textured surface.
-	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Mat4<f32>, texture: &Texture2d, material: &Material) {
+	pub fn render_lit(&mut self, vs: &VertexBuffer<LitVertex>, is: &IndexBuffer<u16>, model: Matrix4<f32>, texture: &Texture2d, material: &Material) {
 		let m = model;
 		let v = self.camera.view_matrix();
 		let p = self.projection;
 		let mvp = p * v * m;
-		let v_inv = self.camera.view_matrix().inv().unwrap_or(Mat4::one());
-		let normal_mat = m.inv().unwrap_or(Mat4::one()).transpose();
+		let v_inv = self.camera.view_matrix().inverse().unwrap_or(Matrix4::one());
+		let normal_mat = m.inverse().unwrap_or(Matrix4::one()).transpose();
 		
 		let uniforms = UniformsStorage::new("mvp", *mvp.as_ref());
 		let uniforms = uniforms.add("model"     , *m.as_ref());
