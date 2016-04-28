@@ -13,6 +13,7 @@ pub struct Game {
 	render: Render,
 	settings: Settings,
 	
+	state_generator: Box<Fn(&Rc<Context>) -> GameState>,
 	current_state: GameState,
 	keyboard_state: KeyboardState,
 	running: bool,
@@ -24,26 +25,22 @@ pub struct Game {
 impl Game {
 	/// Constructs a game with the specified settings, and the default game state.
 	pub fn new(settings: Settings) -> Game {
-		Game::with_state_generator(settings, GameStateBuilder::build_default)
+		Game::with_state_generator(settings, box GameStateBuilder::build_default)
 	}
 	
 	/// Cosnstructs a game with the specified settings, and a custom game state generator.
-	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {
+	pub fn with_state_generator<F>(settings: Settings, generator: Box<F>) -> Game where for<'r> F: Fn(&'r Rc<Context>) -> GameState + 'static {
 		let mut render = Render::new(Camera::new(Vector3::new(0.0, 0.0, 0.0)), &settings);
 		info!("Initialized renderer");
 		
 		let state = generator(render.context());
 		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
-		Game::with_state(settings, render, state)
-	}
-	
-	/// Constructs a game with the specified settings, renderer, and initial game state.
-	pub fn with_state(settings: Settings, render: Render, state: GameState) -> Game {
 		Game {
 			render: render,
 			settings: settings,
 			
+			state_generator: generator,
 			current_state: state,
 			keyboard_state: KeyboardState::new(),
 			running: true,
@@ -240,21 +237,9 @@ impl Game {
 							}
 						} else if Some(code) == self.settings.reload_shaders {
 							reload_shaders = true;
-						}
-						
-						if self.settings.dev && self.keyboard_state.is_ctrl_pressed() {
-							let gen = match code {
-								VirtualKeyCode::Key1 | VirtualKeyCode::Numpad1 => GameStateBuilder::build_default,
-								VirtualKeyCode::Key2 | VirtualKeyCode::Numpad2 => GameStateBuilder::build_solar,
-								VirtualKeyCode::Key3 | VirtualKeyCode::Numpad3 => GameStateBuilder::build_rot_test,
-								VirtualKeyCode::Key4 | VirtualKeyCode::Numpad4 => GameStateBuilder::build_spaceballs,
-								VirtualKeyCode::Key5 | VirtualKeyCode::Numpad5 => GameStateBuilder::build_balls,
-								VirtualKeyCode::Key6 | VirtualKeyCode::Numpad6 => GameStateBuilder::build_phong,
-								VirtualKeyCode::Key7 | VirtualKeyCode::Numpad7 => GameStateBuilder::build_tables,
-								_ => continue,
-							};
-							info!("Regenerating game state...");
-							self.current_state = gen(&ctx);
+						} else if Some(code) == self.settings.reset_state {
+							info!("Resetting game state...");
+							self.current_state = (self.state_generator)(&ctx);
 						}
 					}
 				},

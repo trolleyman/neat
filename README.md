@@ -6,7 +6,7 @@ A basic physics sim that will eventually become a platform for learning about th
 
 `cargo run --release` to run the default simulation
 
-`cargo run --release --example <example>` to run \<example\>. [List of examples](examples) (without the '.rs')
+`cargo run --release --example <example>` to run \<example\>. [List of examples](examples/README.md).
 
 ## Arguments
 - `-p` pauses the simulation
@@ -17,3 +17,4 @@ A basic physics sim that will eventually become a platform for learning about th
 - `F2` to step the simulation
 - `F3` to toggle wireframe mode
 - `F4` to reload the GLSL shaders
+- `F5` to reset the state
