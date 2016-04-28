@@ -246,15 +246,15 @@ fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVerte
 fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[(char, PositionedGlyph)], color: Color) {
 	// Calculate matrix
 	let (w, h) = size;
-	let mut mat = Mat4::one();
-	mat = mat * util::mat4_scale(Vec3::new(1.0, -1.0, 1.0));
-	mat = mat * util::mat4_translation(Vec3::new(-1.0, -1.0, 0.0));
-	mat = mat * util::mat4_scale(Vec3::new(2.0 / w, 2.0 / h, 1.0));
+	let mut mat = Matrix4::one();
+	mat = mat * util::mat4_scale(Vector3::new(1.0, -1.0, 1.0));
+	mat = mat * util::mat4_translation(Vector3::new(-1.0, -1.0, 0.0));
+	mat = mat * util::mat4_scale(Vector3::new(2.0 / w, 2.0 / h, 1.0));
 	draw_glyphs_mat(ctx, surface, shader, font_tex, cache, mat, glyphs, color)
 }
 
 /// Transforms the glyphs by `mat` and then draws the glyphs on `surface`.
-fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Mat4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
+fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Matrix4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
 	match cache_glyphs(font_tex, cache, glyphs) {
 		Ok(()) => {
 			let mut vs = Vec::new();

@@ -20,13 +20,13 @@ pub enum Gravity {
 	/// Each object attracts each other object, scaled by a specified amount.
 	Relative(f32),
 	/// Each object is attracted in a constant direction
-	Constant(Vec3<f32>),
+	Constant(Vector3<f32>),
 	/// No gravity is applied
 	None,
 }
 
 pub trait TickCallback {
-	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vec2<i32>);
+	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vector2<i32>);
 }
 pub trait RenderCallback {
 	fn render(&mut self, r: &mut Render, fps: u32);
@@ -41,7 +41,7 @@ pub struct GameState {
 	keyboard_state: KeyboardState,
 	camera: Camera,
 	light: Light,
-	ambient_light: Vec4<f32>,
+	ambient_light: Vector4<f32>,
 	wireframe_mode: bool,
 	tick_callback  : Option<Rc<RefCell<TickCallback>>>,
 	render_callback: Option<Rc<RefCell<RenderCallback>>>,
@@ -59,14 +59,14 @@ impl GameState {
 			keyboard_state: KeyboardState::new(),
 			camera: cam,
 			light: Light::off(),
-			ambient_light: Vec4::new(0.05, 0.05, 0.05, 1.0),
+			ambient_light: Vector4::new(0.05, 0.05, 0.05, 1.0),
 			wireframe_mode: false,
 			tick_callback  : None,
 			render_callback: None,
 		}
 	}
 	
-	pub fn set_ambient_light(&mut self, ambient_light: Vec4<f32>) {
+	pub fn set_ambient_light(&mut self, ambient_light: Vector4<f32>) {
 		self.ambient_light = ambient_light;
 	}
 	
@@ -129,7 +129,7 @@ impl GameState {
 	/// - `settings` are the current game settings.
 	/// - `events` is a list of events that occured since last frame.
 	/// - `mouse_moved` is how much the mouse has moved (in screen pixels) since the last update.
-	pub fn tick(&mut self, dt: f32, settings: &Settings, events: &mut Vec<Event>, mouse_moved: Vec2<i32>) {
+	pub fn tick(&mut self, dt: f32, settings: &Settings, events: &mut Vec<Event>, mouse_moved: Vector2<i32>) {
 		// Call callback
 		{
 			let call = self.tick_callback.clone();
@@ -163,24 +163,24 @@ impl GameState {
 		}
 		
 		// Translate camera based on keyboard state
-		let mut trans = Vec3::new(0.0, 0.0, 0.0);
+		let mut trans = Vector3::new(0.0, 0.0, 0.0);
 		if self.keyboard_state.is_pressed(&settings.forward) {
-			trans = trans + Vec3::new(0.0, 0.0, -speed);
+			trans = trans + Vector3::new(0.0, 0.0, -speed);
 		}
 		if self.keyboard_state.is_pressed(&settings.backward) {
-			trans = trans + Vec3::new(0.0, 0.0,  speed);
+			trans = trans + Vector3::new(0.0, 0.0,  speed);
 		}
 		if self.keyboard_state.is_pressed(&settings.left) {
-			trans = trans + Vec3::new(-speed, 0.0, 0.0);
+			trans = trans + Vector3::new(-speed, 0.0, 0.0);
 		}
 		if self.keyboard_state.is_pressed(&settings.right) {
-			trans = trans + Vec3::new( speed, 0.0, 0.0);
+			trans = trans + Vector3::new( speed, 0.0, 0.0);
 		}
 		if self.keyboard_state.is_pressed(&settings.up) {
-			trans = trans + Vec3::new(0.0,  speed, 0.0);
+			trans = trans + Vector3::new(0.0,  speed, 0.0);
 		}
 		if self.keyboard_state.is_pressed(&settings.down) {
-			trans = trans + Vec3::new(0.0, -speed, 0.0);
+			trans = trans + Vector3::new(0.0, -speed, 0.0);
 		}
 		self.camera.translate(trans);
 		self.camera.mouse_moved(mouse_moved);
@@ -198,7 +198,7 @@ impl GameState {
 			match self.gravity {
 				Gravity::Relative(g) => self.calculate_gravity(g),
 				Gravity::Constant(v) => self.world.set_gravity(v),
-				Gravity::None        => self.world.set_gravity(Vec3::new(0.0, 0.0, 0.0)),
+				Gravity::None        => self.world.set_gravity(Vector3::new(0.0, 0.0, 0.0)),
 			}
 			
 			// Tick world
