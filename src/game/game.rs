@@ -13,7 +13,7 @@ pub struct Game {
 	render: Render,
 	settings: Settings,
 	
-	initial_state: GameState,
+	state_generator: Box<Fn(&Rc<Context>) -> GameState>,
 	current_state: GameState,
 	keyboard_state: KeyboardState,
 	running: bool,
@@ -25,27 +25,22 @@ pub struct Game {
 impl Game {
 	/// Constructs a game with the specified settings, and the default game state.
 	pub fn new(settings: Settings) -> Game {
-		Game::with_state_generator(settings, GameStateBuilder::build_default)
+		Game::with_state_generator(settings, box GameStateBuilder::build_default)
 	}
 	
 	/// Cosnstructs a game with the specified settings, and a custom game state generator.
-	pub fn with_state_generator<F>(settings: Settings, generator: F) -> Game where F: FnOnce(&Rc<Context>) -> GameState {
+	pub fn with_state_generator<F>(settings: Settings, generator: Box<F>) -> Game where for<'r> F: Fn(&'r Rc<Context>) -> GameState + 'static {
 		let mut render = Render::new(Camera::new(Vector3::new(0.0, 0.0, 0.0)), &settings);
 		info!("Initialized renderer");
 		
 		let state = generator(render.context());
 		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
-		Game::with_state(settings, render, state)
-	}
-	
-	/// Constructs a game with the specified settings, renderer, and initial game state.
-	pub fn with_state(settings: Settings, render: Render, state: GameState) -> Game {
 		Game {
 			render: render,
 			settings: settings,
 			
-			initial_state: state.clone(),
+			state_generator: generator,
 			current_state: state,
 			keyboard_state: KeyboardState::new(),
 			running: true,
@@ -244,7 +239,7 @@ impl Game {
 							reload_shaders = true;
 						} else if Some(code) == self.settings.reset_state {
 							info!("Resetting game state...");
-							self.current_state = self.initial_state.clone();
+							self.current_state = (self.state_generator)(&ctx);
 						}
 					}
 				},
