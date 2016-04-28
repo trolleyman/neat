@@ -2,13 +2,21 @@ use prelude::*;
 use std::rc::Rc;
 use std::sync::Arc;
 
-use nc::shape::Compound;
+use nc::bounding_volume::{HasBoundingVolume, AABB};
+use nc::shape::{ShapeHandle, Cuboid, Compound3, Compound};
 use nc::inspection::Repr;
 use np::object::{RigidBody, RigidBodyHandle};
 use np::world::World;
+use np::volumetric::Volumetric;
 
 use game::{GameState, EntityId};
 use render::{Render, RenderableMesh};
+
+/// Collision type of an entity.
+pub enum Collision {
+	Box,
+	Compound,
+}
 
 /// A component of an Entity
 #[derive(Clone)]
@@ -74,6 +82,7 @@ pub struct EntityBuilder {
 	restitution: f32,
 	friction: f32,
 	
+	collision: Collision,
 	components: Vec<Component>,
 }
 impl EntityBuilder {
@@ -89,6 +98,7 @@ impl EntityBuilder {
 			restitution: restitution,
 			friction: friction,
 			
+			collision: Collision::Compound,
 			components: vec![],
 		}
 	}
@@ -105,6 +115,7 @@ impl EntityBuilder {
 			restitution: restitution,
 			friction: friction,
 			
+			collision: Collision::Compound,
 			components: vec![],
 		}
 	}
@@ -139,6 +150,26 @@ impl EntityBuilder {
 		self
 	}
 	
+	/// Sets the collision type of the entity. (Default = Collision::Compound).
+	pub fn collision(mut self, collision: Collision) -> EntityBuilder {
+		self.collision = collision;
+		self
+	}
+	
+	/// The entity will have a collision mesh that is the sum of it's parts. This is more
+	/// computationally intensive than box collision.
+	pub fn compound_collision(mut self) -> EntityBuilder {
+		self.collision = Collision::Compound;
+		self
+	}
+	
+	/// The entity will have a collision mesh that is a box. This is less computationally
+	/// intensive than compound collision.
+	pub fn box_collision(mut self) -> EntityBuilder {
+		self.collision = Collision::Box;
+		self
+	}
+	
 	/// Builds the entity by adding it to a GameState.
 	/// Returns the new entity ID.
 	pub fn build(self, state: &mut GameState) -> EntityId {
@@ -147,20 +178,21 @@ impl EntityBuilder {
 	
 	/// Builds the entity by adding it to the world.
 	pub fn build_world(self, world: &mut World<f32>) -> Entity {
-		Entity::with_matrix(world, self.components, self.pos, self.vel, self.rot, self.ang_vel, self.density, self.restitution, self.friction)
+		Entity::with_matrix(world, self.components, self.collision, self.pos, self.vel, self.rot, self.ang_vel, self.density, self.restitution, self.friction)
 	}
 }
 
 pub struct Entity {
 	meshes: Vec<(Iso3<f32>, Rc<RenderableMesh>)>,
+	collision: Collision,
 	body: RigidBodyHandle<f32>,
 }
 impl Entity {
-	pub fn new(world: &mut World<f32>, component: Component, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
-		Entity::with_matrix(world, vec![component], Vec3::zero(), Vec3::zero(), Vec3::zero(), Vec3::zero(), density, restitution, friction)
+	pub fn new(world: &mut World<f32>, component: Component, collision: Collision, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
+		Entity::with_matrix(world, vec![component], collision: Collision, Vec3::zero(), Vec3::zero(), Vec3::zero(), Vec3::zero(), density, restitution, friction)
 	}
 	
-	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
+	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, collision: Collision, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
 		
 		let mut bodies = Vec::new();
 		let mut meshes = Vec::new();
@@ -169,20 +201,38 @@ impl Entity {
 			bodies.push((c.iso, c.shape));
 		}
 		
-		let comp = Compound::new(bodies);
-		let mut body = if let Some(density) = density {
-			// Dynamic
-			RigidBody::new_dynamic(comp, density, restitution, friction)
-		} else {
-			// Static
-			RigidBody::new_static(comp, restitution, friction)
+		let (collision_shape, mass_props): (ShapeHandle<_, _>, Option<_>) = match collision {
+			Collision::Box => {
+				let comp: Compound3<f32> = Compound::new(bodies);
+				let props = density.map(|density| {
+					comp.mass_properties(density)
+				});
+				let comp_box: AABB<_> = comp.bounding_volume(&Iso3::one());
+				let mins = *comp_box.mins();
+				let maxs = *comp_box.maxs();
+				let avg  = Vec3::new((mins.x + maxs.x) / 2.0, (mins.y + maxs.y) / 2.0, (mins.z + maxs.z) / 2.0);
+				let size = Vec3::new((mins.x - maxs.x) / 2.0, (mins.y - maxs.y) / 2.0, (mins.z - maxs.z) / 2.0);
+				let comp_box = Cuboid::new(size);
+				let comp_box = Compound::new(vec![(Iso3::new(-avg, Vec3::zero()), ShapeHandle::new(comp_box))]);
+				(ShapeHandle::new(comp_box), props)
+			},
+			Collision::Compound => {
+				let comp: Compound3<f32> = Compound::new(bodies);
+				let props = density.map(|density| {
+					comp.mass_properties(density)
+				});
+				(ShapeHandle::new(comp), props)
+			}
 		};
+		
+		let body = RigidBody::new(collision_shape, mass_props, restitution, friction);
 		body.set_translation(pos);
 		body.set_rotation(rot);
 		let body = world.add_body(body);
 		
 		let mut e = Entity {
 			meshes: meshes,
+			collision: collision,
 			body: body,
 		};
 		
