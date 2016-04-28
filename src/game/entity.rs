@@ -1,6 +1,5 @@
 use prelude::*;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use nc::bounding_volume::{HasBoundingVolume, AABB};
 use nc::shape::{ShapeHandle3, ShapeHandle, Cuboid, Compound3, Compound};
@@ -190,7 +189,7 @@ impl EntityBuilder {
 
 pub struct Entity {
 	meshes: Vec<(Isometry3<f32>, Rc<RenderableMesh>)>,
-	collision: Collision,
+	//collision: Collision,
 	body: RigidBodyHandle<f32>,
 }
 impl Entity {
@@ -238,7 +237,7 @@ impl Entity {
 		
 		let mut e = Entity {
 			meshes: meshes,
-			collision: collision,
+			//collision: collision,
 			body: body,
 		};
 		

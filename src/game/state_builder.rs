@@ -1,11 +1,9 @@
 use prelude::*;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use std::cell::RefCell;
 use glium::Texture2d;
 use glutin::{Event, MouseScrollDelta};
-use nc::inspection::Repr;
 use nc::shape::{ShapeHandle, Ball, Cuboid};
 use rand;
 
