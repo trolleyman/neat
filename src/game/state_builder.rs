@@ -6,7 +6,7 @@ use std::cell::RefCell;
 use glium::Texture2d;
 use glutin::{Event, MouseScrollDelta};
 use nc::inspection::Repr;
-use nc::shape::{Ball, Cuboid};
+use nc::shape::{ShapeHandle, Ball, Cuboid};
 use rand;
 
 use super::state::FONT_SIZE;
@@ -232,7 +232,7 @@ impl GameStateBuilder {
 		
 		// Gen balls at top
 		const SCALE: f32 = 0.4;
-		let ball = Arc::new(box Ball::new(SCALE) as Box<Repr<Point3<f32>, Isometry3<f32>>>);
+		let ball = ShapeHandle::new(Ball::new(SCALE));
 		let ball_mesh = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
 		let r = move || { rand::thread_rng().next_f32() };

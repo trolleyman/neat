@@ -232,7 +232,7 @@ impl GameState {
 					
 					// Get unit vector from a to b 
 					let mut v = b.position().translation - a.position().translation;
-					let len_sq = v.sqnorm();
+					let len_sq = v.norm_squared();
 					v = v / len_sq.sqrt();
 					
 					// Calc force.

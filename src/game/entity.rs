@@ -3,7 +3,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use nc::bounding_volume::{HasBoundingVolume, AABB};
-use nc::shape::{ShapeHandle, Cuboid, Compound3, Compound};
+use nc::shape::{ShapeHandle3, ShapeHandle, Cuboid, Compound3, Compound};
 use nc::inspection::Repr;
 use np::object::{RigidBody, RigidBodyHandle};
 use np::world::World;
@@ -22,7 +22,7 @@ pub enum Collision {
 #[derive(Clone)]
 pub struct Component {
 	iso: Isometry3<f32>,
-	shape: Arc<Box<Repr<Point3<f32>, Isometry3<f32>> + 'static>>,
+	shape: ShapeHandle3<f32>,
 	mesh: Rc<RenderableMesh>,
 }
 impl Component {
@@ -31,13 +31,13 @@ impl Component {
 			where S: Repr<Point3<f32>, Isometry3<f32>> {
 		Component {
 			iso : Isometry3::one(),
-			shape: Arc::new(box shape as Box<Repr<Point3<f32>, Isometry3<f32>>>),
+			shape: ShapeHandle::new(shape),
 			mesh: mesh,
 		}
 	}
 	
 	/// Constructs a new component with the default translation.
-	pub fn with_arc(shape: Arc<Box<Repr<Point3<f32>, Isometry3<f32>> + 'static>>, mesh: Rc<RenderableMesh>) -> Component {
+	pub fn with_arc(shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
 			iso : Isometry3::one(),
 			shape: shape,
@@ -50,12 +50,12 @@ impl Component {
 			where S: Repr<Point3<f32>, Isometry3<f32>> {
 		Component {
 			iso : iso,
-			shape: Arc::new(box shape as Box<Repr<Point3<f32>, Isometry3<f32>>>),
+			shape: ShapeHandle::new(shape),
 			mesh: mesh,
 		}
 	}
 	
-	pub fn with_iso_arc(iso: Isometry3<f32>, shape: Arc<Box<Repr<Point3<f32>, Isometry3<f32>> + 'static>>, mesh: Rc<RenderableMesh>) -> Component {
+	pub fn with_iso_arc(iso: Isometry3<f32>, shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
 			iso : iso,
 			shape: shape,
@@ -225,10 +225,10 @@ impl Entity {
 			}
 		};
 		
-		let body = RigidBody::new(collision_shape, mass_props, restitution, friction);
+		let mut body = RigidBody::new(collision_shape, mass_props, restitution, friction);
 		body.set_translation(pos);
 		body.set_rotation(rot);
-		let body = world.add_body(body);
+		let body = world.add_rigid_body(body);
 		
 		let mut e = Entity {
 			meshes: meshes,
@@ -246,7 +246,7 @@ impl Entity {
 	
 	/// Removes this entity from a world.
 	pub fn remove_world(&self, world: &mut World<f32>) {
-		world.remove_body(&self.body);
+		world.remove_rigid_body(&self.body);
 	}
 	
 	/// Renders the entity

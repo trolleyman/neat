@@ -37,7 +37,7 @@ impl Light {
 	pub fn new_point_light(pos: Vector3<f32>, diffuse: Vector4<f32>, specular: Vector4<f32>,
 	                       constant_attenuation: f32, linear_attenuation: f32, quadratic_attenuation: f32) -> Light {
 		Light {
-			pos: pos.to_pnt().to_homogeneous().to_vec(),
+			pos: pos.to_point().to_homogeneous().to_vector(),
 			diffuse: diffuse,
 			specular: specular,
 			constant_attenuation : constant_attenuation,
@@ -58,7 +58,7 @@ impl Light {
 	                     constant_attenuation: f32, linear_attenuation: f32, quadratic_attenuation: f32,
 	                     cutoff: f32, exponent: f32) -> Light {
 		Light {
-			pos: pos.to_pnt().to_homogeneous().to_vec(),
+			pos: pos.to_point().to_homogeneous().to_vector(),
 			diffuse : diffuse,
 			specular: specular,
 			constant_attenuation : constant_attenuation,
@@ -149,7 +149,7 @@ impl Color {
 	pub fn into_array(self) -> [f32; 3] {
 		self.into()
 	}
-	pub fn into_vec3(self) -> Vector3<f32> {
+	pub fn into_vector3(self) -> Vector3<f32> {
 		self.into()
 	}
 }
