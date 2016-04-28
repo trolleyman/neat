@@ -30,20 +30,10 @@ cfg_if! {
 				}
 			}
 		}
-	} else if #[cfg(target_os = "macos")] {
-		fn os_focus_window(win: &Window) -> Result<(), ()> {
-			// TODO
-			Err(())
-		}
-	} else if #[cfg(target_os = "linux")] {
-		fn os_focus_window(win: &Window) -> Result<(), ()> {
-			// TODO
-			Err(())
-		}
 	} else {
 		fn os_focus_window(win: &Window) -> Result<(), ()> {
 			// Don't do anything
-			Err(())
+			Ok(())
 		}
 	}
 }
@@ -53,6 +43,7 @@ cfg_if! {
 /// # Returns
 /// Ok if the focus suceeded
 /// Err if the focus failed
+#[inline]
 fn focus_window(win: &Window) -> Result<(), ()> {
 	os_focus_window(win)
 }
