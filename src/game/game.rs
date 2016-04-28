@@ -13,6 +13,7 @@ pub struct Game {
 	render: Render,
 	settings: Settings,
 	
+	initial_state: GameState,
 	current_state: GameState,
 	keyboard_state: KeyboardState,
 	running: bool,
@@ -44,6 +45,7 @@ impl Game {
 			render: render,
 			settings: settings,
 			
+			initial_state: state.clone(),
 			current_state: state,
 			keyboard_state: KeyboardState::new(),
 			running: true,
@@ -240,21 +242,9 @@ impl Game {
 							}
 						} else if Some(code) == self.settings.reload_shaders {
 							reload_shaders = true;
-						}
-						
-						if self.settings.dev && self.keyboard_state.is_ctrl_pressed() {
-							let gen = match code {
-								VirtualKeyCode::Key1 | VirtualKeyCode::Numpad1 => GameStateBuilder::build_default,
-								VirtualKeyCode::Key2 | VirtualKeyCode::Numpad2 => GameStateBuilder::build_solar,
-								VirtualKeyCode::Key3 | VirtualKeyCode::Numpad3 => GameStateBuilder::build_rot_test,
-								VirtualKeyCode::Key4 | VirtualKeyCode::Numpad4 => GameStateBuilder::build_spaceballs,
-								VirtualKeyCode::Key5 | VirtualKeyCode::Numpad5 => GameStateBuilder::build_balls,
-								VirtualKeyCode::Key6 | VirtualKeyCode::Numpad6 => GameStateBuilder::build_phong,
-								VirtualKeyCode::Key7 | VirtualKeyCode::Numpad7 => GameStateBuilder::build_tables,
-								_ => continue,
-							};
-							info!("Regenerating game state...");
-							self.current_state = gen(&ctx);
+						} else if Some(code) == self.settings.reset_state {
+							info!("Resetting game state...");
+							self.current_state = self.initial_state.clone();
 						}
 					}
 				},

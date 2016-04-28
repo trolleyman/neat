@@ -37,13 +37,15 @@ pub struct Settings {
 	/// Move down key
 	pub down     : VirtualKeyCode,
 	/// They key to pause/resume the simulation
-	pub physics_pause: Option<VirtualKeyCode>,
+	pub physics_pause   : Option<VirtualKeyCode>,
 	/// The key to step the simulation
-	pub physics_step : Option<VirtualKeyCode>,
+	pub physics_step    : Option<VirtualKeyCode>,
 	/// The key to toggle wireframe mode
 	pub wireframe_toggle: Option<VirtualKeyCode>,
 	/// The key to reload the shaders
-	pub reload_shaders: Option<VirtualKeyCode>,
+	pub reload_shaders  : Option<VirtualKeyCode>,
+	/// The key used to reset the simulation
+	pub reset_state     : Option<VirtualKeyCode>,
 }
 impl Settings {
 	/// Gets game settings from args passed to executable.
@@ -114,10 +116,11 @@ impl Default for Settings {
 			right    : VirtualKeyCode::D,
 			up       : VirtualKeyCode::Q,
 			down     : VirtualKeyCode::E,
-			physics_pause: Some(VirtualKeyCode::F1),
-			physics_step : Some(VirtualKeyCode::F2),
+			physics_pause   : Some(VirtualKeyCode::F1),
+			physics_step    : Some(VirtualKeyCode::F2),
 			wireframe_toggle: Some(VirtualKeyCode::F3),
-			reload_shaders: Some(VirtualKeyCode::F4),
+			reload_shaders  : Some(VirtualKeyCode::F4),
+			reset_state     : Some(VirtualKeyCode::F5),
 		}
 	}
 }
