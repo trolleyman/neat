@@ -57,7 +57,7 @@ impl Game {
 	pub fn main_loop(&mut self) {
 		// How long each physics timestep should be.
 		const PHYSICS_HZ: u32 = 120;
-		// Maximum lag in ms
+		// Maximum lag in ms simulated.
 		const MAX_LAG_MS: u32 = 500;
 		let sec = Duration::new(1, 0);
 		let physics_dt = sec / PHYSICS_HZ;
@@ -92,7 +92,7 @@ impl Game {
 			previous = current;
 			lag += elapsed;
 			
-			// Make sure lag doesn't get bigger and bigger when there are loads of objects
+			// Make sure lag doesn't get bigger and bigger when the program is slow
 			if lag > Duration::from_millis(MAX_LAG_MS) {
 				lag = Duration::from_millis(MAX_LAG_MS);
 			}
