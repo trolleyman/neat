@@ -57,6 +57,8 @@ impl Game {
 	pub fn main_loop(&mut self) {
 		// How long each physics timestep should be.
 		const PHYSICS_HZ: u32 = 120;
+		// Maximum lag in ms
+		const MAX_LAG_MS: u32 = 500;
 		let sec = Duration::new(1, 0);
 		let physics_dt = sec / PHYSICS_HZ;
 		
@@ -89,6 +91,11 @@ impl Game {
 			}
 			previous = current;
 			lag += elapsed;
+			
+			// Make sure lag doesn't get bigger and bigger when there are loads of objects
+			if lag > Duration::from_millis(MAX_LAG_MS) {
+				lag = Duration::from_millis(MAX_LAG_MS);
+			}
 			
 			// Calculate fps
 			if current - previous_fps_count >= sec {
