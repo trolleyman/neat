@@ -246,7 +246,9 @@ impl Game {
 							reload_shaders = true;
 						} else if Some(code) == self.settings.reset_state {
 							info!("Resetting game state...");
+							let sw = Stopwatch::start();
 							self.current_state = (self.state_generator)(&ctx);
+							info!("Reset game state ({}ms)", sw.elapsed_ms());
 						}
 					}
 				},
