@@ -58,7 +58,7 @@ impl Game {
 		// How long each physics timestep should be.
 		const PHYSICS_HZ: u32 = 120;
 		// Maximum lag in ms simulated.
-		const MAX_LAG_MS: u32 = 500;
+		const MAX_LAG_MS: u64 = 500;
 		let sec = Duration::new(1, 0);
 		let physics_dt = sec / PHYSICS_HZ;
 		
