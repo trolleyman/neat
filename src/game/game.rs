@@ -80,6 +80,7 @@ impl Game {
 		let mut frames = 0;
 		let mut fps = 0;
 		
+		self.render.show();
 		let mut events = Vec::new();
 		info!("Starting game main loop");
 		while self.running {
