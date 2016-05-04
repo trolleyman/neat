@@ -95,6 +95,7 @@ impl Game {
 			lag += elapsed;
 			
 			// Make sure lag doesn't get bigger and bigger when the program is slow
+			// This makes the simulation kinda non-deteministic
 			if lag > Duration::from_millis(MAX_LAG_MS) {
 				lag = Duration::from_millis(MAX_LAG_MS);
 			}
