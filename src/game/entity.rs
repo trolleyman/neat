@@ -216,9 +216,10 @@ impl Entity {
 				let mins = *comp_box.mins();
 				let maxs = *comp_box.maxs();
 				let avg  = Vector3::new((mins.x + maxs.x) / 2.0, (mins.y + maxs.y) / 2.0, (mins.z + maxs.z) / 2.0);
-				let size = Vector3::new((mins.x - maxs.x) / 2.0, (mins.y - maxs.y) / 2.0, (mins.z - maxs.z) / 2.0);
+				let size = Vector3::new((maxs.x - mins.x) / 2.0, (maxs.y - mins.y) / 2.0, (maxs.z - mins.z) / 2.0);
+				let collision_iso = Isometry3::new(avg, Vector3::zero());
 				let comp_box = Cuboid::new(size);
-				let comp_box = Compound::new(vec![(Isometry3::new(-avg, Vector3::zero()), ShapeHandle::new(comp_box))]);
+				let comp_box = Compound::new(vec![(collision_iso, ShapeHandle::new(comp_box))]);
 				(ShapeHandle::new(comp_box), props)
 			},
 			Collision::Compound => {
