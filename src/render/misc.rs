@@ -5,20 +5,20 @@ use util;
 /// Represents a light.
 #[derive(Copy, Clone)]
 pub struct Light {
-	pub pos     : Vec4<f32>,
-	pub diffuse : Vec4<f32>,
-	pub specular: Vec4<f32>,
+	pub pos     : Vector4<f32>,
+	pub diffuse : Vector4<f32>,
+	pub specular: Vector4<f32>,
 	pub constant_attenuation : f32,
 	pub linear_attenuation   : f32,
 	pub quadratic_attenuation: f32,
 	/// in radians
 	pub spot_cutoff   : f32,
 	pub spot_exponent : f32,
-	pub spot_direction: Vec3<f32>,
+	pub spot_direction: Vector3<f32>,
 }
 impl Light {
 	/// Constructs a new directional light
-	pub fn new_directional(dir: Vec3<f32>, diffuse: Vec4<f32>, specular: Vec4<f32>) -> Light {
+	pub fn new_directional(dir: Vector3<f32>, diffuse: Vector4<f32>, specular: Vector4<f32>) -> Light {
 		Light {
 			pos: dir.to_homogeneous(),
 			diffuse: diffuse,
@@ -29,15 +29,15 @@ impl Light {
 			quadratic_attenuation: 0.0,
 			spot_cutoff: util::to_rad(180.0),
 			spot_exponent: 0.0,
-			spot_direction: Vec3::zero(),
+			spot_direction: Vector3::zero(),
 		}
 	}
 	
 	/// Constructs a new point light
-	pub fn new_point_light(pos: Vec3<f32>, diffuse: Vec4<f32>, specular: Vec4<f32>,
+	pub fn new_point_light(pos: Vector3<f32>, diffuse: Vector4<f32>, specular: Vector4<f32>,
 	                       constant_attenuation: f32, linear_attenuation: f32, quadratic_attenuation: f32) -> Light {
 		Light {
-			pos: pos.to_pnt().to_homogeneous().to_vec(),
+			pos: pos.to_point().to_homogeneous().to_vector(),
 			diffuse: diffuse,
 			specular: specular,
 			constant_attenuation : constant_attenuation,
@@ -46,7 +46,7 @@ impl Light {
 			
 			spot_cutoff: util::to_rad(180.0),
 			spot_exponent: 0.0,
-			spot_direction: Vec3::zero(),
+			spot_direction: Vector3::zero(),
 		}
 	}
 	
@@ -54,11 +54,11 @@ impl Light {
 	/// 
 	/// `cutoff` is how wide the spotlight is, in radians.
 	/// `exponent` is how 'focused' the spotlight is.
-	pub fn new_spotlight(pos: Vec3<f32>, dir: Vec3<f32>, diffuse: Vec4<f32>, specular: Vec4<f32>,
+	pub fn new_spotlight(pos: Vector3<f32>, dir: Vector3<f32>, diffuse: Vector4<f32>, specular: Vector4<f32>,
 	                     constant_attenuation: f32, linear_attenuation: f32, quadratic_attenuation: f32,
 	                     cutoff: f32, exponent: f32) -> Light {
 		Light {
-			pos: pos.to_pnt().to_homogeneous().to_vec(),
+			pos: pos.to_point().to_homogeneous().to_vector(),
 			diffuse : diffuse,
 			specular: specular,
 			constant_attenuation : constant_attenuation,
@@ -72,19 +72,19 @@ impl Light {
 	
 	/// Constructs a light that is off. (It has no output).
 	pub fn off() -> Light {
-		Light::new_directional(Vec3::zero(), Vec4::zero(), Vec4::zero())
+		Light::new_directional(Vector3::zero(), Vector4::zero(), Vector4::zero())
 	}
 }
 
 #[derive(Copy, Clone)]
 pub struct Material {
-	pub ambient: Vec4<f32>,
-	pub diffuse: Vec4<f32>,
-	pub specular: Vec4<f32>,
+	pub ambient: Vector4<f32>,
+	pub diffuse: Vector4<f32>,
+	pub specular: Vector4<f32>,
 	pub shininess: f32,
 }
 impl Material {
-	pub fn new(ambient: Vec4<f32>, diffuse: Vec4<f32>, specular: Vec4<f32>, shininess: f32) -> Material {
+	pub fn new(ambient: Vector4<f32>, diffuse: Vector4<f32>, specular: Vector4<f32>, shininess: f32) -> Material {
 		Material {
 			ambient: ambient,
 			diffuse: diffuse,
@@ -93,22 +93,22 @@ impl Material {
 		}
 	}
 	/// Returns a copy of the material, but with ambient reflection `r`.
-	pub fn with_ambient(mut self, r: Vec4<f32>) -> Material {
+	pub fn with_ambient(mut self, r: Vector4<f32>) -> Material {
 		self.ambient = r;
 		self
 	}
 	/// Returns a copy of the material, but with diffuse reflection `r`.
-	pub fn with_diffuse(mut self, r: Vec4<f32>) -> Material {
+	pub fn with_diffuse(mut self, r: Vector4<f32>) -> Material {
 		self.diffuse = r;
 		self
 	}
 	/// Returns a copy of the material, but with specular reflection `r`.
-	pub fn with_specular(mut self, r: Vec4<f32>) -> Material {
+	pub fn with_specular(mut self, r: Vector4<f32>) -> Material {
 		self.specular = r;
 		self
 	}
 	/// Returns a copy of the material, but with ambient, diffuse and specular reflection scaled by a color.
-	pub fn with_scale_rgba(mut self, scale: Vec4<f32>) -> Material {
+	pub fn with_scale_rgba(mut self, scale: Vector4<f32>) -> Material {
 		self.ambient  = self.ambient  * scale;
 		self.diffuse  = self.diffuse  * scale;
 		self.specular = self.specular * scale;
@@ -149,7 +149,7 @@ impl Color {
 	pub fn into_array(self) -> [f32; 3] {
 		self.into()
 	}
-	pub fn into_vec3(self) -> Vec3<f32> {
+	pub fn into_vector3(self) -> Vector3<f32> {
 		self.into()
 	}
 }
@@ -159,8 +159,8 @@ impl From<[f32; 3]> for Color {
 		Color::new(c[0], c[1], c[2])
 	}
 }
-impl From<Vec3<f32>> for Color {
-	fn from(c: Vec3<f32>) -> Color {
+impl From<Vector3<f32>> for Color {
+	fn from(c: Vector3<f32>) -> Color {
 		Color::new(c.x, c.y, c.z)
 	}
 }
@@ -170,8 +170,8 @@ impl Into<[f32; 3]> for Color {
 		[self.r, self.g, self.b]
 	}
 }
-impl Into<Vec3<f32>> for Color {
-	fn into(self) -> Vec3<f32> {
-		Vec3::new(self.r, self.g, self.b)
+impl Into<Vector3<f32>> for Color {
+	fn into(self) -> Vector3<f32> {
+		Vector3::new(self.r, self.g, self.b)
 	}
 }

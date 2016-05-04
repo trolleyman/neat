@@ -15,8 +15,8 @@ pub struct SimpleVertex {
 }
 implement_vertex!(SimpleVertex, pos);
 
-impl From<Vec3<f32>> for SimpleVertex {
-	fn from(v: Vec3<f32>) -> SimpleVertex {
+impl From<Vector3<f32>> for SimpleVertex {
+	fn from(v: Vector3<f32>) -> SimpleVertex {
 		SimpleVertex{
 			pos: unsafe { mem::transmute(v) },
 		}
@@ -35,7 +35,7 @@ pub struct SimpleMesh {
 }
 impl SimpleMesh {
 	/// Render the mesh
-	pub fn render(&self, r: &mut Render, model: Mat4<f32>, color: Color) {
+	pub fn render(&self, r: &mut Render, model: Matrix4<f32>, color: Color) {
 		r.render_simple(&self.vertex_buffer, &self.index_buffer, model, color);
 	}
 	
@@ -63,7 +63,7 @@ impl SimpleMesh {
 	}
 	
 	/// Construct a cuboid from it's half extents.
-	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vec3<f32>) -> SimpleMesh {
+	pub fn cuboid(ctx: &Rc<Context>, half_extents: Vector3<f32>) -> SimpleMesh {
 		let mut vs: Vec<SimpleVertex> = Vec::new();
 		let mut is: Vec<u16> = Vec::new();
 		
@@ -103,10 +103,10 @@ impl SimpleMesh {
 	}
 	
 	fn gen_cube(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>) {
-		SimpleMesh::gen_cuboid(vs, is, Vec3::new(0.5, 0.5, 0.5))
+		SimpleMesh::gen_cuboid(vs, is, Vector3::new(0.5, 0.5, 0.5))
 	}
 	
-	fn gen_cuboid(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>, half_extents: Vec3<f32>) {
+	fn gen_cuboid(vs: &mut Vec<SimpleVertex>, is: &mut Vec<u16>, half_extents: Vector3<f32>) {
 		fn push_quad(is: &mut Vec<u16>, i: u16, v0: u16, v1: u16, v2: u16, v3: u16) {
 			is.extend(&[i+v0, i+v2, i+v1]);
 			is.extend(&[i+v0, i+v3, i+v2]);
@@ -115,14 +115,14 @@ impl SimpleMesh {
 		let he = half_extents;
 		let i = vs.len() as u16;
 		let cuboid_vs: &[SimpleVertex] = &[
-			Vec3::new(-he.x,  he.y, -he.z).into(), // FUL
-			Vec3::new( he.x,  he.y, -he.z).into(), // FUR
-			Vec3::new( he.x, -he.y, -he.z).into(), // FDR
-			Vec3::new(-he.x, -he.y, -he.z).into(), // FDL
-			Vec3::new(-he.x,  he.y,  he.z).into(), // BUL
-			Vec3::new( he.x,  he.y,  he.z).into(), // BUR
-			Vec3::new( he.x, -he.y,  he.z).into(), // BDR
-			Vec3::new(-he.x, -he.y,  he.z).into(), // BDL
+			Vector3::new(-he.x,  he.y, -he.z).into(), // FUL
+			Vector3::new( he.x,  he.y, -he.z).into(), // FUR
+			Vector3::new( he.x, -he.y, -he.z).into(), // FDR
+			Vector3::new(-he.x, -he.y, -he.z).into(), // FDL
+			Vector3::new(-he.x,  he.y,  he.z).into(), // BUL
+			Vector3::new( he.x,  he.y,  he.z).into(), // BUR
+			Vector3::new( he.x, -he.y,  he.z).into(), // BDR
+			Vector3::new(-he.x, -he.y,  he.z).into(), // BDL
 		];
 		
 		vs.extend(cuboid_vs);
@@ -141,9 +141,9 @@ impl SimpleMesh {
 		// Now scale vertices to proper locations.
 		// (by normalising them)
 		for v in vs.iter_mut() {
-			let pos: Vec3<f32> = {
+			let pos: Vector3<f32> = {
 				let add: &[f32;3] = &v.pos;
-				let into: &Vec3<f32> = add.into();
+				let into: &Vector3<f32> = add.into();
 				*into
 			};
 			*v = SimpleVertex::from(pos.normalize());
@@ -154,12 +154,12 @@ impl SimpleMesh {
 		// v0 is top
 		// v1 through v4 are vertices going anti-clockwise (looking down) around the dodecahedron
 		// v5 is bottom
-		let v0 = Vec3::new( 0.0,  0.5,  0.0);
-		let v1 = Vec3::new( 0.0,  0.0,  0.5);
-		let v2 = Vec3::new( 0.5,  0.0,  0.0);
-		let v3 = Vec3::new( 0.0,  0.0, -0.5);
-		let v4 = Vec3::new(-0.5,  0.0,  0.0);
-		let v5 = Vec3::new( 0.0, -0.5,  0.0);
+		let v0 = Vector3::new( 0.0,  0.5,  0.0);
+		let v1 = Vector3::new( 0.0,  0.0,  0.5);
+		let v2 = Vector3::new( 0.5,  0.0,  0.0);
+		let v3 = Vector3::new( 0.0,  0.0, -0.5);
+		let v4 = Vector3::new(-0.5,  0.0,  0.0);
+		let v5 = Vector3::new( 0.0, -0.5,  0.0);
 		
 		let start_len = vs.len() as u16;
 		
@@ -182,7 +182,7 @@ impl SimpleMesh {
 		}
 	}
 	
-	fn gen_dodec_face_tris(vs: &mut Vec<SimpleVertex>, detail: u32, v0: Vec3<f32>, v1: Vec3<f32>, v2: Vec3<f32>) {
+	fn gen_dodec_face_tris(vs: &mut Vec<SimpleVertex>, detail: u32, v0: Vector3<f32>, v1: Vector3<f32>, v2: Vector3<f32>) {
 		let rows = 2u32.pow(detail) + 1;
 		for row in 0..rows {
 			// Create row + 1 vertices.

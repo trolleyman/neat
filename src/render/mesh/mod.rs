@@ -12,7 +12,7 @@ mod lit;
 
 /// Represents a mesh that can be rendered.
 pub trait RenderableMesh {
-	fn render(&self, r: &mut Render, model: Mat4<f32>);
+	fn render(&self, r: &mut Render, model: Matrix4<f32>);
 }
 
 /// Holds a SimpleMesh and gives it a color and scale so that it can be rendered to the screen.
@@ -40,8 +40,8 @@ impl ColoredMesh {
 	}
 }
 impl RenderableMesh for ColoredMesh {
-	fn render(&self, r: &mut Render, model: Mat4<f32>) {
-		let scale = util::mat4_scale(Vec3::new(self.scale, self.scale, self.scale));
+	fn render(&self, r: &mut Render, model: Matrix4<f32>) {
+		let scale = util::mat4_scale(Vector3::new(self.scale, self.scale, self.scale));
 		self.mesh.render(r, model * scale, self.color);
 	}
 }
@@ -58,7 +58,7 @@ impl EmptyMesh {
 	}
 }
 impl RenderableMesh for EmptyMesh {
-	fn render(&self, _r: &mut Render, _model: Mat4<f32>) {
+	fn render(&self, _r: &mut Render, _model: Matrix4<f32>) {
 		// No-op.
 	}
 }

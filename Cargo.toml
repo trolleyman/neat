@@ -9,9 +9,10 @@ name = "neat"
 
 [dependencies]
 glium = "0.13.5"
-nalgebra = "0.6.0"
-ncollide = "0.7.0"
-nphysics3d = { git = "https://github.com/sebcrozet/nphysics.git" } # will be 0.2.3 (probably)
+num  = "0.1.*"
+nalgebra = "0.8.*"
+ncollide = "0.8.*"
+nphysics3d = "0.3.*"
 rusttype = "0.2.0"
 unicode-normalization = "0.1.2"
 log = "0.3.6"
@@ -19,7 +20,6 @@ simplelog = { git = "https://github.com/trolleyman/simplelog.rs" }
 cfg-if = "0.1.0"
 image = "0.8.0"
 rand = "0.3.14"
-num = "0.1.31"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 user32-sys = "*"

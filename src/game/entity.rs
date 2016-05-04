@@ -1,9 +1,8 @@
 use prelude::*;
 use std::rc::Rc;
-use std::sync::Arc;
 
 use nc::bounding_volume::{HasBoundingVolume, AABB};
-use nc::shape::{ShapeHandle, Cuboid, Compound3, Compound};
+use nc::shape::{ShapeHandle3, ShapeHandle, Cuboid, Compound3, Compound};
 use nc::inspection::Repr;
 use np::object::{RigidBody, RigidBodyHandle};
 use np::world::World;
@@ -18,44 +17,44 @@ pub enum Collision {
 	Compound,
 }
 
-/// A component of an Entity
+/// A component of an entity
 #[derive(Clone)]
 pub struct Component {
-	iso: Iso3<f32>,
-	shape: Arc<Box<Repr<Pnt3<f32>, Iso3<f32>> + 'static>>,
+	iso: Isometry3<f32>,
+	shape: ShapeHandle3<f32>,
 	mesh: Rc<RenderableMesh>,
 }
 impl Component {
 	/// Constructs a new component from a shape and a mesh. The position will be at 0,0,0
 	pub fn new<S>(shape: S, mesh: Rc<RenderableMesh>) -> Component
-			where S: Repr<Pnt3<f32>, Iso3<f32>> {
+			where S: Repr<Point3<f32>, Isometry3<f32>> {
 		Component {
-			iso : Iso3::one(),
-			shape: Arc::new(box shape as Box<Repr<Pnt3<f32>, Iso3<f32>>>),
+			iso : Isometry3::one(),
+			shape: ShapeHandle::new(shape),
 			mesh: mesh,
 		}
 	}
 	
 	/// Constructs a new component with the default translation.
-	pub fn with_arc(shape: Arc<Box<Repr<Pnt3<f32>, Iso3<f32>> + 'static>>, mesh: Rc<RenderableMesh>) -> Component {
+	pub fn with_handle(shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
-			iso : Iso3::one(),
+			iso : Isometry3::one(),
 			shape: shape,
 			mesh: mesh,
 		}
 	}
 	
 	/// Constructs a new component from a position, a shape and a mesh.
-	pub fn with_iso<S>(iso: Iso3<f32>, shape: S, mesh: Rc<RenderableMesh>) -> Component
-			where S: Repr<Pnt3<f32>, Iso3<f32>> {
+	pub fn with_iso<S>(iso: Isometry3<f32>, shape: S, mesh: Rc<RenderableMesh>) -> Component
+			where S: Repr<Point3<f32>, Isometry3<f32>> {
 		Component {
 			iso : iso,
-			shape: Arc::new(box shape as Box<Repr<Pnt3<f32>, Iso3<f32>>>),
+			shape: ShapeHandle::new(shape),
 			mesh: mesh,
 		}
 	}
 	
-	pub fn with_iso_arc(iso: Iso3<f32>, shape: Arc<Box<Repr<Pnt3<f32>, Iso3<f32>> + 'static>>, mesh: Rc<RenderableMesh>) -> Component {
+	pub fn with_iso_handle(iso: Isometry3<f32>, shape: ShapeHandle3<f32>, mesh: Rc<RenderableMesh>) -> Component {
 		Component {
 			iso : iso,
 			shape: shape,
@@ -63,19 +62,25 @@ impl Component {
 		}
 	}
 	
-	/// Returns a component with the specified translation
-	pub fn with_pos(mut self, pos: Vec3<f32>) -> Component {
+	/// Returns the component with the specified translation
+	pub fn pos(mut self, pos: Vector3<f32>) -> Component {
 		self.iso.translation = pos;
+		self
+	}
+	
+	/// Returns the component with the specified rotation
+	pub fn rot(mut self, rot: Rotation3<f32>) -> Component {
+		self.iso.rotation = rot;
 		self
 	}
 }
 
 /// Helper struct to build an entity.
 pub struct EntityBuilder {
-	pos: Vec3<f32>,
-	vel: Vec3<f32>,
-	rot: Vec3<f32>,
-	ang_vel: Vec3<f32>,
+	pos: Vector3<f32>,
+	vel: Vector3<f32>,
+	rot: Vector3<f32>,
+	ang_vel: Vector3<f32>,
 	
 	// If None, is a static object
 	density: Option<f32>,
@@ -89,10 +94,10 @@ impl EntityBuilder {
 	/// Creates a new dynamic EntityBuilder.
 	pub fn new(density: f32, restitution: f32, friction: f32) -> EntityBuilder {
 		EntityBuilder {
-			pos: Vec3::zero(),
-			vel: Vec3::zero(),
-			rot: Vec3::zero(),
-			ang_vel: Vec3::zero(),
+			pos: Vector3::zero(),
+			vel: Vector3::zero(),
+			rot: Vector3::zero(),
+			ang_vel: Vector3::zero(),
 			
 			density: Some(density),
 			restitution: restitution,
@@ -106,10 +111,10 @@ impl EntityBuilder {
 	/// Creates a new static EntityBuilder
 	pub fn new_static(restitution: f32, friction: f32) -> EntityBuilder {
 		EntityBuilder {
-			pos: Vec3::zero(),
-			vel: Vec3::zero(),
-			rot: Vec3::zero(),
-			ang_vel: Vec3::zero(),
+			pos: Vector3::zero(),
+			vel: Vector3::zero(),
+			rot: Vector3::zero(),
+			ang_vel: Vector3::zero(),
 			
 			density: None,
 			restitution: restitution,
@@ -121,25 +126,25 @@ impl EntityBuilder {
 	}
 	
 	/// Sets the position that the entity is created at.
-	pub fn pos(mut self, pos: Vec3<f32>) -> EntityBuilder {
+	pub fn pos(mut self, pos: Vector3<f32>) -> EntityBuilder {
 		self.pos = pos;
 		self
 	}
 	
 	/// Sets the velocity that the entity is created with.
-	pub fn vel(mut self, vel: Vec3<f32>) -> EntityBuilder {
+	pub fn vel(mut self, vel: Vector3<f32>) -> EntityBuilder {
 		self.vel = vel;
 		self
 	}
 	
 	/// Sets the rotation the entity is created with.
-	pub fn rot(mut self, rot: Vec3<f32>) -> EntityBuilder {
+	pub fn rot(mut self, rot: Vector3<f32>) -> EntityBuilder {
 		self.rot = rot;
 		self
 	}
 	
 	/// Sets the angular velocity the entity is created with.
-	pub fn ang_vel(mut self, ang_vel: Vec3<f32>) -> EntityBuilder {
+	pub fn ang_vel(mut self, ang_vel: Vector3<f32>) -> EntityBuilder {
 		self.ang_vel = ang_vel;
 		self
 	}
@@ -183,16 +188,16 @@ impl EntityBuilder {
 }
 
 pub struct Entity {
-	meshes: Vec<(Iso3<f32>, Rc<RenderableMesh>)>,
-	collision: Collision,
+	meshes: Vec<(Isometry3<f32>, Rc<RenderableMesh>)>,
+	//collision: Collision,
 	body: RigidBodyHandle<f32>,
 }
 impl Entity {
 	pub fn new(world: &mut World<f32>, component: Component, collision: Collision, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
-		Entity::with_matrix(world, vec![component], collision: Collision, Vec3::zero(), Vec3::zero(), Vec3::zero(), Vec3::zero(), density, restitution, friction)
+		Entity::with_matrix(world, vec![component], collision: Collision, Vector3::zero(), Vector3::zero(), Vector3::zero(), Vector3::zero(), density, restitution, friction)
 	}
 	
-	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, collision: Collision, pos: Vec3<f32>, vel: Vec3<f32>, rot: Vec3<f32>, ang_vel: Vec3<f32>, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
+	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, collision: Collision, pos: Vector3<f32>, vel: Vector3<f32>, rot: Vector3<f32>, ang_vel: Vector3<f32>, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
 		
 		let mut bodies = Vec::new();
 		let mut meshes = Vec::new();
@@ -207,13 +212,14 @@ impl Entity {
 				let props = density.map(|density| {
 					comp.mass_properties(density)
 				});
-				let comp_box: AABB<_> = comp.bounding_volume(&Iso3::one());
+				
+				let comp_box: AABB<_> = comp.bounding_volume(&Isometry3::one());
 				let mins = *comp_box.mins();
 				let maxs = *comp_box.maxs();
-				let avg  = Vec3::new((mins.x + maxs.x) / 2.0, (mins.y + maxs.y) / 2.0, (mins.z + maxs.z) / 2.0);
-				let size = Vec3::new((mins.x - maxs.x) / 2.0, (mins.y - maxs.y) / 2.0, (mins.z - maxs.z) / 2.0);
+				let avg  = Vector3::new((mins.x + maxs.x) / 2.0, (mins.y + maxs.y) / 2.0, (mins.z + maxs.z) / 2.0);
+				let size = Vector3::new((mins.x - maxs.x) / 2.0, (mins.y - maxs.y) / 2.0, (mins.z - maxs.z) / 2.0);
 				let comp_box = Cuboid::new(size);
-				let comp_box = Compound::new(vec![(Iso3::new(-avg, Vec3::zero()), ShapeHandle::new(comp_box))]);
+				let comp_box = Compound::new(vec![(Isometry3::new(-avg, Vector3::zero()), ShapeHandle::new(comp_box))]);
 				(ShapeHandle::new(comp_box), props)
 			},
 			Collision::Compound => {
@@ -225,14 +231,14 @@ impl Entity {
 			}
 		};
 		
-		let body = RigidBody::new(collision_shape, mass_props, restitution, friction);
+		let mut body = RigidBody::new(collision_shape, mass_props, restitution, friction);
 		body.set_translation(pos);
 		body.set_rotation(rot);
-		let body = world.add_body(body);
+		let body = world.add_rigid_body(body);
 		
 		let mut e = Entity {
 			meshes: meshes,
-			collision: collision,
+			//collision: collision,
 			body: body,
 		};
 		
@@ -246,7 +252,7 @@ impl Entity {
 	
 	/// Removes this entity from a world.
 	pub fn remove_world(&self, world: &mut World<f32>) {
-		world.remove_body(&self.body);
+		world.remove_rigid_body(&self.body);
 	}
 	
 	/// Renders the entity
@@ -262,19 +268,19 @@ impl Entity {
 		&self.body
 	}
 	
-	pub fn set_pos(&mut self, pos: Vec3<f32>) {
+	pub fn set_pos(&mut self, pos: Vector3<f32>) {
 		self.body.borrow_mut().set_translation(pos);
 	}
 	
-	pub fn set_vel(&mut self, vel: Vec3<f32>) {
+	pub fn set_vel(&mut self, vel: Vector3<f32>) {
 		self.body.borrow_mut().set_lin_vel(vel)
 	}
 	
-	pub fn set_rot(&mut self, rot: Vec3<f32>) {
+	pub fn set_rot(&mut self, rot: Vector3<f32>) {
 		self.body.borrow_mut().set_rotation(rot);
 	}
 	
-	pub fn set_ang_vel(&mut self, ang_vel: Vec3<f32>) {
+	pub fn set_ang_vel(&mut self, ang_vel: Vector3<f32>) {
 		self.body.borrow_mut().set_ang_vel(ang_vel);
 	}
 }
