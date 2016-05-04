@@ -20,6 +20,7 @@ pub struct Game {
 	focused: bool,
 	step: bool,
 	ignore_next_mouse_movement: bool,
+	skip_next_tick: bool,
 	rerender: bool,
 }
 impl Game {
@@ -47,6 +48,7 @@ impl Game {
 			focused: true,
 			step: false,
 			ignore_next_mouse_movement: false,
+			skip_next_tick: true,
 			rerender: false,
 		}
 	}
@@ -111,6 +113,11 @@ impl Game {
 				break;
 			}
 			
+			if self.skip_next_tick {
+				lag = Duration::from_millis(0);
+				self.skip_next_tick = false;
+			}
+			
 			// Tick game
 			if !self.rerender {
 				let mut n = 0;
@@ -121,9 +128,16 @@ impl Game {
 				if n > 4 {
 					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
 				}
-				self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
+				if !self.skip_next_tick {
+					self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
+				}
 			} else {
 				self.rerender = false;
+			}
+			
+			if self.skip_next_tick {
+				lag = Duration::from_millis(0);
+				self.skip_next_tick = false;
 			}
 			
 			// Render to screen
@@ -249,6 +263,7 @@ impl Game {
 							let sw = Stopwatch::start();
 							self.current_state = (self.state_generator)(&ctx);
 							info!("Reset game state ({}ms)", sw.elapsed_ms());
+							self.skip_next_tick = true;
 						}
 					}
 				},
@@ -264,6 +279,7 @@ impl Game {
 				Ok(()) => info!("Reloaded shaders ({}ms)", s.elapsed_ms()),
 				Err(e) => error!("Error reloading shaders: {}", e),
 			}
+			self.skip_next_tick = true;
 		}
 		
 		if resized {
