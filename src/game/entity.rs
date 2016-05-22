@@ -212,6 +212,7 @@ impl Entity {
 				let props = density.map(|density| {
 					comp.mass_properties(density)
 				});
+				
 				let comp_box: AABB<_> = comp.bounding_volume(&Isometry3::one());
 				let mins = *comp_box.mins();
 				let maxs = *comp_box.maxs();
