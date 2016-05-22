@@ -3,5 +3,5 @@ extern crate neat;
 use neat::game::GameStateBuilder;
 
 pub fn main() {
-	neat::run(GameStateBuilder::build_rot_test);
+	neat::run(Box::new(GameStateBuilder::build_rot_test));
 }
