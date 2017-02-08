@@ -4,14 +4,14 @@
 	"isShellCommand": true,
 	"showOutput": "always",
 	"suppressTaskName": true,
-    "tasks": [
-        {
-            "taskName": "build-debug",
+	"tasks": [
+		{
+			"taskName": "build-debug",
 			"args": ["build"]
-        },
-        {
-            "taskName": "build-release",
+		},
+		{
+			"taskName": "build-release",
 			"args": ["build", "--release"]
-        }
-    ]
+		}
+	]
 }

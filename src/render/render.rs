@@ -124,7 +124,6 @@ impl Render {
 			font_render: font_render,
 		};
 		r.resize();
-		r.win.get_window().map(|w| w.show());
 		r
 	}
 	
@@ -152,6 +151,11 @@ impl Render {
 	
 	pub fn set_camera(&mut self, cam: Camera) {
 		self.camera = cam;
+	}
+	
+	/// Shows the window to the user
+	pub fn show(&mut self) {
+		self.win.get_window().map(|w| w.show());
 	}
 	
 	/// Tries to reload the shaders currently used.

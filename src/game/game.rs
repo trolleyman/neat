@@ -20,6 +20,7 @@ pub struct Game {
 	focused: bool,
 	step: bool,
 	ignore_next_mouse_movement: bool,
+	skip_next_tick: bool,
 	rerender: bool,
 }
 impl Game {
@@ -47,6 +48,7 @@ impl Game {
 			focused: true,
 			step: false,
 			ignore_next_mouse_movement: false,
+			skip_next_tick: true,
 			rerender: false,
 		}
 	}
@@ -57,6 +59,8 @@ impl Game {
 	pub fn main_loop(&mut self) {
 		// How long each physics timestep should be.
 		const PHYSICS_HZ: u32 = 120;
+		// Maximum lag in ms simulated.
+		const MAX_LAG_MS: u64 = 500;
 		let sec = Duration::new(1, 0);
 		let physics_dt = sec / PHYSICS_HZ;
 		
@@ -76,6 +80,7 @@ impl Game {
 		let mut frames = 0;
 		let mut fps = 0;
 		
+		self.render.show();
 		let mut events = Vec::new();
 		info!("Starting game main loop");
 		while self.running {
@@ -89,6 +94,12 @@ impl Game {
 			}
 			previous = current;
 			lag += elapsed;
+			
+			// Make sure lag doesn't get bigger and bigger when the program is slow
+			// This makes the simulation kinda non-deteministic
+			if lag > Duration::from_millis(MAX_LAG_MS) {
+				lag = Duration::from_millis(MAX_LAG_MS);
+			}
 			
 			// Calculate fps
 			if current - previous_fps_count >= sec {
@@ -104,6 +115,11 @@ impl Game {
 				break;
 			}
 			
+			if self.skip_next_tick {
+				lag = Duration::from_millis(0);
+				self.skip_next_tick = false;
+			}
+			
 			// Tick game
 			if !self.rerender {
 				let mut n = 0;
@@ -114,9 +130,16 @@ impl Game {
 				if n > 4 {
 					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
 				}
-				self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
+				if !self.skip_next_tick {
+					self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
+				}
 			} else {
 				self.rerender = false;
+			}
+			
+			if self.skip_next_tick {
+				lag = Duration::from_millis(0);
+				self.skip_next_tick = false;
 			}
 			
 			// Render to screen
@@ -239,7 +262,10 @@ impl Game {
 							reload_shaders = true;
 						} else if Some(code) == self.settings.reset_state {
 							info!("Resetting game state...");
+							let sw = Stopwatch::start();
 							self.current_state = (self.state_generator)(&ctx);
+							info!("Reset game state ({}ms)", sw.elapsed_ms());
+							self.skip_next_tick = true;
 						}
 					}
 				},
@@ -255,6 +281,7 @@ impl Game {
 				Ok(()) => info!("Reloaded shaders ({}ms)", s.elapsed_ms()),
 				Err(e) => error!("Error reloading shaders: {}", e),
 			}
+			self.skip_next_tick = true;
 		}
 		
 		if resized {

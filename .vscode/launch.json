@@ -6,7 +6,7 @@
 			"preLaunchTask": "build-debug",
 			"type": "gdb",
 			"request": "launch",
-			"target": "./target/debug/neat2d.exe",
+			"target": "./target/debug/neat.exe",
 			"cwd": "${workspaceRoot}"
 		},
 		{
@@ -14,7 +14,7 @@
 			"preLaunchTask": "build-release",
 			"type": "gdb",
 			"request": "launch",
-			"target": "./target/debug/neat2d.exe",
+			"target": "./target/release/neat.exe",
 			"cwd": "${workspaceRoot}"
 		}
 	]
