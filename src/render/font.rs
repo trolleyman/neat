@@ -1,5 +1,4 @@
 use prelude::*;
-use std::io::Write;
 use std::rc::Rc;
 use std::borrow::Cow;
 use std::process::exit;

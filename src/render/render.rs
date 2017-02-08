@@ -90,7 +90,7 @@ impl Render {
 			match builder.build_glium() {
 				Ok(w)  => w,
 				Err(e) => {
-					error!("Could not initialize window: {}", e);
+					error!("Could not initialize window: {:?}", e);
 					exit(1);
 				}
 			}

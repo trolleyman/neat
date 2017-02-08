@@ -1,4 +1,4 @@
-#![feature(box_syntax, question_mark, associated_consts, type_ascription)]
+#![feature(box_syntax, associated_consts, type_ascription)]
 #[macro_use]
 extern crate glium;
 extern crate nalgebra as na;
