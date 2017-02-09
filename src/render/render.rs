@@ -16,10 +16,9 @@ use render::{FontRender, Camera, Color, SimpleVertex, LitVertex, Light, Material
 cfg_if! {
 	if #[cfg(target_os = "windows")] {
 		fn os_focus_window(win: &Window) -> Result<(), ()> {
-			use glutin::os::windows::WindowExt;
 			use user32;
 			unsafe {
-				let hwnd = win.get_hwnd() as *mut _;
+				let hwnd = win.platform_window() as *mut _;
 				let fail = user32::SetForegroundWindow(hwnd) == 0;
 				if fail {
 					warn!("Focus failed");
@@ -79,7 +78,7 @@ impl Render {
 		let win = {
 			let mut builder = WindowBuilder::new()
 				.with_dimensions(settings.w, settings.h)
-				.with_title("NEAT".into())
+				.with_title("NEAT")
 				.with_visibility(false)
 				.with_depth_buffer(24);
 			

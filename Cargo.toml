@@ -8,7 +8,7 @@ build = "build/build.rs"
 name = "neat"
 
 [dependencies]
-glium = "0.13.5"
+glium = "0.16.*"
 num  = "0.1.*"
 nalgebra = "0.8.*"
 ncollide = "0.8.*"

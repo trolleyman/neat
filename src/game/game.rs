@@ -175,7 +175,7 @@ impl Game {
 		for e in self.render.poll_events() {
 			// Filter out 'noisy' events from the log.
 			let uninportant = match &e {
-				&Event::MouseMoved(_) |
+				&Event::MouseMoved(_, _) |
 				&Event::Moved(_, _) => {
 					true
 				},
@@ -194,9 +194,9 @@ impl Game {
 			}
 			
 			let push = match &e {
-				&Event::MouseMoved(_) => true,
+				&Event::MouseMoved(_, _) => true,
 				&Event::MouseInput(_, _) => true,
-				&Event::MouseWheel(_) => true,
+				&Event::MouseWheel(_, _) => true,
 				&Event::KeyboardInput(_, _, _) => true,
 				&Event::ReceivedCharacter(_) => true,
 				_ => false,
@@ -209,11 +209,11 @@ impl Game {
 				Event::Closed => {
 					self.running = false;
 				},
-				Event::MouseMoved(pos) => {
+				Event::MouseMoved(x, y) => {
 					if self.ignore_next_mouse_movement {
 						self.ignore_next_mouse_movement = false;
 					} else {
-						mouse_pos = Vector2::new(pos.0, pos.1);
+						mouse_pos = Vector2::new(x, y);
 					}
 				},
 				Event::Focused(b) => {

@@ -463,11 +463,11 @@ impl TickCallback for LightHandler {
 		let mut scroll = Vector2::zero();
 		for e in events.iter() {
 			match e {
-				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y)) => {
+				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y), _) => {
 					scroll.x += x * PIXELS_PER_LINE;
 					scroll.y += y * PIXELS_PER_LINE;
 				},
-				&Event::MouseWheel(MouseScrollDelta::PixelDelta(x, y)) => {
+				&Event::MouseWheel(MouseScrollDelta::PixelDelta(x, y), _) => {
 					scroll.x += x;
 					scroll.y += y;
 				},
