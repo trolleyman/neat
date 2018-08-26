@@ -6,10 +6,11 @@ build = "build/build.rs"
 
 [lib]
 name = "neat"
+path = "src/neat.rs"
 
 [dependencies]
 glium = "0.16.*"
-num  = "0.1.*"
+num = "0.1.*"
 nalgebra = "0.8.*"
 ncollide = "0.8.*"
 nphysics3d = "0.3.*"
