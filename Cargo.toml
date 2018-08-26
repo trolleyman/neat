@@ -10,7 +10,7 @@ path = "src/neat.rs"
 
 [dependencies]
 glium = "0.22.*"
-num = "0.1.*"
+num = "0.2.*"
 nalgebra = "0.8.*"
 ncollide = "0.8.*"
 nphysics3d = "0.3.*"
