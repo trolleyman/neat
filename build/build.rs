@@ -41,7 +41,5 @@ pub fn main() {
 	print_env("PROFILE");
 	print_env("DEBUG");
 	println!("");
-	copy_to_out("fonts");
-	copy_to_out("shaders");
-	copy_to_out("textures");
+	copy_to_out("assets");
 }
