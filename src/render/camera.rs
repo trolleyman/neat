@@ -49,10 +49,10 @@ impl Camera {
 	}
 	
 	/// Handle a mouse move on the screen by rotating the camera.
-	pub fn mouse_moved(&mut self, moved: Vector2<i32>) {
+	pub fn mouse_moved(&mut self, moved: Vector2<f64>) {
 		let rot = Vector2::new(moved.x as f32, moved.y as f32) * -0.008;
-		if moved.x != 0 && moved.y != 0 {
-			trace!("mouse moved: {:3},{:3} look change: {},{}", rot.x, rot.y, -moved.x, -moved.y);
+		if moved.x != 0.0 && moved.y != 0.0 {
+			trace!("mouse moved: {:3},{:3} look change: {:1},{:1}", rot.x, rot.y, -moved.x, -moved.y);
 		}
 		self.look(rot);
 	}

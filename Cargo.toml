@@ -9,7 +9,7 @@ name = "neat"
 path = "src/neat.rs"
 
 [dependencies]
-glium = "0.16.*"
+glium = "0.22.*"
 num = "0.1.*"
 nalgebra = "0.8.*"
 ncollide = "0.8.*"

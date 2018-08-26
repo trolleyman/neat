@@ -3,7 +3,8 @@ use std::rc::Rc;
 
 use std::cell::RefCell;
 use glium::Texture2d;
-use glutin::{Event, MouseScrollDelta};
+use glutin::{Event, MouseScrollDelta, WindowEvent};
+use glutin::dpi::LogicalPosition;
 use nc::shape::{ShapeHandle, Ball, Cuboid};
 use rand;
 
@@ -457,35 +458,37 @@ impl LightHandler {
 	}
 }
 impl TickCallback for LightHandler {
-	fn tick(&mut self, state: &mut GameState, _dt: f32, _settings: &Settings, events: &[Event], _mouse_moved: Vector2<i32>) {
+	fn tick(&mut self, state: &mut GameState, _dt: f32, _settings: &Settings, events: &[Event], _mouse_moved: Vector2<f64>) {
 		const PIXELS_PER_LINE: f32 = 16.0;
 		
 		let mut scroll: Vector2<f32> = Vector2::zero();
-		for e in events.iter() {
-			match e {
-				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y), _) => {
-					scroll.x += x * PIXELS_PER_LINE;
-					scroll.y += y * PIXELS_PER_LINE;
-				},
-				&Event::MouseWheel(MouseScrollDelta::PixelDelta(x, y), _) => {
-					scroll.x += x;
-					scroll.y += y;
-				},
-				&Event::ReceivedCharacter(c) => {
-					match match c {
-						'1' => Some(Mode::LightConstant),
-						'2' => Some(Mode::LightLinear),
-						'3' => Some(Mode::LightQuadratic),
-						_ => None,
-					} {
-						Some(m) => {
-							info!("Changing mode to {:?}", m);
-							self.mode = m;
-						},
-						None => {}
+		for event in events.iter() {
+			if let Event::WindowEvent{event, ..} = event {
+				match event {
+					&WindowEvent::MouseWheel{delta: MouseScrollDelta::LineDelta(x, y), ..} => {
+						scroll.x += x * PIXELS_PER_LINE;
+						scroll.y += y * PIXELS_PER_LINE;
+					},
+					&WindowEvent::MouseWheel{delta: MouseScrollDelta::PixelDelta(LogicalPosition{x, y}), ..} => {
+						scroll.x += x as f32;
+						scroll.y += y as f32;
+					},
+					&WindowEvent::ReceivedCharacter(c) => {
+						match match c {
+							'1' => Some(Mode::LightConstant),
+							'2' => Some(Mode::LightLinear),
+							'3' => Some(Mode::LightQuadratic),
+							_ => None,
+						} {
+							Some(m) => {
+								info!("Changing mode to {:?}", m);
+								self.mode = m;
+							},
+							None => {}
+						}
 					}
+					_ => {}
 				}
-				_ => {}
 			}
 		}
 		scroll.y *= 0.07;

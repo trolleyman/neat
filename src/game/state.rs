@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-use glutin::{ElementState, Event};
+use glutin::{KeyboardInput, ElementState, Event, WindowEvent};
 use np::world::World;
 
 use game::{KeyboardState, Entity, EntityBuilder};
@@ -26,7 +26,7 @@ pub enum Gravity {
 }
 
 pub trait TickCallback {
-	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vector2<i32>);
+	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vector2<f64>);
 }
 pub trait RenderCallback {
 	fn render(&mut self, r: &mut Render, fps: u32);
@@ -43,7 +43,7 @@ pub struct GameState {
 	light: Light,
 	ambient_light: Vector4<f32>,
 	wireframe_mode: bool,
-	tick_callback  : Option<Rc<RefCell<TickCallback>>>,
+	tick_callback: Option<Rc<RefCell<TickCallback>>>,
 	render_callback: Option<Rc<RefCell<RenderCallback>>>,
 }
 impl GameState {
@@ -129,12 +129,11 @@ impl GameState {
 	/// - `settings` are the current game settings.
 	/// - `events` is a list of events that occured since last frame.
 	/// - `mouse_moved` is how much the mouse has moved (in screen pixels) since the last update.
-	pub fn tick(&mut self, dt: f32, settings: &Settings, events: &mut Vec<Event>, mouse_moved: Vector2<i32>) {
+	pub fn tick(&mut self, dt: f32, settings: &Settings, events: &mut Vec<Event>, mouse_moved: Vector2<f64>) {
 		// Call callback
 		{
 			let call = self.tick_callback.clone();
-			if call.is_some() {
-				let call = call.unwrap();
+			if let Some(call) = call {
 				let mut call = call.borrow_mut();
 				call.tick(self, dt, settings, &*events, mouse_moved);
 			}
@@ -145,7 +144,7 @@ impl GameState {
 		
 		for e in events.drain(..) {
 			match e {
-				Event::KeyboardInput(key_state, _, Some(code)) => {
+				Event::WindowEvent{event: WindowEvent::KeyboardInput{input: KeyboardInput{state:key_state, virtual_keycode: Some(code), ..}, ..}, ..} => {
 					self.keyboard_state.process_event(key_state, code);
 					if key_state == ElementState::Pressed {
 						if Some(code) == settings.wireframe_toggle {

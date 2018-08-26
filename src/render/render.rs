@@ -1,12 +1,12 @@
 use prelude::*;
 use std::rc::Rc;
-use std::process::exit;
+use std::cell::Ref;
 
 use glium::*;
 use glium::backend::Facade;
-use glium::backend::glutin_backend::{GlutinFacade, PollEventsIter, WinRef};
+use glium::backend::glutin::Display;
 use glium::uniforms::UniformsStorage;
-use glutin::{CursorState, WindowBuilder, Window};
+use glutin::{ContextBuilder, EventsLoop, GlWindow, Robustness, WindowBuilder, Window};
 
 use util;
 use vfs;
@@ -16,9 +16,10 @@ use render::{FontRender, Camera, Color, SimpleVertex, LitVertex, Light, Material
 cfg_if! {
 	if #[cfg(target_os = "windows")] {
 		fn os_focus_window(win: &Window) -> Result<(), ()> {
+			use glutin::os::windows::WindowExt;
 			use user32;
 			unsafe {
-				let hwnd = win.platform_window() as *mut _;
+				let hwnd = win.get_hwnd() as *mut _;
 				let fail = user32::SetForegroundWindow(hwnd) == 0;
 				if fail {
 					warn!("Focus failed");
@@ -52,12 +53,15 @@ const PHONG_SHADER_NAME: &'static str = "phong";
 
 /// Render handler.
 pub struct Render {
-	/// Window handle
-	win: GlutinFacade,
+	/// Display backend
+	display: Display,
 	/// OpenGL handle
 	ctx: Rc<Context>,
 	/// Current framebuffer handle
 	frame: Frame,
+	
+	/// True if the cursor should be grabbed currently
+	cursor_grabbed: bool,
 	
 	/// Projection matrix
 	projection: Matrix4<f32>,
@@ -74,46 +78,50 @@ impl Render {
 	/// Constructs a new `Render` object.
 	/// 
 	/// In doing so it opens a window, loads the necessary shaders and initializes the font renderer.
-	pub fn new(camera: Camera, settings: &Settings) -> Render {
-		let win = {
-			let mut builder = WindowBuilder::new()
-				.with_dimensions(settings.w, settings.h)
-				.with_title("NEAT")
-				.with_visibility(false)
-				.with_depth_buffer(24);
-			
-			if settings.vsync {
-				builder = builder.with_vsync();
-			}
-			
-			match builder.build_glium() {
-				Ok(w)  => w,
-				Err(e) => {
-					error!("Could not initialize window: {:?}", e);
-					exit(1);
-				}
-			}
-		};
+	pub fn new(events_loop: &EventsLoop, camera: Camera, settings: &Settings) -> Result<Render, String> {
+		// Setup window settings
+		let win_builder = WindowBuilder::new()
+			.with_dimensions((settings.w, settings.h).into())
+			.with_title("NEAT")
+			.with_visibility(false);
 		
-		let mut frame = win.draw();
+		// Setup OpenGL context settings
+		let ctx_builder = ContextBuilder::new()
+			.with_depth_buffer(8)
+			.with_vsync(settings.vsync)
+			.with_gl_robustness(Robustness::TryRobustLoseContextOnReset);
+		
+		// Build OpenGL window
+		let gl_window = GlWindow::new(win_builder, ctx_builder, &events_loop)
+			.map_err(|e| format!("Error building window: {}", e))?;
+		
+		// Build display
+		let display = Display::from_gl_window(gl_window)
+			.map_err(|e| format!("Error building OpenGL context: {}", e))?;
+		
+		// Build & clear framebuffer
+		let mut frame = display.draw();
 		Render::clear_frame(&mut frame);
 		frame.finish().ok();
-		let frame = win.draw();
-		let ctx = win.get_context().clone();
+		let frame = display.draw();
+		let ctx = display.get_context().clone();
 		
+		// Load shaders
 		let simple_shader = vfs::load_shader(&ctx, SIMPLE_SHADER_NAME);
-		
 		let phong_shader = vfs::load_shader(&ctx, PHONG_SHADER_NAME);
 		
+		// Setup font renderer
 		let font_render = FontRender::new(ctx.clone());
 		
 		let mut r = Render {
-			win: win,
-			ctx: ctx,
-			frame: frame,
+			display,
+			ctx,
+			frame,
+			
+			cursor_grabbed: false,
 			
 			projection: Matrix4::one(),
-			camera: camera,
+			camera,
 			
 			ambient_light: Vector4::zero(),
 			light: Light::off(),
@@ -123,7 +131,7 @@ impl Render {
 			font_render: font_render,
 		};
 		r.resize();
-		r
+		Ok(r)
 	}
 	
 	/// Clears the color and depth buffers of `frame`
@@ -154,7 +162,7 @@ impl Render {
 	
 	/// Shows the window to the user
 	pub fn show(&mut self) {
-		self.win.get_window().map(|w| w.show());
+		self.window().show();
 	}
 	
 	/// Tries to reload the shaders currently used.
@@ -186,38 +194,40 @@ impl Render {
 		self.projection = Perspective3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_matrix();
 	}
 	
-	pub fn get_window(&self) -> Option<WinRef> {
-		self.win.get_window()
-	}
-	
-	/// Gets an iterator that polls the events of the current window
-	pub fn poll_events<'a>(&'a self) -> PollEventsIter<'a> {
-		self.win.poll_events()
-	}
-	
 	/// Tries to grab the focus of the window. If it does it also sets the cursor grabbing state.
 	pub fn try_focus(&mut self) -> Result<(), ()> {
-		if let Some(win) = self.win.get_window() {
-			if focus_window(&win).is_ok() {
-				win.set_cursor_state(CursorState::Grab).ok();
-				Ok(())
-			} else {
-				win.set_cursor_state(CursorState::Normal).ok();
-				Err(())
-			}
+		if focus_window(&self.window()).is_ok() {
+			self.input_reset();
+			Ok(())
 		} else {
+			self.window().grab_cursor(false).ok();
+			self.window().hide_cursor(false);
 			Err(())
 		}
 	}
 	
 	/// Grabs the cursor.
-	pub fn input_grab(&self) {
-		self.get_window().map(|w| w.set_cursor_state(CursorState::Grab));
+	pub fn input_grab(&mut self) {
+		self.cursor_grabbed = true;
+		
+		self.input_reset();
 	}
 	
 	/// Lets the cursor go.
-	pub fn input_normal(&self) {
-		self.get_window().map(|w| w.set_cursor_state(CursorState::Normal));
+	pub fn input_normal(&mut self) {
+		self.cursor_grabbed = false;
+		
+		self.input_reset();
+	}
+	
+	/// Reset the mouse grabbed/non-grabbed state, after the window has been focused
+	pub fn input_reset(&self) {
+		self.window().grab_cursor(self.cursor_grabbed).ok();
+		self.window().hide_cursor(self.cursor_grabbed);
+	}
+	
+	pub fn window(&self) -> Ref<GlWindow> {
+		self.display.gl_window()
 	}
 	
 	pub fn context(&mut self) -> &Rc<Context> {
@@ -234,7 +244,7 @@ impl Render {
 	pub fn swap(&mut self) {
 		trace!("Swapping buffers...");
 		self.frame.set_finish().ok();
-		self.frame = self.win.draw();
+		self.frame = self.display.draw();
 		Render::clear_frame(&mut self.frame);
 	}
 	

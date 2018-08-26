@@ -1,8 +1,10 @@
 use prelude::*;
 use std::rc::Rc;
 use std::thread::sleep;
+use std::cell::RefCell;
 
-use glutin::{VirtualKeyCode, Event, MouseButton, ElementState};
+use glutin::{VirtualKeyCode, Event, EventsLoop, MouseButton, ElementState, KeyboardInput, WindowEvent};
+use glutin::dpi::{LogicalPosition, LogicalSize};
 
 use game::{GameState, GameStateBuilder, KeyboardState};
 use render::{Render, Camera};
@@ -11,6 +13,7 @@ use settings::Settings;
 /// The structure that keeps track of game-wide state.
 pub struct Game {
 	render: Render,
+	events_loop: Rc<RefCell<EventsLoop>>,
 	settings: Settings,
 	
 	state_generator: Box<Fn(&Rc<Context>) -> GameState>,
@@ -25,21 +28,23 @@ pub struct Game {
 }
 impl Game {
 	/// Constructs a game with the specified settings, and the default game state.
-	pub fn new(settings: Settings) -> Game {
+	pub fn new(settings: Settings) -> Result<Game, String> {
 		Game::with_state_generator(settings, Box::new(GameStateBuilder::build_default))
 	}
 	
 	/// Cosnstructs a game with the specified settings, and a custom game state generator.
-	pub fn with_state_generator<F>(settings: Settings, generator: Box<F>) -> Game where for<'r> F: Fn(&'r Rc<Context>) -> GameState + 'static {
-		let mut render = Render::new(Camera::new(Vector3::new(0.0, 0.0, 0.0)), &settings);
+	pub fn with_state_generator<F>(settings: Settings, generator: Box<F>) -> Result<Game, String> where for<'r> F: Fn(&'r Rc<Context>) -> GameState + 'static {
+		let events_loop = EventsLoop::new();
+		let mut render = Render::new(&events_loop, Camera::new(Vector3::new(0.0, 0.0, 0.0)), &settings)?;
 		info!("Initialized renderer");
 		
 		let state = generator(render.context());
 		render.set_camera(state.camera().clone());
 		info!("Initialized game state");
-		Game {
-			render: render,
-			settings: settings,
+		Ok(Game {
+			render,
+			events_loop: Rc::new(RefCell::new(events_loop)),
+			settings,
 			
 			state_generator: generator,
 			current_state: state,
@@ -50,7 +55,7 @@ impl Game {
 			ignore_next_mouse_movement: false,
 			skip_next_tick: true,
 			rerender: false,
-		}
+		})
 	}
 	
 	/// Performs the main loop.
@@ -154,12 +159,12 @@ impl Game {
 	/// Appends events to pass onto the GameState to `events`
 	/// 
 	/// Returns how much the mouse has moved since the last frame.
-	pub fn process_events(&mut self, events: &mut Vec<Event>) -> Vector2<i32> {
+	pub fn process_events(&mut self, events: &mut Vec<Event>) -> Vector2<f64> {
 		// Find centre of screen.
-		let mid = self.render.get_window().and_then(|w| w.get_outer_size()).unwrap_or((0, 0));
-		let mid = Vector2::new(mid.0 as i32 / 2, mid.1 as i32 / 2);
+		let mid = self.render.window().get_outer_size().unwrap_or(LogicalSize{width: 0.0, height: 0.0});
+		let mid = Vector2::new(mid.width / 2.0, mid.height / 2.0);
 		if self.focused {
-			self.render.get_window().map(|w| w.set_cursor_position(mid.x, mid.y));
+			self.render.window().set_cursor_position(LogicalPosition::new(mid.x, mid.y)).ok();
 		}
 		
 		if self.step {
@@ -172,106 +177,124 @@ impl Game {
 		let mut resized = false;
 		let mut mouse_pos = mid;
 		let ctx = self.render.context().clone();
-		for e in self.render.poll_events() {
+		
+		let events_loop = self.events_loop.clone();
+		events_loop.borrow_mut().poll_events(|event| {
 			// Filter out 'noisy' events from the log.
-			let uninportant = match &e {
-				&Event::MouseMoved(_, _) |
-				&Event::Moved(_, _) => {
-					true
-				},
-				&Event::KeyboardInput(ElementState::Pressed, _, Some(ref code))
-					if self.keyboard_state.is_pressed(code) => {
+			let uninportant = match &event {
+				Event::WindowEvent{event, ..} => match &event {
+					WindowEvent::CursorMoved{..} => {
+						true
+					},
+					WindowEvent::KeyboardInput{input: KeyboardInput{state: ElementState::Pressed, virtual_keycode: Some(code), ..}, ..}
+						if self.keyboard_state.is_pressed(&code) => {
 						// Repeated key stroke
 						true
-				},
+					},
+					_ => false,
+				}
 				_ => false,
 			};
 			
 			if uninportant {
-				trace!("Event recieved: {:?}", e);
+				trace!("Event recieved: {:?}", event);
 			} else {
-				debug!("Event recieved: {:?}", e);
+				debug!("Event recieved: {:?}", event);
 			}
 			
-			let push = match &e {
-				&Event::MouseMoved(_, _) => true,
-				&Event::MouseInput(_, _) => true,
-				&Event::MouseWheel(_, _) => true,
-				&Event::KeyboardInput(_, _, _) => true,
-				&Event::ReceivedCharacter(_) => true,
+			let push = match &event {
+				Event::WindowEvent{event, ..} => match &event {
+					WindowEvent::CursorMoved{..} => true,
+					WindowEvent::MouseInput{..} => true,
+					WindowEvent::MouseWheel{..} => true,
+					WindowEvent::KeyboardInput{..} => true,
+					WindowEvent::ReceivedCharacter(_) => true,
+					_ => false,
+				}
 				_ => false,
 			};
 			if push {
-				events.push(e.clone());
+				events.push(event.clone());
 			}
 			
-			match e {
-				Event::Closed => {
-					self.running = false;
-				},
-				Event::MouseMoved(x, y) => {
-					if self.ignore_next_mouse_movement {
-						self.ignore_next_mouse_movement = false;
-					} else {
-						mouse_pos = Vector2::new(x, y);
-					}
-				},
-				Event::Focused(b) => {
-					if b {
-						info!("Window focused");
-					} else {
-						info!("Window unfocused");
-						self.focused = false;
-					}
-				},
-				Event::MouseInput(mouse_state, button) => {
-					if mouse_state == ElementState::Pressed && button == MouseButton::Left {
-						if !self.focused {
-							self.render.get_window().map(|w| w.set_cursor_position(mid.x, mid.y));
-							mouse_pos = mid;
-							self.ignore_next_mouse_movement = true;
-							self.focused = true;
+			match &event {
+				Event::WindowEvent{event, ..} => match &event {
+					WindowEvent::Destroyed => {
+						info!("Window destroyed");
+						self.running = false;
+					},
+					WindowEvent::CloseRequested => {
+						info!("Window close requested");
+						self.running = false;
+					},
+					WindowEvent::CursorMoved{position: LogicalPosition{x, y}, ..} => {
+						if self.ignore_next_mouse_movement {
+							self.ignore_next_mouse_movement = false;
+						} else {
+							mouse_pos = Vector2::new(*x, *y);
 						}
-					}
-				},
-				Event::Resized(_, _) => {
-					resized = true;
-				},
-				Event::Refresh => {
-					rerender = true;
-				},
-				Event::KeyboardInput(key_state, _, Some(code)) => {
-					self.keyboard_state.process_event(key_state, code);
-					if key_state == ElementState::Pressed {
-						if code == VirtualKeyCode::Escape {
-							self.focused = false;
-						} else if Some(code) == self.settings.physics_pause {
-							self.settings.paused = !self.settings.paused;
-							if self.settings.paused {
-								info!("Game paused");
-							} else {
-								info!("Game resumed");
-							}
-						} else if Some(code) == self.settings.physics_step {
-							if self.settings.paused {
-								self.settings.paused = false;
-								self.step = true;
-								info!("Game stepped");
-							}
-						} else if Some(code) == self.settings.reload_shaders {
-							reload_shaders = true;
-						} else if Some(code) == self.settings.reset_state {
-							info!("Resetting game state...");
-							let sw = Stopwatch::start();
-							self.current_state = (self.state_generator)(&ctx);
-							info!("Reset game state ({}ms)", sw.elapsed_ms());
-							self.skip_next_tick = true;
+					},
+					WindowEvent::Focused(b) => {
+						self.focused = *b;
+						if self.focused {
+							info!("Window focused");
+							self.render.input_reset();
+						} else {
+							info!("Window unfocused");
 						}
-					}
+					},
+					WindowEvent::MouseInput{state: mouse_state, button, ..} => {
+						if mouse_state == &ElementState::Pressed && button == &MouseButton::Left {
+							if !self.focused {
+								self.render.window().set_cursor_position(LogicalPosition::new(mid.x, mid.y)).ok();
+								mouse_pos = mid;
+								self.ignore_next_mouse_movement = true;
+								self.focused = true;
+							}
+						}
+					},
+					WindowEvent::Resized{..} => {
+						resized = true;
+					},
+					WindowEvent::Refresh => {
+						rerender = true;
+					},
+					WindowEvent::KeyboardInput{input: KeyboardInput{state: key_state, virtual_keycode: Some(code), ..}, ..} => {
+						let key_state = *key_state;
+						let code = *code;
+						self.keyboard_state.process_event(key_state, code);
+						if key_state == ElementState::Pressed {
+							if code == VirtualKeyCode::Escape {
+								self.focused = false;
+							} else if Some(code) == self.settings.physics_pause {
+								self.settings.paused = !self.settings.paused;
+								if self.settings.paused {
+									info!("Game paused");
+								} else {
+									info!("Game resumed");
+								}
+							} else if Some(code) == self.settings.physics_step {
+								if self.settings.paused {
+									self.settings.paused = false;
+									self.step = true;
+									info!("Game stepped");
+								}
+							} else if Some(code) == self.settings.reload_shaders {
+								reload_shaders = true;
+							} else if Some(code) == self.settings.reset_state {
+								info!("Resetting game state...");
+								let sw = Stopwatch::start();
+								self.current_state = (self.state_generator)(&ctx);
+								info!("Reset game state ({}ms)", sw.elapsed_ms());
+								self.skip_next_tick = true;
+							}
+						}
+					},
+					_ => {},
 				},
 				_ => {},
 			}
-		}
+		});
 		
 		// Reload shaders
 		if reload_shaders {
@@ -302,14 +325,14 @@ impl Game {
 		if self.focused {
 			mouse_pos - mid
 		} else {
-			Vector2::new(0, 0)
+			Vector2::new(0.0, 0.0)
 		}
 	}
 	
 	/// Ticks the game.
 	/// `dt` is the number of seconds since last frame.
 	/// `n` is the number of iterations to do.
-	pub fn tick(&mut self, dt: f32, n: u32, events: &mut Vec<Event>, mouse_moved: Vector2<i32>) {
+	pub fn tick(&mut self, dt: f32, n: u32, events: &mut Vec<Event>, mouse_moved: Vector2<f64>) {
 		if n == 0 {
 			return;
 		}

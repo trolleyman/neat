@@ -1,7 +1,17 @@
+
 extern crate neat;
+
+use std::process::exit;
+use std::io::{self, prelude::*};
 
 use neat::game::GameStateBuilder;
 
 pub fn main() {
-	neat::run(Box::new(GameStateBuilder::build_default));
+	match neat::run(Box::new(GameStateBuilder::build_default)) {
+		Ok(()) => {},
+		Err(e) => {
+			writeln!(io::stderr(), "Error: {}", e).ok();
+			exit(1);
+		}
+	}
 }

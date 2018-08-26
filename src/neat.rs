@@ -42,7 +42,7 @@ use settings::Settings;
 /// Runs `neat` with a custom [`GameState`](game/struct.GameState.html) generator.
 ///
 /// This will get the settings from the program's arguments.
-pub fn run<F>(generator: Box<F>) where for<'r> F: Fn(&'r Rc<Context>) -> GameState + 'static {
+pub fn run<F>(generator: Box<F>) -> Result<(), String> where for<'r> F: Fn(&'r Rc<Context>) -> GameState + 'static {
 	let settings = Settings::from_args();
 	let mut loggers: Vec<Box<SharedLogger>> = Vec::new();
 	let file_result = File::create(&settings.log_file);
@@ -56,10 +56,12 @@ pub fn run<F>(generator: Box<F>) where for<'r> F: Fn(&'r Rc<Context>) -> GameSta
 	
 	info!("Initialized logger");
 	
-	let mut g = Game::with_state_generator(settings, generator);
+	let mut g = Game::with_state_generator(settings, generator)
+		.map_err(|e| format!("Could not initialize game: {}", e))?;
 	info!("Initialized game");
 	
 	g.main_loop();
 	
 	info!("Program exited");
+	Ok(())
 }
