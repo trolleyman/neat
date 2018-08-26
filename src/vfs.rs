@@ -16,7 +16,7 @@ use image::{self, DynamicImage, ConvertBuffer};
 
 /// Gets the base directory for all of the vfs operations.
 fn try_get_base_dir() -> Result<PathBuf, String> {
-	::std::env::current_exe().and_then(|p| p.join("..").canonicalize()).map_err(|e| {
+	::std::env::current_exe().and_then(|p| p.join("../assets").canonicalize()).map_err(|e| {
 		format!("Unable to locate current executable: {}", e)
 	})
 }
