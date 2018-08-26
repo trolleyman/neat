@@ -194,7 +194,7 @@ pub struct Entity {
 }
 impl Entity {
 	pub fn new(world: &mut World<f32>, component: Component, collision: Collision, density: Option<f32>, restitution: f32, friction: f32) -> Entity {
-		Entity::with_matrix(world, vec![component], collision: Collision, Vector3::zero(), Vector3::zero(), Vector3::zero(), Vector3::zero(), density, restitution, friction)
+		Entity::with_matrix(world, vec![component], collision, Vector3::zero(), Vector3::zero(), Vector3::zero(), Vector3::zero(), density, restitution, friction)
 	}
 	
 	pub fn with_matrix(world: &mut World<f32>, mut components: Vec<Component>, collision: Collision, pos: Vector3<f32>, vel: Vector3<f32>, rot: Vector3<f32>, ang_vel: Vector3<f32>, density: Option<f32>, restitution: f32, friction: f32) -> Entity {

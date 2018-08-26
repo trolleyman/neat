@@ -12,12 +12,12 @@ pub use rand::Rng;
 /// Note: these functions should not be used when the Duration could be large, as they will be very innacurate
 pub trait DurationExt {
 	/// Returns the number of milliseconds in the Duration, rounded down
-	fn as_millis(&self) -> u64;
+	fn as_millis_u64(&self) -> u64;
 	/// Returns the number of seconds in the Duration, as a floating point number
 	fn as_secs_partial(&self) -> f64;
 }
 impl DurationExt for Duration {
-	fn as_millis(&self) -> u64 {
+	fn as_millis_u64(&self) -> u64 {
 		let secs = self.as_secs();
 		let subsec_millis = self.subsec_nanos() as u64 / 1_000_000;
 		(secs * 1000) + subsec_millis
@@ -46,7 +46,7 @@ impl Stopwatch {
 	}
 	/// Returns the duration elapsed since the stopwatch was started, in milliseconds.
 	pub fn elapsed_ms(&self) -> u64 {
-		self.start.elapsed().as_millis()
+		self.start.elapsed().as_millis_u64()
 	}
 	/// Returns the duration elapsed since the stopwatch was started, in seconds.
 	pub fn elapsed_secs(&self) -> f64 {

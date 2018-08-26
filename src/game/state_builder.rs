@@ -460,7 +460,7 @@ impl TickCallback for LightHandler {
 	fn tick(&mut self, state: &mut GameState, _dt: f32, _settings: &Settings, events: &[Event], _mouse_moved: Vector2<i32>) {
 		const PIXELS_PER_LINE: f32 = 16.0;
 		
-		let mut scroll = Vector2::zero();
+		let mut scroll: Vector2<f32> = Vector2::zero();
 		for e in events.iter() {
 			match e {
 				&Event::MouseWheel(MouseScrollDelta::LineDelta(x, y), _) => {

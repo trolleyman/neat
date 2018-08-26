@@ -36,7 +36,7 @@ pub struct Settings {
 	pub up       : VirtualKeyCode,
 	/// Move down key
 	pub down     : VirtualKeyCode,
-	/// They key to pause/resume the simulation
+	/// The key to pause/resume the simulation
 	pub physics_pause   : Option<VirtualKeyCode>,
 	/// The key to step the simulation
 	pub physics_step    : Option<VirtualKeyCode>,

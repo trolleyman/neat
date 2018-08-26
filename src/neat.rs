@@ -1,4 +1,5 @@
-#![feature(box_syntax, associated_consts, type_ascription)]
+//#![feature(box_syntax, type_ascription)]
+
 #[macro_use]
 extern crate glium;
 extern crate nalgebra as na;
@@ -46,7 +47,7 @@ pub fn run<F>(generator: Box<F>) where for<'r> F: Fn(&'r Rc<Context>) -> GameSta
 	let mut loggers: Vec<Box<SharedLogger>> = Vec::new();
 	let file_result = File::create(&settings.log_file);
 	match file_result {
-		Ok(f) => loggers.push(WriteLogger::new(settings.file_log_level, box BufWriter::new(f))),
+		Ok(f) => loggers.push(WriteLogger::new(settings.file_log_level, Box::new(BufWriter::new(f)))),
 		Err(e) => {let _ = writeln!(io::stderr(), "Error: Could not open log file '{}': {}", settings.log_file.display(), e); },
 	}
 	loggers.push(TermLogger::new(settings.term_log_level));

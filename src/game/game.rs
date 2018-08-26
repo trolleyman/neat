@@ -26,7 +26,7 @@ pub struct Game {
 impl Game {
 	/// Constructs a game with the specified settings, and the default game state.
 	pub fn new(settings: Settings) -> Game {
-		Game::with_state_generator(settings, box GameStateBuilder::build_default)
+		Game::with_state_generator(settings, Box::new(GameStateBuilder::build_default))
 	}
 	
 	/// Cosnstructs a game with the specified settings, and a custom game state generator.
@@ -128,7 +128,7 @@ impl Game {
 					lag -= physics_dt;
 				}
 				if n > 4 {
-					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis(), n);
+					warn!("Stutter detected ({}ms): {} iterations needed to catch up", elapsed.as_millis_u64(), n);
 				}
 				if !self.skip_next_tick {
 					self.tick(physics_dt.as_secs_partial() as f32, n, &mut events, mouse_moved);
