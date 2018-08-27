@@ -2,6 +2,7 @@ use prelude::*;
 use std::rc::Rc;
 use std::borrow::Cow;
 use std::process::exit;
+use std::collections::HashSet;
 
 use glium::{Blend, BlendingFunction, LinearBlendingFactor, Texture2d, Program, Surface, VertexBuffer, IndexBuffer, DrawParameters, BackfaceCullingMode};
 use glium::Rect as GlRect;
@@ -13,7 +14,7 @@ use unicode_normalization::UnicodeNormalization;
 
 use render::Color;
 use util;
-use vfs::{load_shader, load_font};
+use vfs;
 
 const SIZE: u32 = 8192;
 static EMPTY_TEXTURE_DATA: [u8; SIZE as usize * SIZE as usize] = [0; SIZE as usize * SIZE as usize];
@@ -63,7 +64,7 @@ impl FormatState {
 		let scale = Scale::uniform(scale);
 		let v_metrics = font.v_metrics(scale);
 		let y = y + v_metrics.ascent;
-		FormatState{
+		FormatState {
 			init_x: x,
 			
 			x: x,
@@ -83,10 +84,10 @@ impl FormatState {
 	/// Lays out a string and returns the positioned glyphs that the text represents.
 	/// 
 	/// Handles newlines (`'\n'`, `'\r'`, `'\r\n'`) properly. Doesn't perform wrapping
-	pub fn layout_text<'a, 'b>(&'b mut self, font: &Font<'a>, text: &str, glyphs: &mut Vec<(char, PositionedGlyph<'a>)>) {
+	pub fn layout_text<'a, 'f>(&'a mut self, ignorable_db: &'a IgnorableDatabase, font: &Font<'f>, text: &str, glyphs: &mut Vec<(char, PositionedGlyph<'f>)>) {
 		let mut cprev = None;
 		for c in normalize_line_endings(text.chars().nfc()) {
-			if let Some(glyph) = self.layout_char(&font, cprev, c) {
+			if let Some(glyph) = self.layout_char(ignorable_db, font, cprev, c) {
 				glyphs.push((c, glyph));
 				cprev = Some(c);
 			}
@@ -100,9 +101,9 @@ impl FormatState {
 	/// # Returns
 	/// - `Some(g)` If a printable glyph was returned
 	/// - `None` If c is an invisible character
-	fn layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
+	fn layout_char<'a, 'f>(&'a mut self, ignorable_db: &'a IgnorableDatabase, font: &Font<'f>, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'f>> {
 		// Unwrap is safe here as force_print is true
-		self.layout_char_imp(font, true, cprev, c).ok().unwrap()
+		self.layout_char_imp(ignorable_db, font, true, cprev, c).ok().unwrap()
 	}
 	
 	/// Lays out a char at the current posiion, and updates the current position.
@@ -114,8 +115,8 @@ impl FormatState {
 	/// - `Ok(None)` If c is an invisible character
 	/// - `Err(())` If a glyph could not be found in the font for c
 	#[allow(dead_code)]
-	fn try_layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> Result<Option<PositionedGlyph<'a>>, ()> {
-		self.layout_char_imp(font, false, cprev, c)
+	fn try_layout_char<'a, 'f>(&'a mut self, ignorable_db: &'a IgnorableDatabase, font: &Font<'f>, cprev: Option<char>, c: char) -> Result<Option<PositionedGlyph<'f>>, ()> {
+		self.layout_char_imp(ignorable_db, font, false, cprev, c)
 	}
 	
 	/// Lays out a char at the current posiion, and updates the current position.
@@ -128,9 +129,14 @@ impl FormatState {
 	/// - `Err(())` If a glyph could not be found in the font for c
 	/// 
 	/// If `force_print` is true, then replaces unknown glyphs with the `.notdef` glyph, i.e. never returns `Err(())`.
-	fn layout_char_imp<'a, 'b>(&'b mut self, font: &Font<'a>, force_print: bool, cprev: Option<char>, c: char) -> Result<Option<PositionedGlyph<'a>>, ()> {
+	fn layout_char_imp<'a, 'f>(&'a mut self, ignorable_db: &'a IgnorableDatabase, font: &Font<'f>, force_print: bool, cprev: Option<char>, c: char) -> Result<Option<PositionedGlyph<'f>>, ()> {
 		if c == '\n' || c == '\r' {
 			self.newline();
+			return Ok(None);
+		}
+		
+		if ignorable_db.is_char_default_ignorable(c) {
+			// Ignore char for rendering purposes
 			return Ok(None);
 		}
 		
@@ -173,12 +179,90 @@ impl FontVertex {
 
 implement_vertex!(FontVertex, pos, uv);
 
+pub struct IgnorableDatabase {
+	chars: HashSet<char>
+}
+impl IgnorableDatabase {
+	pub fn load() -> IgnorableDatabase {
+		fn char_from_hexstring(s: &str) -> Option<char> {
+			u32::from_str_radix(s, 16).ok().and_then(|cp| ::std::char::from_u32(cp))
+		}
+		
+		let mut chars = HashSet::new();
+		
+		match vfs::try_load_data_string("unicode/DerivedCoreProperties.txt") {
+			Ok(s) => {
+				for oline in s.lines() {
+					let mut line = oline;
+					line = line.trim_right();
+					if let Some(index) = line.find('#') {
+						line = &line[..index]
+					}
+					line = line.trim_right();
+					
+					if line == "" {
+						continue;
+					}
+					
+					let fields: Vec<_> = line.split(';').map(|l| l.trim()).collect();
+					if fields.len() != 2 {
+						warn!("Ignored weird line: {:?}", oline.trim());
+						continue;
+					}
+					
+					let chars_identifier = fields[0];
+					let property_name = fields[1];
+					if property_name != "Default_Ignorable_Code_Point" {
+						continue;
+					}
+					
+					if let Some(i) = line.find("..") {
+						// Range of chars
+						let from_s = &chars_identifier[..i];
+						let to_s = &chars_identifier[i+2..];
+						let from_c = char_from_hexstring(from_s);
+						let to_c = char_from_hexstring(to_s);
+						
+						if let (Some(from_c), Some(to_c)) = (from_c, to_c) {
+							trace!("Parsed ignorable char range from {} ({:?}) to {} ({:?})", from_s, from_c, to_s, to_c);
+							for c in from_c as u32 ..= to_c as u32 {
+								chars.insert(::std::char::from_u32(c).unwrap());
+							}
+						} else {
+							warn!("Ignoring invalid line: {:?}", oline.trim());
+						}
+					} else {
+						// Individual char
+						if let Some(c) = char_from_hexstring(chars_identifier) {
+							trace!("Parsed ignorable char: {:?}", c);
+							chars.insert(c);
+						} else {
+							warn!("Ignoring invalid line: {:?}", oline.trim());
+						}
+					}
+				}
+			},
+			Err(e) => warn!("Error: Could not load default ignorable characters database: {}", e),
+		}
+		
+		IgnorableDatabase {
+			chars
+		}
+	}
+	
+	pub fn is_char_default_ignorable(&self, c: char) -> bool {
+		self.chars.contains(&c)
+	}
+}
+
 /// Font rendering handler.
 pub struct FontRender {
 	ctx: Rc<Context>,
 	cache: Cache<'static>,
 	
 	font: Font<'static>,
+	
+	ignorable_db: IgnorableDatabase,
 	
 	font_tex: Texture2d,
 	shader: Program,
@@ -188,9 +272,11 @@ impl FontRender {
 	/// 
 	/// Loads the default font from the filesystem.
 	pub fn new(ctx: Rc<Context>) -> FontRender {
-		let shader = load_shader(&ctx, "font");
+		let ignorable_db = IgnorableDatabase::load();
 		
-		let font = load_font("consolas.ttf", 0);
+		let shader = vfs::load_shader(&ctx, "font");
+		
+		let font = vfs::load_font("consolas.ttf", 0);
 		
 		let img = RawImage2d {
 			data  : Cow::Borrowed(&EMPTY_TEXTURE_DATA as &[u8]),
@@ -219,6 +305,8 @@ impl FontRender {
 			
 			font,
 			
+			ignorable_db,
+			
 			font_tex,
 			shader,
 		}
@@ -229,7 +317,7 @@ impl FontRender {
 		//println!("Rendering string: {}", s);
 		let mut state = FormatState::new(x, y, scale, &self.font);
 		let mut glyphs = Vec::new();
-		state.layout_text(&self.font, s, &mut glyphs);
+		state.layout_text(&self.ignorable_db, &self.font, s, &mut glyphs);
 		
 		let size = (screen_w, screen_h);
 		draw_glyphs(&self.ctx, surface, &self.shader, &mut self.font_tex, &mut self.cache, size, &glyphs, color);
@@ -268,9 +356,9 @@ fn cache_glyphs<'a>(font_tex: &mut Texture2d, cache: &mut Cache<'a>, glyphs: &[(
 	if n > 0 {
 		let s: String = glyphs.iter().map(|&(c, _)| c).collect();
 		if n == 1 {
-			warn!("{} cache miss while rendering '{}'", n, s)
+			warn!("{} cache miss while rendering {:?}", n, s);
 		} else {
-			warn!("{} cache misses while rendering '{}'", n, s)
+			warn!("{} cache misses while rendering {:?}", n, s);
 		}
 	}
 	ret

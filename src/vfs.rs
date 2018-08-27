@@ -16,18 +16,22 @@ use image::{self, DynamicImage, ConvertBuffer};
 
 /// Gets the base directory for all of the vfs operations.
 fn try_get_base_dir() -> Result<PathBuf, String> {
-	::std::env::current_exe().and_then(|p| p.join("../assets").canonicalize()).map_err(|e| {
-		format!("Unable to locate current executable: {}", e)
-	})
+	let mut path = ::std::env::current_exe()
+		.map_err(|e| format!("unable to locate current executable: {}", e))?;
+	
+	path.pop();
+	path.push("assets");
+	assert_is_dir(&path)?;
+	Ok(path)
 }
 
 /// Returns Err if the `path` is not a directory with a custom error message.
 fn assert_is_dir<P: AsRef<Path>>(path: P) -> Result<(), String> {
 	let path = path.as_ref();
 	if !path.exists() {
-		Err(format!("'{}' does not exist.", path.display()))
+		Err(format!("directory does not exist: '{}'", path.display()))
 	} else if !path.is_dir() {
-		Err(format!("'{}' is not a directory.", path.display()))
+		Err(format!("not a directory: '{}'", path.display()))
 	} else {
 		Ok(())
 	}
@@ -46,12 +50,12 @@ fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 	
 	let path = path.as_ref();
 	if !path.exists() {
-		return Err(format!("The file '{}' does not exist.", path.display()));
+		return Err(format!("file does not exist: '{}'", path.display()));
 	} else if !path.is_file() {
-		return Err(format!("'{}' is not a file.", path.display()));
+		return Err(format!("not a file: '{}'", path.display()));
 	}
 	get_contents(path).map_err(|e| {
-		format!("Unreadable file '{}': {}", path.display(), e)
+		format!("unreadable file '{}': {}", path.display(), e)
 	})
 }
 
@@ -59,22 +63,32 @@ fn try_read_file_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
 ///
 /// Returns a custom error message on failure.
 fn try_read_file_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
-	fn get_contents(path: &Path) -> io::Result<String> {
-		let mut f = File::open(path)?;
-		let mut contents = String::with_capacity(f.metadata()?.len() as usize + 1);
-		f.read_to_string(&mut contents)?;
-		Ok(contents)
-	}
-	
 	let path = path.as_ref();
-	if !path.exists() {
-		return Err(format!("The file '{}' does not exist.", path.display()));
-	} else if !path.is_file() {
-		return Err(format!("'{}' is not a file.", path.display()));
+	let bytes = try_read_file_bytes(path)?;
+	String::from_utf8(bytes)
+		.map_err(|e| format!("unreadable file '{}': {}", path.display(), e))
+}
+
+/// Tries to load an arbitrary data file from the `assets/` folder as bytes.
+pub fn try_load_data_bytes<P: AsRef<Path>>(path: P) -> Result<Vec<u8>, String> {
+	fn inner_try(path: &Path) -> Result<Vec<u8>, String> {
+		let base_dir = try_get_base_dir()?;
+		try_read_file_bytes(base_dir.join(path))
 	}
-	get_contents(path).map_err(|e| {
-		format!("Unreadable file '{}': {}", path.display(), e)
-	})
+	let path = path.as_ref();
+	inner_try(path)
+		.map_err(|e| format!("could not load data file '{}': {}", path.display(), e))
+}
+
+/// Tries to load an arbitrary data file from the `assets/` folder as a string.
+pub fn try_load_data_string<P: AsRef<Path>>(path: P) -> Result<String, String> {
+	fn inner_try(path: &Path) -> Result<String, String> {
+		let base_dir = try_get_base_dir()?;
+		try_read_file_string(base_dir.join(path))
+	}
+	let path = path.as_ref();
+	inner_try(path)
+		.map_err(|e| format!("could not load data file '{}': {}", path.display(), e))
 }
 
 /// Loads the shader `name` from the `shaders/` folder.
@@ -106,7 +120,7 @@ pub fn load_shader(ctx: &Rc<Context>, name: &str) -> Program {
 /// 
 /// Returns an `Err` if the shader cannot be found or is invalid.
 pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
-	fn try(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
+	fn inner_try(ctx: &Rc<Context>, name: &str) -> Result<Program, String> {
 		let base_dir = try_get_base_dir()?;
 		
 		let name = String::from(name);
@@ -118,13 +132,13 @@ pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String>
 		
 		let frag = try_read_file_string(shaders_dir.join(name.clone() + ".frag"))?;
 		
-		trace!("Compiling shader '{}'...", name);
+		debug!("Compiling shader '{}'...", name);
 		match Program::from_source(ctx, &vert, &frag, None) {
 			Ok(p) => Ok(p),
-			Err(e) => Err(format!("Compilation error:\n{}", e)),
+			Err(e) => Err(format!("compilation error:\n{}", e)),
 		}
 	}
-	try(ctx, name).map_err(|e| format!("Cannot load shader '{}': {}", name, e))
+	inner_try(ctx, name).map_err(|e| format!("cannot load shader '{}': {}", name, e))
 }
 
 /// Loads the font `name` at `index` from a file in the `fonts/` folder.
@@ -144,18 +158,19 @@ pub fn load_font(name: &str, index: usize) -> Font<'static> {
 /// 
 /// Returns an `Err` if the font is not valid.
 pub fn try_load_font(name: &str, index: usize) -> Result<Font<'static>, String> {
-	fn try(name: &str, index: usize) -> Result<Font<'static>, String> {
+	fn inner_try(name: &str, index: usize) -> Result<Font<'static>, String> {
 		let base_dir = try_get_base_dir()?;
 		let fonts_dir = base_dir.join("fonts");
+		assert_is_dir(&fonts_dir)?;
 		let font_path = fonts_dir.join(name);
 		let bytes = try_read_file_bytes(&font_path)?;
 		
 		let collection = FontCollection::from_bytes(bytes)
-			.map_err(|e| format!("Invalid font: {}", e))?;
+			.map_err(|e| format!("invalid font: {}", e))?;
 		collection.font_at(index)
-			.map_err(|e| format!("Invalid font at index {}: {}", index, e))
+			.map_err(|e| format!("invalid font at index {}: {}", index, e))
 	}
-	try(name, index).map_err(|e| format!("Cannot load font '{}': {}", name, e))
+	inner_try(name, index).map_err(|e| format!("cannot load font '{}': {}", name, e))
 }
 
 /// Loads the texture `name` from a file in the `textures/` folder and uploads it to OpenGL.
@@ -175,9 +190,10 @@ pub fn load_texture(ctx: &Rc<Context>, name: &str) -> Texture2d {
 /// 
 /// Returns an `Err` if the texture could not be found, the texture was invalid, or it could not be uploaded to OpenGL.
 pub fn try_load_texture(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
-	fn try(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
+	fn inner_try(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, String> {
 		let base_dir = try_get_base_dir()?;
 		let textures_dir = base_dir.join("textures");
+		assert_is_dir(&textures_dir)?;
 		let texture_path = textures_dir.join(name);
 		let bytes = try_read_file_bytes(&texture_path)?;
 		
@@ -194,5 +210,5 @@ pub fn try_load_texture(ctx: &Rc<Context>, name: &str) -> Result<Texture2d, Stri
 		let img = RawImage2d::from_raw_rgba(img_buffer.into_raw(), dimensions);
 		Texture2d::new(ctx, img).map_err(|e| format!("{}", e))
 	}
-	try(ctx, name).map_err(|e| format!("Cannot load texture '{}': {}", name, e))
+	inner_try(ctx, name).map_err(|e| format!("cannot load texture '{}': {}", name, e))
 }
