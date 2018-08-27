@@ -5,6 +5,7 @@ use std::cell::RefCell;
 
 use glutin::{KeyboardInput, ElementState, Event, WindowEvent};
 use np::world::World;
+use np::object::RigidBody;
 
 use game::{KeyboardState, Entity, EntityBuilder};
 use render::{Camera, Render, Light};
@@ -103,13 +104,28 @@ impl GameState {
 	}
 	
 	/// Gets a reference to the entity with the specified id
-	pub fn get_entity<'a>(&'a self, id: &EntityId) -> Option<&'a Entity> {
-		self.entities.get(id)
+	pub fn get_entity(&self, id: EntityId) -> Option<&Entity> {
+		self.entities.get(&id)
 	}
 	
 	/// Gets a mutable reference to the entity with the specified id
-	pub fn get_entity_mut<'a>(&'a mut self, id: &EntityId) -> Option<&'a mut Entity> {
-		self.entities.get_mut(id)
+	pub fn get_entity_mut(&mut self, id: EntityId) -> Option<&mut Entity> {
+		self.entities.get_mut(&id)
+	}
+	
+	/// Gets a reference to the entity's body with the specified id
+	pub fn get_entity_rigid_body(&self, id: EntityId) -> Option<&RigidBody<f32>> {
+		self.entities.get(&id).and_then(|e| self.world.rigid_body(e.body()))
+	}
+	
+	/// Gets a mutable reference to the entity's body with the specified id
+	pub fn get_entity_rigid_body_mut<'a>(&'a mut self, id: EntityId) -> Option<&'a mut RigidBody<f32>> {
+		let body = self.entities.get(&id).map(|e| e.body());
+		if let Some(body) = body {
+			self.world.rigid_body_mut(body)
+		} else {
+			None
+		}
 	}
 	
 	/// Remove an entity from the simulation.
@@ -201,7 +217,8 @@ impl GameState {
 			}
 			
 			// Tick world
-			self.world.step(dt);
+			self.world.set_timestep(dt);
+			self.world.step();
 		}
 	}
 	
@@ -216,30 +233,32 @@ impl GameState {
 			};
 			for b_id in ids.clone() {
 				let f = {
-					let a = self.get_entity(&a_id).map(|b| b.body().borrow()).unwrap();
-					let b = self.get_entity(&b_id).map(|b| b.body().borrow()).unwrap();
+					let a = self.world.rigid_body(self.entities[&a_id].body());
+					let b = self.world.rigid_body(self.entities[&b_id].body());
 					
-					if !a.can_move() && !b.can_move() {
-						continue;
-					}
-					let (a_mass, b_mass) = {
-						if a.inv_mass() == 0.0 || b.inv_mass() == 0.0 {
+					if let (Some(a), Some(b)) = (a, b) {
+						if a.is_static() && b.is_static() {
 							continue;
 						}
-						(1.0 / a.inv_mass(), 1.0 / b.inv_mass())
-					};
-					
-					// Get unit vector from a to b 
-					let mut v = b.position().translation - a.position().translation;
-					let len_sq = v.norm_squared();
-					v = v / len_sq.sqrt();
-					
-					// Calc force.
-					v * ((g * a_mass * b_mass) / len_sq)
+						let a_mass = a.augmented_mass().mass();
+						let b_mass = b.augmented_mass().mass();
+						
+						// Get unit vector from a to b 
+						let mut v = b.position().translation.vector - a.position().translation.vector;
+						let len_sq = v.norm_squared();
+						v = v / len_sq.sqrt();
+						
+						// Calc force.
+						let lin_force = v * ((g * a_mass * b_mass) / len_sq);
+						Force3::linear(lin_force)
+					} else {
+						continue;
+					}
 				};
 				// Apply force
-				self.entities.get_mut(&a_id).map(|e| e.body().borrow_mut().apply_central_impulse(f));
-				self.entities.get_mut(&b_id).map(|e| e.body().borrow_mut().apply_central_impulse(-f));
+				self.world.rigid_body_mut(self.entities[&a_id].body()).unwrap().apply_force(&f);
+				let f = Force3::linear(-f.linear);
+				self.world.rigid_body_mut(self.entities[&b_id].body()).unwrap().apply_force(&f);
 			}
 		}
 	}
@@ -254,7 +273,7 @@ impl GameState {
 		r.set_wireframe_mode(self.wireframe_mode);
 		
 		for e in self.entities.values() {
-			e.render(r);
+			e.render(&self.world, r);
 		}
 		
 		r.draw_str(&format!("{} FPS", fps), 10.0, 10.0, FONT_SIZE);

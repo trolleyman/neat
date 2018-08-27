@@ -191,7 +191,7 @@ impl Render {
 	/// Resizes the renderer to the current framebuffer's dimensions.
 	pub fn resize(&mut self) {
 		let (w, h) = self.frame.get_dimensions();
-		self.projection = Perspective3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_matrix();
+		self.projection = Perspective3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_homogeneous();
 	}
 	
 	/// Tries to grab the focus of the window. If it does it also sets the cursor grabbing state.
@@ -284,8 +284,8 @@ impl Render {
 		let v = self.camera.view_matrix();
 		let p = self.projection;
 		let mvp = p * v * m;
-		let v_inv = self.camera.view_matrix().inverse().unwrap_or(Matrix4::one());
-		let normal_mat = m.inverse().unwrap_or(Matrix4::one()).transpose();
+		let v_inv = self.camera.view_matrix().try_inverse().unwrap_or(Matrix4::one());
+		let normal_mat = m.try_inverse().unwrap_or(Matrix4::one()).transpose();
 		
 		let uniforms = UniformsStorage::new("mvp", *mvp.as_ref());
 		let uniforms = uniforms.add("model"     , *m.as_ref());

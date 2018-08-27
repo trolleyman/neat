@@ -141,11 +141,7 @@ impl SimpleMesh {
 		// Now scale vertices to proper locations.
 		// (by normalising them)
 		for v in vs.iter_mut() {
-			let pos: Vector3<f32> = {
-				let add: &[f32;3] = &v.pos;
-				let into: &Vector3<f32> = add.into();
-				*into
-			};
+			let pos: Vector3<f32> = Vector3::new(v.pos[0], v.pos[1], v.pos[2]);
 			*v = SimpleVertex::from(pos.normalize());
 		}
 	}

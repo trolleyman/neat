@@ -16,9 +16,9 @@ doc = false
 [dependencies]
 glium = "0.22.*"
 num = "0.2.*"
-nalgebra = "0.8.*"
-ncollide = "0.8.*"
-nphysics3d = "0.3.*"
+nalgebra = "0.16.0"
+ncollide3d = "0.17.1"
+nphysics3d = "0.9.1"
 unicode-normalization = "0.1.2"
 log = "0.4.4"
 simplelog = { git = "https://github.com/trolleyman/simplelog.rs" }

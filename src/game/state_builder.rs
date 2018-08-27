@@ -81,17 +81,17 @@ impl GameStateBuilder {
 		info!("SUN    : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			SUN_VEL,
 			1.0,
-			1.0 / state.get_entity(&sun).unwrap().body().borrow().inv_mass(),
+			1.0 / state.get_entity_rigid_body(sun).unwrap().augmented_mass().mass(),
 			SUN_RADIUS);
 		info!("EARTH  : vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			EARTH_VEL,
 			EARTH_SCALE,
-			1.0 / state.get_entity(&earth).unwrap().body().borrow().inv_mass(),
+			1.0 / state.get_entity_rigid_body(earth).unwrap().augmented_mass().mass(),
 			EARTH_RADIUS);
 		info!("MERCURY: vel: {:6.2}, scale: {:.4}, mass: {:6.2}, radius: {:.4}",
 			MERCURY_VEL,
 			MERCURY_SCALE,
-			1.0 / state.get_entity(&mercury).unwrap().body().borrow().inv_mass(),
+			1.0 / state.get_entity_rigid_body(mercury).unwrap().augmented_mass().mass(),
 			MERCURY_RADIUS);
 		
 		state
@@ -111,49 +111,42 @@ impl GameStateBuilder {
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), red.clone()))
-			.pos(Vector3::new(0.0, 0.0,  0.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
+			.pos(Vector3::new(0.0, 0.0, 0.0))
 			.build(&mut state);
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), green.clone()))
 			.pos(Vector3::new(3.0, 0.0, 0.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
 			.ang_vel(Vector3::new(1.0, 0.0, 0.0))
 			.build(&mut state);
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), blue.clone()))
 			.pos(Vector3::new(6.0, 0.0,  0.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
 			.ang_vel(Vector3::new(2.0, 0.0, 0.0))
 			.build(&mut state);
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), green.clone()))
 			.pos(Vector3::new(0.0, 3.0, 0.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
 			.ang_vel(Vector3::new(0.0, 1.0, 0.0))
 			.build(&mut state);
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), blue.clone()))
-			.pos(Vector3::new(0.0, 6.0,  0.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
+			.pos(Vector3::new(0.0, 6.0, 0.0))
 			.ang_vel(Vector3::new(0.0, 2.0, 0.0))
 			.build(&mut state);
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), green.clone()))
 			.pos(Vector3::new(0.0, 0.0, 3.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
 			.ang_vel(Vector3::new(0.0, 0.0, 1.0))
 			.build(&mut state);
 		
 		EntityBuilder::new(1.0, 0.9, 0.1)
 			.component(Component::new(Ball::new(1.0), blue.clone()))
-			.pos(Vector3::new(0.0, 0.0,  6.0))
-			.rot(Vector3::new(0.0, 0.0, 0.0))
+			.pos(Vector3::new(0.0, 0.0, 6.0))
 			.ang_vel(Vector3::new(0.0, 0.0, 2.0))
 			.build(&mut state);
 		
@@ -211,22 +204,22 @@ impl GameStateBuilder {
 		// Plane +X
 		EntityBuilder::new_static(0.1, 0.5)
 			.component(Component::new(Cuboid::new(he), green.clone()))
-			.rot(Vector3::new(0.0, 0.0, -ANG))
+			.rot(Rotation3::from_euler_angles(0.0, 0.0, -ANG))
 			.build(&mut state);
 		// Plane +Z
 		EntityBuilder::new_static(0.1, 0.5)
 			.component(Component::new(Cuboid::new(he), blue .clone()))
-			.rot(Vector3::new(-ANG, 0.0, 0.0))
+			.rot(Rotation3::from_euler_angles(-ANG, 0.0, 0.0))
 			.build(&mut state);
 		// Plane -X
 		EntityBuilder::new_static(0.1, 0.5)
 			.component(Component::new(Cuboid::new(he), green.clone()))
-			.rot(Vector3::new(0.0, 0.0, ANG)).
+			.rot(Rotation3::from_euler_angles(0.0, 0.0, ANG)).
 			build(&mut state);
 		// Plane -Y
 		EntityBuilder::new_static(0.1, 0.5)
 			.component(Component::new(Cuboid::new(he), blue .clone()))
-			.rot(Vector3::new(ANG, 0.0, 0.0)).
+			.rot(Rotation3::from_euler_angles(ANG, 0.0, 0.0)).
 			build(&mut state);
 		
 		// Gen balls at top

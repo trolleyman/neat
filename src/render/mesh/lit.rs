@@ -102,7 +102,7 @@ impl LitMesh {
 		let start = vs.len();
 		LitMesh::gen_dodec(vs, is, detail);
 		for i in start..vs.len() {
-			Into::<&mut Vector3<f32>>::into(&mut vs[i].pos).normalize_mut();
+			Vector3::<f32>::from(vs[i].pos).normalize_mut();
 			vs[i].normal = vs[i].pos;
 		}
 	}

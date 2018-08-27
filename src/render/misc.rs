@@ -37,12 +37,12 @@ impl Light {
 	pub fn new_point_light(pos: Vector3<f32>, diffuse: Vector4<f32>, specular: Vector4<f32>,
 	                       constant_attenuation: f32, linear_attenuation: f32, quadratic_attenuation: f32) -> Light {
 		Light {
-			pos: pos.to_point().to_homogeneous().to_vector(),
-			diffuse: diffuse,
-			specular: specular,
-			constant_attenuation : constant_attenuation,
-			linear_attenuation   : linear_attenuation,
-			quadratic_attenuation: quadratic_attenuation,
+			pos: Point3::<f32>::from_coordinates(pos).to_homogeneous(),
+			diffuse,
+			specular,
+			constant_attenuation,
+			linear_attenuation,
+			quadratic_attenuation,
 			
 			spot_cutoff: util::to_rad(180.0),
 			spot_exponent: 0.0,
@@ -58,7 +58,7 @@ impl Light {
 	                     constant_attenuation: f32, linear_attenuation: f32, quadratic_attenuation: f32,
 	                     cutoff: f32, exponent: f32) -> Light {
 		Light {
-			pos: pos.to_point().to_homogeneous().to_vector(),
+			pos: Point3::<f32>::from_coordinates(pos).to_homogeneous(),
 			diffuse : diffuse,
 			specular: specular,
 			constant_attenuation : constant_attenuation,
@@ -109,9 +109,9 @@ impl Material {
 	}
 	/// Returns a copy of the material, but with ambient, diffuse and specular reflection scaled by a color.
 	pub fn with_scale_rgba(mut self, scale: Vector4<f32>) -> Material {
-		self.ambient  = self.ambient  * scale;
-		self.diffuse  = self.diffuse  * scale;
-		self.specular = self.specular * scale;
+		self.ambient = self.ambient.component_mul(&scale);
+		self.diffuse = self.diffuse.component_mul(&scale);
+		self.specular = self.specular.component_mul(&scale);
 		self
 	}
 }

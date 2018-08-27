@@ -33,8 +33,8 @@ impl Camera {
 			view_mat
 		} else {
 			let pos = util::mat4_translation(-self.pos);
-			let rot_y = Rotation3::new_with_euler_angles(-self.yrot, 0.0, 0.0).to_homogeneous();
-			let rot_x = Rotation3::new_with_euler_angles(0.0, -self.xrot, 0.0).to_homogeneous();
+			let rot_y = Rotation3::from_euler_angles(-self.yrot, 0.0, 0.0).to_homogeneous();
+			let rot_x = Rotation3::from_euler_angles(0.0, -self.xrot, 0.0).to_homogeneous();
 			rot_y * rot_x * pos
 		};
 		self.view_mat = Some(mat);

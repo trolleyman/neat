@@ -1,8 +1,19 @@
 //! A prelude imported into all files because I'm lazy.
 pub use std::time::{Instant, Duration};
 
-pub use na::{Point2, Point3, Point4, Vector2, Vector3, Vector4, Matrix3, Matrix4, UnitQuaternion, Rotation3, Isometry3, Similarity3, Perspective3};
-pub use na::{Eye, Inverse, Transpose, Norm, Cross, ToHomogeneous, FromHomogeneous};
+pub use na::{
+	Point2, Point3, Point4,
+	RowVector2, RowVector3, RowVector4,
+	Vector2, Vector3, Vector4,
+	Matrix3, Matrix4,
+	Translation,
+	UnitQuaternion, Rotation3, Isometry3, Similarity3, Perspective3,
+};
+pub use np::algebra::{
+	Force2, Force3,
+	Velocity2, Velocity3,
+};
+
 pub use num::{Zero, One};
 pub use glium::backend::Context;
 pub use rand::Rng;
