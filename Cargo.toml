@@ -8,6 +8,11 @@ build = "build/build.rs"
 name = "neat"
 path = "src/neat.rs"
 
+[[bin]]
+name = "neat"
+path = "src/main.rs"
+doc = false
+
 [dependencies]
 glium = "0.22.*"
 num = "0.2.*"
@@ -25,18 +30,12 @@ rand = "0.3.14"
 version = "0.7.*"
 features = ["gpu_cache"]
 
-[target.'cfg(target_os = "windows")'.dependencies]
+[target.'cfg(windows)'.dependencies]
 user32-sys = "*"
 
-[target.'cfg(target_os = "macos")'.dependencies]
 
-
-[target.'cfg(target_os = "linux")'.dependencies]
-
-[[bin]]
-name = "neat"
-path = "src/main.rs"
-doc = false
+[profile.dev]
+opt-level = 2
 
 # Examples generally increase in order of when they were added, which coincidentally
 # is also their order of complexity.
