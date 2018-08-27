@@ -183,6 +183,21 @@ impl GameStateBuilder {
 			.vel(Vector3::new(-1.0, 1.0, 1.0))
 			.build(&mut state);
 		
+		state.set_render_callback(Some(Rc::new(RefCell::new(move |state: &mut GameState, r: &mut Render, _fps: u32| {
+			use std::fmt::Write;
+			
+			let mut s = "\n=== Entities ===\n".to_string();
+			for (i, e) in state.entities.iter() {
+				if let Some(body) = state.world.rigid_body(e.body()) {
+					let pos = body.position().translation.vector;
+					let vel = body.velocity().linear;
+					let mass = body.augmented_mass().mass();
+					writeln!(&mut s, "{}: mass: {:.2}, pos:[{:.2}, {:.2}, {:.2}], vel:[{:.2}, {:.2}, {:.2}]", i, mass, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z).ok();
+				}
+			}
+			r.draw_str(&s, 10.0, 10.0, 20.0);
+		}))));
+		
 		state
 	}
 	

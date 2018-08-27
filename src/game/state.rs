@@ -45,10 +45,10 @@ impl<F> RenderCallback for F where F: FnMut(&mut GameState, &mut Render, u32) {
 
 /// Holds the state of the game
 pub struct GameState {
-	world: World<f32>,
+	pub world: World<f32>,
 	gravity: Gravity,
 	next_free_id: EntityId,
-	entities: HashMap<EntityId, Entity>,
+	pub entities: HashMap<EntityId, Entity>,
 	keyboard_state: KeyboardState,
 	camera: Camera,
 	light: Light,
