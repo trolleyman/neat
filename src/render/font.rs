@@ -7,7 +7,7 @@ use glium::{Blend, BlendingFunction, LinearBlendingFactor, Texture2d, Program, S
 use glium::Rect as GlRect;
 use glium::index::PrimitiveType;
 use glium::texture::{RawImage2d, ClientFormat, MipmapsOption};
-use rusttype::*;
+use rusttype::{Font, PositionedGlyph, GlyphId, IntoGlyphId, Rect, Scale, VMetrics, point};
 use rusttype::gpu_cache::{Cache, CacheWriteErr};
 use unicode_normalization::UnicodeNormalization;
 
@@ -18,10 +18,39 @@ use vfs::{load_shader, load_font};
 const SIZE: u32 = 8192;
 static EMPTY_TEXTURE_DATA: [u8; SIZE as usize * SIZE as usize] = [0; SIZE as usize * SIZE as usize];
 
+mod line_endings {
+	use std::iter::Peekable;
+	
+	struct EndingIterator<I: Iterator<Item=char>> {
+		it: Peekable<I>
+	}
+	impl<I: Iterator<Item=char>> Iterator for EndingIterator<I> {
+		type Item = char;
+		fn next(&mut self) -> Option<char> {
+			if let Some(c) = self.it.next() {
+				let cnext = self.it.peek().map(|&c| c);
+				match (c, cnext) {
+					('\r', Some('\n')) => self.it.next(), // Skip '\r'
+					('\r', _) => Some('\n'), // Replace with '\n'
+					_ => Some(c), // Keep as-is
+				}
+			} else {
+				None
+			}
+		}
+	}
+	
+	pub fn normalize_line_endings<I: Iterator<Item=char>>(it: I) -> impl Iterator<Item=char> {
+		EndingIterator {
+			it: it.peekable()
+		}
+	}
+}
+use self::line_endings::normalize_line_endings;
+
 /// The state of the formatter
 struct FormatState {
 	init_x: f32,
-	_init_y: f32,
 	
 	pub x: f32,
 	pub y: f32,
@@ -36,7 +65,6 @@ impl FormatState {
 		let y = y + v_metrics.ascent;
 		FormatState{
 			init_x: x,
-			_init_y: y,
 			
 			x: x,
 			y: y,
@@ -52,34 +80,67 @@ impl FormatState {
 		self.y = self.y + self.v_metrics.descent + self.v_metrics.ascent + self.v_metrics.line_gap;
 	}
 	
-	/// Lays out a char at the current posiion, and updated the current position to be after it.
+	/// Lays out a string and returns the positioned glyphs that the text represents.
+	/// 
+	/// Handles newlines properly. Doesn't perform wrapping
+	pub fn layout_text<'a, 'b>(&'b mut self, font: &Font<'a>, text: &str, glyphs: &mut Vec<(char, PositionedGlyph<'a>)>) {
+		let mut cprev = None;
+		for c in normalize_line_endings(text.chars().nfc()) {
+			let glyph = self.layout_char(&font, cprev, c);
+			glyphs.push((c, glyph));
+			cprev = Some(c);
+		}
+	}
+	
+	/// Lays out a char at the current posiion, and updates the current position to be after it.
 	/// 
 	/// Handles newlines properly.
+	fn layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> PositionedGlyph<'a> {
+		// Unwrap is safe here as force_print is true
+		self.layout_char_imp(font, true, cprev, c).unwrap()
+	}
+	
+	/// Lays out a char at the current posiion, and updates the current position to be after it.
 	/// 
-	/// Returns None if the char does not have a glyph.
-	pub fn layout_char<'a, 'b>(&'b mut self, font: &'a Font, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
-		let c = match (cprev, c) {
-			(Some('\r'), '\n') => {
-				self.newline();
-				None
-			},
-			(Some('\n'), _) | (Some('\r'), _) => {
-				self.newline();
-				Some(c)
-			},
-			(_, _) => {
-				Some(c)
-			},
-		};
-		if let Some(glyph) = c.and_then(|c| font.glyph(c)) {
-			let scaled = glyph.scaled(self.scale);
-			let advance = scaled.h_metrics().advance_width;
-			let positioned = scaled.positioned(point(self.x, self.y));
-			self.x += advance;
-			Some(positioned)
-		} else {
-			None
+	/// Handles newlines.
+	/// 
+	/// Returns `None` if the char does not have a glyph for the character supplied.
+	#[allow(dead_code)]
+	fn try_layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
+		self.layout_char_imp(font, false, cprev, c)
+	}
+	
+	/// Lays out a char at the current posiion, and updated the current position to be after it.
+	/// 
+	/// Handles newlines.
+	/// 
+	/// If `force_print` is true, then always prints a glyph, even if the character could not be found.
+	/// If not, returns `None` if the char does not have a glyph for the character supplied.
+	fn layout_char_imp<'a, 'b>(&'b mut self, font: &Font<'a>, force_print: bool, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
+		if c == '\n' {
+			self.newline();
 		}
+		
+		let glyph_id = c.into_glyph_id(font);
+		if force_print && glyph_id == GlyphId(0) {
+			return None;
+		}
+		let glyph = font.glyph(glyph_id);
+		
+		let scaled = glyph.scaled(self.scale);
+		let advance = scaled.h_metrics().advance_width;
+		
+		// Apply kerning
+		match (cprev, c) {
+			(Some(cprev), c) => {
+				self.x += font.pair_kerning(self.scale, cprev, c);
+			},
+			_ => {}
+		};
+		
+		let positioned = scaled.positioned(point(self.x, self.y));
+		self.x += advance;
+		Some(positioned)
 	}
 }
 
@@ -102,10 +163,9 @@ implement_vertex!(FontVertex, pos, uv);
 /// Font rendering handler.
 pub struct FontRender {
 	ctx: Rc<Context>,
-	cache: Cache,
+	cache: Cache<'static>,
 	
-	font_collection: FontCollection<'static>,
-	font_index: usize,
+	font: Font<'static>,
 	
 	font_tex: Texture2d,
 	shader: Program,
@@ -117,10 +177,7 @@ impl FontRender {
 	pub fn new(ctx: Rc<Context>) -> FontRender {
 		let shader = load_shader(&ctx, "font");
 		
-		const FONT_PATH: &'static str = "consolas.ttf";
-		const FONT_INDEX: usize = 0;
-		
-		let font_collection = load_font(FONT_PATH, FONT_INDEX);
+		let font = load_font("consolas.ttf", 0);
 		
 		let img = RawImage2d {
 			data  : Cow::Borrowed(&EMPTY_TEXTURE_DATA as &[u8]),
@@ -137,40 +194,29 @@ impl FontRender {
 			},
 		};
 		
+		let cache = Cache::builder()
+			.dimensions(SIZE, SIZE)
+			.pad_glyphs(true)
+			.multithread(false)
+			.build();
+		
 		FontRender {
-			ctx: ctx,
-			cache: Cache::new(SIZE, SIZE, 0.1, 1.0),
+			ctx,
+			cache,
 			
-			font_collection: font_collection,
-			font_index: FONT_INDEX,
+			font,
 			
-			font_tex: font_tex,
-			shader: shader,
+			font_tex,
+			shader,
 		}
 	}
 	
 	/// Draw a string at x, y on the screen scaled by scale.
 	pub fn draw_str<S: Surface>(&mut self, surface: &mut S, s: &str, x: f32, y: f32, screen_w: f32, screen_h: f32, scale: f32, color: Color) {
-		let font = match self.font_collection.font_at(self.font_index) {
-			Some(f) => f,
-			None => {
-				warn!("The font at {} could not be loaded from the collection.", self.font_index);
-				return;
-			},
-		};
-		
 		//println!("Rendering string: {}", s);
+		let mut state = FormatState::new(x, y, scale, &self.font);
 		let mut glyphs = Vec::new();
-		
-		let mut state = FormatState::new(x, y, scale, &font);
-		
-		let mut cprev = None;
-		for c in s.chars().nfc() {
-			if let Some(glyph) = state.layout_char(&font, cprev, c) {
-				glyphs.push((c, glyph));
-			}
-			cprev = Some(c);
-		}
+		state.layout_text(&self.font, s, &mut glyphs);
 		
 		let size = (screen_w, screen_h);
 		draw_glyphs(&self.ctx, surface, &self.shader, &mut self.font_tex, &mut self.cache, size, &glyphs, color);
@@ -182,7 +228,7 @@ impl FontRender {
 /// # Returns
 /// Err if the cache is too small to cache all of the glyphs and render them at once.
 /// Retry with a smaller slice.
-fn cache_glyphs(font_tex: &mut Texture2d, cache: &mut Cache, glyphs: &[(char, PositionedGlyph)]) -> Result<(), CacheWriteErr> {
+fn cache_glyphs<'a>(font_tex: &mut Texture2d, cache: &mut Cache<'a>, glyphs: &[(char, PositionedGlyph<'a>)]) -> Result<(), CacheWriteErr> {
 	cache.clear_queue();
 	for &(_, ref glyph) in glyphs.iter() {
 		cache.queue_glyph(0, glyph.clone());
@@ -218,7 +264,7 @@ fn cache_glyphs(font_tex: &mut Texture2d, cache: &mut Cache, glyphs: &[(char, Po
 }
 
 /// Adds the vertices necessary to `vs` and `is` to draw the glyph to the screen, if it is in `cache`.
-fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
+fn draw_glyph<'a>(cache: &mut Cache<'a>, glyph: &PositionedGlyph<'a>, vs: &mut Vec<FontVertex>, is: &mut Vec<u32>) {
 	if let Ok(Some((uv, pos))) = cache.rect_for(0, glyph) {
 		// 0--1
 		// |  |
@@ -242,7 +288,7 @@ fn draw_glyph(cache: &mut Cache, glyph: &PositionedGlyph, vs: &mut Vec<FontVerte
 /// Draws the glyphs at a specified point on `surface`.
 /// 
 /// Properly calculates matrix.
-fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, size: (f32, f32), glyphs: &[(char, PositionedGlyph)], color: Color) {
+fn draw_glyphs<'a, S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache<'a>, size: (f32, f32), glyphs: &[(char, PositionedGlyph<'a>)], color: Color) {
 	// Calculate matrix
 	let (w, h) = size;
 	let mut mat = Matrix4::one();
@@ -253,7 +299,7 @@ fn draw_glyphs<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program,
 }
 
 /// Transforms the glyphs by `mat` and then draws the glyphs on `surface`.
-fn draw_glyphs_mat<S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache, mat: Matrix4<f32>, glyphs: &[(char, PositionedGlyph)], color: Color) {
+fn draw_glyphs_mat<'a, S: Surface>(ctx: &Rc<Context>, surface: &mut S, shader: &Program, font_tex: &mut Texture2d, cache: &mut Cache<'a>, mat: Matrix4<f32>, glyphs: &[(char, PositionedGlyph<'a>)], color: Color) {
 	match cache_glyphs(font_tex, cache, glyphs) {
 		Ok(()) => {
 			let mut vs = Vec::new();

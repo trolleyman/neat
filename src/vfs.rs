@@ -11,7 +11,7 @@ use std::rc::Rc;
 
 use glium::*;
 use glium::texture::RawImage2d;
-use rusttype::FontCollection;
+use rusttype::{Font, FontCollection};
 use image::{self, DynamicImage, ConvertBuffer};
 
 /// Gets the base directory for all of the vfs operations.
@@ -130,7 +130,7 @@ pub fn try_load_shader(ctx: &Rc<Context>, name: &str) -> Result<Program, String>
 /// Loads the font `name` at `index` from a file in the `fonts/` folder.
 /// 
 /// Exits if the font is not valid.
-pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
+pub fn load_font(name: &str, index: usize) -> Font<'static> {
 	match try_load_font(name, index) {
 		Ok(font) => font,
 		Err(e) => {
@@ -143,18 +143,17 @@ pub fn load_font(name: &str, index: usize) -> FontCollection<'static> {
 /// Loads the font `name` at `index` from a file in the `fonts/` folder.
 /// 
 /// Returns an `Err` if the font is not valid.
-pub fn try_load_font(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
-	fn try(name: &str, index: usize) -> Result<FontCollection<'static>, String> {
+pub fn try_load_font(name: &str, index: usize) -> Result<Font<'static>, String> {
+	fn try(name: &str, index: usize) -> Result<Font<'static>, String> {
 		let base_dir = try_get_base_dir()?;
 		let fonts_dir = base_dir.join("fonts");
 		let font_path = fonts_dir.join(name);
 		let bytes = try_read_file_bytes(&font_path)?;
 		
-		let collection = FontCollection::from_bytes(bytes);
-		match collection.font_at(index) {
-			Some(_) => Ok(collection),
-			None => Err(format!("Invalid font at index {}: '{}'", index, font_path.display()))
-		}
+		let collection = FontCollection::from_bytes(bytes)
+			.map_err(|e| format!("Invalid font: {}", e))?;
+		collection.font_at(index)
+			.map_err(|e| format!("Invalid font at index {}: {}", index, e))
 	}
 	try(name, index).map_err(|e| format!("Cannot load font '{}': {}", name, e))
 }

@@ -14,13 +14,16 @@ num = "0.2.*"
 nalgebra = "0.8.*"
 ncollide = "0.8.*"
 nphysics3d = "0.3.*"
-rusttype = "0.2.0"
 unicode-normalization = "0.1.2"
 log = "0.3.6"
 simplelog = { git = "https://github.com/trolleyman/simplelog.rs" }
 cfg-if = "0.1.0"
 image = "0.8.0"
 rand = "0.3.14"
+
+[dependencies.rusttype]
+version = "0.7.*"
+features = ["gpu_cache"]
 
 [target.'cfg(target_os = "windows")'.dependencies]
 user32-sys = "*"
