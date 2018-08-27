@@ -1,7 +1,16 @@
 extern crate neat;
 
+use std::process::exit;
+use std::io::{self, Write};
+
 use neat::game::GameStateBuilder;
 
 pub fn main() {
-	neat::run(Box::new(GameStateBuilder::build_rot_test));
+	match neat::run(Box::new(GameStateBuilder::build_rot_test)) {
+		Ok(()) => {},
+		Err(e) => {
+			writeln!(io::stderr(), "Error: {}", e).ok();
+			exit(1);
+		}
+	}
 }

@@ -496,7 +496,7 @@ impl TickCallback for LightHandler {
 	}
 }
 impl RenderCallback for LightHandler {
-	fn render(&mut self, r: &mut Render, _fps: u32) {
+	fn render(&mut self, _state: &mut GameState, r: &mut Render, _fps: u32) {
 		let s = match self.mode {
 			Mode::LightConstant  => "constant attenuation",
 			Mode::LightLinear    => "linear attenuation",

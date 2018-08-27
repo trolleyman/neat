@@ -60,9 +60,6 @@ pub struct Render {
 	/// Current framebuffer handle
 	frame: Frame,
 	
-	/// True if the cursor should be grabbed currently
-	cursor_grabbed: bool,
-	
 	/// Projection matrix
 	projection: Matrix4<f32>,
 	camera: Camera,
@@ -117,8 +114,6 @@ impl Render {
 			display,
 			ctx,
 			frame,
-			
-			cursor_grabbed: false,
 			
 			projection: Matrix4::one(),
 			camera,
@@ -194,36 +189,21 @@ impl Render {
 		self.projection = Perspective3::new(w as f32 / h as f32, util::to_rad(90.0), 0.001, 1000.0).to_homogeneous();
 	}
 	
-	/// Tries to grab the focus of the window. If it does it also sets the cursor grabbing state.
+	/// Tries to grab the focus of the window
 	pub fn try_focus(&mut self) -> Result<(), ()> {
-		if focus_window(&self.window()).is_ok() {
-			self.input_reset();
-			Ok(())
-		} else {
-			self.window().grab_cursor(false).ok();
-			self.window().hide_cursor(false);
-			Err(())
+		focus_window(&self.window())
 		}
-	}
 	
 	/// Grabs the cursor.
 	pub fn input_grab(&mut self) {
-		self.cursor_grabbed = true;
-		
-		self.input_reset();
+		self.window().grab_cursor(true).ok();
+		self.window().hide_cursor(true);
 	}
 	
 	/// Lets the cursor go.
 	pub fn input_normal(&mut self) {
-		self.cursor_grabbed = false;
-		
-		self.input_reset();
-	}
-	
-	/// Reset the mouse grabbed/non-grabbed state, after the window has been focused
-	pub fn input_reset(&self) {
-		self.window().grab_cursor(self.cursor_grabbed).ok();
-		self.window().hide_cursor(self.cursor_grabbed);
+		self.window().grab_cursor(false).ok();
+		self.window().hide_cursor(false);
 	}
 	
 	pub fn window(&self) -> Ref<GlWindow> {

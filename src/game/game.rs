@@ -238,7 +238,6 @@ impl Game {
 						self.focused = *b;
 						if self.focused {
 							info!("Window focused");
-							self.render.input_reset();
 						} else {
 							info!("Window unfocused");
 						}

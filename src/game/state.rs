@@ -29,8 +29,18 @@ pub enum Gravity {
 pub trait TickCallback {
 	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vector2<f64>);
 }
+impl<F> TickCallback for F where F: FnMut(&mut GameState, f32, &Settings, &[Event], Vector2<f64>) {
+	fn tick(&mut self, state: &mut GameState, dt: f32, settings: &Settings, events: &[Event], mouse_moved: Vector2<f64>) {
+		self(state, dt, settings, events, mouse_moved)
+	}
+}
 pub trait RenderCallback {
-	fn render(&mut self, r: &mut Render, fps: u32);
+	fn render(&mut self, state: &mut GameState, r: &mut Render, fps: u32);
+}
+impl<F> RenderCallback for F where F: FnMut(&mut GameState, &mut Render, u32) {
+	fn render(&mut self, state: &mut GameState, r: &mut Render, fps: u32) {
+		self(state, r, fps)
+	}
 }
 
 /// Holds the state of the game
@@ -201,13 +211,15 @@ impl GameState {
 		self.camera.mouse_moved(mouse_moved);
 		
 		if !settings.paused {
-			/*info!("=== Entities ===");
-			for (i, e) in self.entities.iter() {
-				let body = e.components()[0].body().borrow();
-				let pos = body.position().translation;
-				let vel = body.lin_vel();
-				info!("{}: pos:[{}, {}, {}], vel:[{}, {}, {}]", i, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z);
-			}*/
+			// info!("=== Entities ===");
+			// for (i, e) in self.entities.iter() {
+			// 	if let Some(body) = self.world.rigid_body(e.body()) {
+			// 		let pos = body.position().translation.vector;
+			// 		let vel = body.velocity().linear;
+			// 		let mass = body.augmented_mass().mass();
+			// 		info!("{}: mass: {:.2}, pos:[{:.2}, {:.2}, {:.2}], vel:[{:.2}, {:.2}, {:.2}]", i, mass, pos.x, pos.y, pos.z, vel.x, vel.y, vel.z);
+			// 	}
+			// }
 			
 			// Apply gravity to all non-static entities.
 			match self.gravity {
@@ -224,6 +236,7 @@ impl GameState {
 	
 	/// Calculates relative gravity for all the entities in the scene.
 	fn calculate_gravity(&mut self, g: f32) {
+		// info!("Calculating gravity");
 		let id_vec: Vec<_> = self.entities.keys().cloned().collect();
 		let mut ids = id_vec.iter();
 		loop {
@@ -250,6 +263,7 @@ impl GameState {
 						
 						// Calc force.
 						let lin_force = v * ((g * a_mass * b_mass) / len_sq);
+						// info!("Calculate gravity {} <-> {}: {:6.2?}", a_id, b_id, lin_force);
 						Force3::linear(lin_force)
 					} else {
 						continue;
@@ -273,7 +287,7 @@ impl GameState {
 		r.set_wireframe_mode(self.wireframe_mode);
 		
 		for e in self.entities.values() {
-			e.render(&self.world, r);
+			e.render(r, &self.world);
 		}
 		
 		r.draw_str(&format!("{} FPS", fps), 10.0, 10.0, FONT_SIZE);
@@ -281,10 +295,9 @@ impl GameState {
 		// Call callback
 		{
 			let call = self.render_callback.clone();
-			if call.is_some() {
-				let call = call.unwrap();
+			if let Some(call) = call {
 				let mut call = call.borrow_mut();
-				call.render(r, fps);
+				call.render(self, r, fps);
 			}
 		}
 		

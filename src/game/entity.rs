@@ -242,6 +242,8 @@ impl Entity {
 			// Set static status if density hasn't been given
 			if density.is_none() {
 				rbody.set_status(BodyStatus::Static);
+			} else {
+				rbody.set_status(BodyStatus::Dynamic);
 			}
 		}
 		
@@ -269,7 +271,7 @@ impl Entity {
 	}
 	
 	/// Renders the entity
-	pub fn render(&self, world: &World<f32>, r: &mut Render) {
+	pub fn render(&self, r: &mut Render, world: &World<f32>) {
 		if let Some(model_mat) = world.rigid_body(self.body).map(|body| body.position().to_homogeneous()) {
 			for &(ref iso, ref mesh) in self.meshes.iter() {
 				mesh.render(r, model_mat * iso.to_homogeneous());
