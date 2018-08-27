@@ -82,48 +82,61 @@ impl FormatState {
 	
 	/// Lays out a string and returns the positioned glyphs that the text represents.
 	/// 
-	/// Handles newlines properly. Doesn't perform wrapping
+	/// Handles newlines (`'\n'`, `'\r'`, `'\r\n'`) properly. Doesn't perform wrapping
 	pub fn layout_text<'a, 'b>(&'b mut self, font: &Font<'a>, text: &str, glyphs: &mut Vec<(char, PositionedGlyph<'a>)>) {
 		let mut cprev = None;
 		for c in normalize_line_endings(text.chars().nfc()) {
-			let glyph = self.layout_char(&font, cprev, c);
-			glyphs.push((c, glyph));
-			cprev = Some(c);
+			if let Some(glyph) = self.layout_char(&font, cprev, c) {
+				glyphs.push((c, glyph));
+				cprev = Some(c);
+			}
 		}
 	}
 	
-	/// Lays out a char at the current posiion, and updates the current position to be after it.
+	/// Lays out a char at the current posiion, and updates the current position.
 	/// 
-	/// Handles newlines properly.
-	fn layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> PositionedGlyph<'a> {
+	/// Any newline character (`'\n'`, `'\r'`) causes a newline.
+	/// 
+	/// # Returns
+	/// - `Some(g)` If a printable glyph was returned
+	/// - `None` If c is an invisible character
+	fn layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
 		// Unwrap is safe here as force_print is true
-		self.layout_char_imp(font, true, cprev, c).unwrap()
+		self.layout_char_imp(font, true, cprev, c).ok().unwrap()
 	}
 	
-	/// Lays out a char at the current posiion, and updates the current position to be after it.
+	/// Lays out a char at the current posiion, and updates the current position.
 	/// 
-	/// Handles newlines.
+	/// Any newline character (`'\n'`, `'\r'`) causes a newline.
 	/// 
-	/// Returns `None` if the char does not have a glyph for the character supplied.
+	/// # Returns
+	/// - `Ok(Some(g))` If a printable glyph was returned
+	/// - `Ok(None)` If c is an invisible character
+	/// - `Err(())` If a glyph could not be found in the font for c
 	#[allow(dead_code)]
-	fn try_layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
+	fn try_layout_char<'a, 'b>(&'b mut self, font: &Font<'a>, cprev: Option<char>, c: char) -> Result<Option<PositionedGlyph<'a>>, ()> {
 		self.layout_char_imp(font, false, cprev, c)
 	}
 	
-	/// Lays out a char at the current posiion, and updated the current position to be after it.
+	/// Lays out a char at the current posiion, and updates the current position.
 	/// 
-	/// Handles newlines.
+	/// Any newline character (`'\n'`, `'\r'`) causes a newline.
 	/// 
-	/// If `force_print` is true, then always prints a glyph, even if the character could not be found.
-	/// If not, returns `None` if the char does not have a glyph for the character supplied.
-	fn layout_char_imp<'a, 'b>(&'b mut self, font: &Font<'a>, force_print: bool, cprev: Option<char>, c: char) -> Option<PositionedGlyph<'a>> {
-		if c == '\n' {
+	/// # Returns
+	/// - `Ok(Some(g))` If a printable glyph was returned
+	/// - `Ok(None)` If c is an invisible character
+	/// - `Err(())` If a glyph could not be found in the font for c
+	/// 
+	/// If `force_print` is true, then replaces unknown glyphs with the `.notdef` glyph, i.e. never returns `Err(())`.
+	fn layout_char_imp<'a, 'b>(&'b mut self, font: &Font<'a>, force_print: bool, cprev: Option<char>, c: char) -> Result<Option<PositionedGlyph<'a>>, ()> {
+		if c == '\n' || c == '\r' {
 			self.newline();
+			return Ok(None);
 		}
 		
 		let glyph_id = c.into_glyph_id(font);
-		if force_print && glyph_id == GlyphId(0) {
-			return None;
+		if !force_print && glyph_id == GlyphId(0) {
+			return Err(());
 		}
 		let glyph = font.glyph(glyph_id);
 		
@@ -140,7 +153,7 @@ impl FormatState {
 		
 		let positioned = scaled.positioned(point(self.x, self.y));
 		self.x += advance;
-		Some(positioned)
+		Ok(Some(positioned))
 	}
 }
 

@@ -192,7 +192,7 @@ impl Render {
 	/// Tries to grab the focus of the window
 	pub fn try_focus(&mut self) -> Result<(), ()> {
 		focus_window(&self.window())
-		}
+	}
 	
 	/// Grabs the cursor.
 	pub fn input_grab(&mut self) {
