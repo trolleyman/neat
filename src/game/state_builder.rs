@@ -234,7 +234,7 @@ impl GameStateBuilder {
 		let ball = ShapeHandle::new(Ball::new(SCALE));
 		let ball_mesh = Rc::new(SimpleMesh::sphere(ctx, 4));
 		
-		let r = move || { rand::thread_rng().next_f32() };
+		let r = move || { rand::thread_rng().gen::<f32>() };
 		
 		const N: i32 = 10;
 		for x in 0..N {
@@ -330,8 +330,8 @@ impl GameStateBuilder {
 	/// This is basically an entity test scene, testing how entities interact with themselves and other objects.
 	pub fn build_tables(ctx: &Rc<Context>) -> GameState {
 		fn build_table(ctx: &Rc<Context>, state: &mut GameState, top_tex: Rc<Texture2d>, leg_tex: Rc<Texture2d>, pos: Vector3<f32>, material: Material) {
-			let r = move || { rand::thread_rng().next_f32() };
-			//let r_neg = move || { rand::thread_rng().next_f32() * 2.0 - 1.0 };
+			let r = move || { rand::thread_rng().gen::<f32>() };
+			//let r_neg = move || { rand::thread_rng().gen::<f32>() * 2.0 - 1.0 };
 			
 			let col = Vector4::new(r(), r(), r(), 1.0);
 			let material = material.with_scale_rgba(col);

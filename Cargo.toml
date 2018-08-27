@@ -24,7 +24,7 @@ log = "0.3.6"
 simplelog = { git = "https://github.com/trolleyman/simplelog.rs" }
 cfg-if = "0.1.0"
 image = "0.8.0"
-rand = "0.3.14"
+rand = "0.5.*"
 
 [dependencies.rusttype]
 version = "0.7.*"
