@@ -2,11 +2,22 @@ use prelude::*;
 use std::rc::Rc;
 use std::cell::Ref;
 
-use glium::*;
-use glium::backend::Facade;
-use glium::backend::glutin::Display;
-use glium::uniforms::UniformsStorage;
-use glutin::{ContextBuilder, EventsLoop, GlWindow, Robustness, WindowBuilder, Window};
+use glium::{
+	Depth, DepthTest,
+	PolygonMode, BackfaceCullingMode,
+	DrawParameters,
+	Frame,
+	Program,
+	Texture2d,
+	IndexBuffer, VertexBuffer,
+	Surface,
+	backend::{
+		Facade,
+		glutin::Display,
+	},
+	uniforms::UniformsStorage,
+};
+use glutin::{Api, ContextBuilder, EventsLoop, GlProfile, GlRequest, GlWindow, Robustness, WindowBuilder, Window};
 
 use util;
 use vfs;
@@ -31,7 +42,7 @@ cfg_if! {
 			}
 		}
 	} else {
-		fn os_focus_window(win: &Window) -> Result<(), ()> {
+		fn os_focus_window(_win: &Window) -> Result<(), ()> {
 			// Don't do anything
 			Ok(())
 		}
@@ -86,6 +97,8 @@ impl Render {
 		let ctx_builder = ContextBuilder::new()
 			.with_depth_buffer(8)
 			.with_vsync(settings.vsync)
+			.with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
+			.with_gl_profile(GlProfile::Core)
 			.with_gl_robustness(Robustness::TryRobustLoseContextOnReset);
 		
 		// Build OpenGL window
