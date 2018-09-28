@@ -25,10 +25,7 @@ simplelog = { git = "https://github.com/trolleyman/simplelog.rs" }
 cfg-if = "0.1.0"
 image = "0.19.0"
 rand = "0.5.*"
-
-[dependencies.rusttype]
-version = "0.7.*"
-features = ["gpu_cache"]
+rusttype = { version = "0.7.*", features = ["gpu_cache"] }
 
 [target.'cfg(windows)'.dependencies]
 user32-sys = "*"
