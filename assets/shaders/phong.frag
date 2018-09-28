@@ -1,4 +1,4 @@
-#version 330
+#version 130
 
 // Texture of the object
 uniform sampler2D tex;
