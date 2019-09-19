@@ -15,17 +15,21 @@ doc = false
 
 [dependencies]
 glium = "0.22.*"
-num = "0.2.*"
+rusttype = { version = "0.7.*", features = ["gpu_cache"] }
+image = "0.19.0"
+
 nalgebra = "0.16.0"
 ncollide3d = "0.17.1"
 nphysics3d = "0.9.1"
+
+num = "0.2.*"
 unicode-normalization = "0.1.2"
+
 log = "0.4.4"
 simplelog = { git = "https://github.com/trolleyman/simplelog.rs" }
-cfg-if = "0.1.0"
-image = "0.19.0"
+
 rand = "0.5.*"
-rusttype = { version = "0.7.*", features = ["gpu_cache"] }
+cfg-if = "0.1.0"
 
 [target.'cfg(windows)'.dependencies]
 user32-sys = "*"

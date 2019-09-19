@@ -37,16 +37,17 @@ fn copy_folder(src: &Path, dst: &Path) {
 			let dst = dst.join(entry.path().file_name().unwrap());
 			if ty.is_dir() {
 				copy_folder(&entry.path(), &dst);
-			} else if ty.is_file() {
+			} else if ty.is_file() || ty.is_symlink() {
 				fs::copy(&entry.path(), &dst).unwrap();
 				println!("Copied '{}' => '{}'", entry.path().display(), dst.display());
 			}
-			// Ignore symbolic links
 		}
 	} else {
+		println!("cargo:rerun-if-changed={}", src.display());
 		println!("Debug mode -- symlinking");
+		
 		// Remove previous data
-		if let Ok(meta) = fs::symlink_metadata(dst) {
+		if let Ok(meta) = fs::metadata(dst) {
 			let ty = meta.file_type();
 			if ty.is_dir() {
 				fs::remove_dir_all(dst).unwrap();
