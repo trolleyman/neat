@@ -16,7 +16,7 @@ doc = false
 [dependencies]
 glium = "0.22.*"
 rusttype = { version = "0.7.*", features = ["gpu_cache"] }
-image = "0.19.0"
+image = "0.22.5"
 
 nalgebra = "0.16.0"
 ncollide3d = "0.17.1"
